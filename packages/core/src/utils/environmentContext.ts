@@ -7,6 +7,7 @@
 import type { Part, Content } from '@google/genai';
 import type { Config } from '../config/config.js';
 import { getFolderStructure } from './getFolderStructure.js';
+import os from 'node:os';
 
 export const INITIAL_HISTORY_LENGTH = 1;
 
@@ -45,6 +46,42 @@ Here is the folder structure of the current working directories:
 ${folderStructure}`;
 }
 
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    return 'unknown';
+  }
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let size = bytes;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  return `${size.toFixed(size >= 10 || size % 1 === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function getSystemSnapshot(): string {
+  const platform = `${os.platform()} ${os.release()}`;
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const usedMem = Math.max(totalMem - freeMem, 0);
+  const usedPercent = totalMem > 0 ? (usedMem / totalMem) * 100 : 0;
+  const cpuCount = os.cpus().length;
+  const load = os.loadavg();
+
+  const loadDisplay =
+    Array.isArray(load) && load.length > 0 && Number.isFinite(load[0])
+      ? `, load (1m): ${load[0].toFixed(2)}`
+      : '';
+
+  return `
+## Current System State
+- OS: ${platform}
+- CPU: ${cpuCount} cores${loadDisplay}
+- RAM: ${formatBytes(usedMem)} used of ${formatBytes(totalMem)} (${usedPercent.toFixed(1)}%)
+- Disk: Run 'df -h' for details if needed.`.trim();
+}
+
 /**
  * Retrieves environment-related information to be included in the chat context.
  * This includes the current working directory, date, operating system, and folder structure.
@@ -63,12 +100,14 @@ export async function getEnvironmentContext(config: Config): Promise<Part[]> {
   const directoryContext = await getDirectoryContextString(config);
   const tempDir = config.storage.getProjectTempDir();
   const environmentMemory = config.getEnvironmentMemory();
+  const systemSnapshot = getSystemSnapshot();
 
   const context = `
-This is the Gemini CLI. We are setting up the context for our chat.
+This is TermAI, a general terminal agent. We are setting up the context for our chat.
 Today's date is ${today} (formatted according to the user's locale).
 My operating system is: ${platform}
 The project's temporary directory is: ${tempDir}
+${systemSnapshot}
 ${directoryContext}
 
 ${environmentMemory}

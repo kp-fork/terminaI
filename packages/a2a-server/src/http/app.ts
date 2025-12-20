@@ -28,6 +28,9 @@ import { commandRegistry } from '../commands/command-registry.js';
 import { SimpleExtensionLoader } from '@google/gemini-cli-core';
 import type { Command, CommandArgument } from '../commands/types.js';
 import { GitService } from '@google/gemini-cli-core';
+import { createAuthMiddleware, loadAuthVerifier } from './auth.js';
+import { createCorsAllowlist } from './cors.js';
+import { createReplayProtection } from './replay.js';
 
 type CommandResponse = {
   name: string;
@@ -74,8 +77,13 @@ const coderAgentCard: AgentCard = {
   supportsAuthenticatedExtendedCard: false,
 };
 
-export function updateCoderAgentCardUrl(port: number) {
-  coderAgentCard.url = `http://localhost:${port}/`;
+export function updateCoderAgentCardUrl(
+  port: number,
+  host: string = 'localhost',
+) {
+  const formattedHost =
+    host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+  coderAgentCard.url = `http://${formattedHost}:${port}/`;
 }
 
 async function handleExecuteCommand(
@@ -154,6 +162,13 @@ export async function createApp() {
     const workspaceRoot = setTargetDir(undefined);
     loadEnvironment();
     const settings = loadSettings(workspaceRoot);
+    const envAllowedOrigins = process.env['GEMINI_WEB_REMOTE_ALLOWED_ORIGINS'];
+    const allowedOrigins = envAllowedOrigins
+      ? envAllowedOrigins
+          .split(',')
+          .map((origin) => origin.trim())
+          .filter(Boolean)
+      : (settings.webRemote?.allowedOrigins ?? []);
     const extensions = loadExtensions(workspaceRoot);
     const config = await loadConfig(
       settings,
@@ -198,10 +213,29 @@ export async function createApp() {
     expressApp.use((req, res, next) => {
       requestStorage.run({ req }, next);
     });
+    expressApp.use(
+      express.json({
+        verify: (req, _res, buf) => {
+          (req as { rawBody?: Buffer }).rawBody = buf;
+        },
+      }),
+    );
+
+    const authVerifier = await loadAuthVerifier();
+    expressApp.use(createCorsAllowlist(allowedOrigins));
+    expressApp.use(
+      createAuthMiddleware(authVerifier, {
+        bypassPaths: new Set(['/healthz']),
+      }),
+    );
+    expressApp.use(createReplayProtection());
 
     const appBuilder = new A2AExpressApp(requestHandler);
     expressApp = appBuilder.setupRoutes(expressApp, '');
-    expressApp.use(express.json());
+
+    expressApp.get('/healthz', (_req, res) => {
+      res.status(200).json({ status: 'ok' });
+    });
 
     expressApp.post('/tasks', async (req, res) => {
       try {

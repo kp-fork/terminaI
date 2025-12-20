@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { render } from 'ink';
-import { AppContainer } from './ui/AppContainer.js';
+import { AppContainer, type VoiceOverrides } from './ui/AppContainer.js';
 import { loadCliConfig, parseArguments } from './config/config.js';
 import * as cliConfig from './config/config.js';
 import { readStdin } from './utils/readStdin.js';
@@ -98,6 +98,12 @@ import { isAlternateBufferEnabled } from './ui/hooks/useAlternateBuffer.js';
 
 import { setupTerminalAndTheme } from './utils/terminalTheme.js';
 import { profiler } from './ui/components/DebugProfiler.js';
+import type { Server } from 'node:http';
+import {
+  ensureWebRemoteAuth,
+  isLoopbackHost,
+  startWebRemoteServer,
+} from './utils/webRemoteServer.js';
 
 const SLOW_RENDER_MS = 200;
 
@@ -178,6 +184,7 @@ export async function startInteractiveUI(
   workspaceRoot: string = process.cwd(),
   resumedSessionData: ResumedSessionData | undefined,
   initializationResult: InitializationResult,
+  voiceOverrides?: VoiceOverrides,
 ) {
   // Never enter Ink alternate buffer mode when screen reader mode is enabled
   // as there is no benefit of alternate buffer mode when using a screen reader
@@ -233,6 +240,7 @@ export async function startInteractiveUI(
                     version={version}
                     resumedSessionData={resumedSessionData}
                     initializationResult={initializationResult}
+                    voiceOverrides={voiceOverrides}
                   />
                 </VimModeProvider>
               </SessionStatsProvider>
@@ -450,6 +458,85 @@ export async function main() {
     const config = await loadCliConfig(settings.merged, sessionId, argv);
     loadConfigHandle?.end();
 
+    const webRemoteHost = argv.webRemoteHost ?? '127.0.0.1';
+    const webRemotePort = argv.webRemotePort ?? 0;
+    const webRemoteAllowedOrigins = argv.webRemoteAllowedOrigins ?? [];
+    const additionalStartupWarnings: string[] = [];
+
+    if (argv.webRemoteRotateToken && !argv.webRemote) {
+      const authResult = await ensureWebRemoteAuth({
+        host: webRemoteHost,
+        port: webRemotePort,
+        allowedOrigins: webRemoteAllowedOrigins,
+        tokenOverride: argv.webRemoteToken,
+        rotateToken: true,
+      });
+      if (authResult.token) {
+        writeToStdout(
+          `Web-remote token rotated. New token: ${authResult.token}\n`,
+        );
+      } else {
+        writeToStdout(
+          'Web-remote token rotated. Use --web-remote to start the server.\n',
+        );
+      }
+      await runExitCleanup();
+      process.exit(ExitCodes.SUCCESS);
+    }
+
+    let webRemoteServer: Server | undefined;
+    if (argv.webRemote) {
+      if (!isLoopbackHost(webRemoteHost) && !argv.iUnderstandWebRemoteRisk) {
+        writeToStderr(
+          'Error: binding web-remote to a non-loopback host requires --i-understand-web-remote-risk.\n',
+        );
+        await runExitCleanup();
+        process.exit(ExitCodes.FATAL_INPUT_ERROR);
+      }
+      const authResult = await ensureWebRemoteAuth({
+        host: webRemoteHost,
+        port: webRemotePort,
+        allowedOrigins: webRemoteAllowedOrigins,
+        tokenOverride: argv.webRemoteToken,
+        rotateToken: argv.webRemoteRotateToken,
+      });
+      const { server, port } = await startWebRemoteServer({
+        host: webRemoteHost,
+        port: webRemotePort,
+        allowedOrigins: webRemoteAllowedOrigins,
+        tokenOverride: argv.webRemoteToken,
+        rotateToken: argv.webRemoteRotateToken,
+      });
+      webRemoteServer = server;
+      registerCleanup(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            webRemoteServer?.close((err) => {
+              if (err) {
+                reject(err);
+                return;
+              }
+              resolve();
+            });
+          }),
+      );
+      let tokenNotice = `Token stored at ${authResult.authPath}. Use --web-remote-rotate-token to rotate.`;
+      if (authResult.tokenSource === 'env') {
+        tokenNotice = 'Token loaded from GEMINI_WEB_REMOTE_TOKEN.';
+      } else if (authResult.tokenSource === 'override') {
+        tokenNotice = 'Token loaded from --web-remote-token (not stored).';
+      } else if (authResult.token) {
+        tokenNotice = `Token: ${authResult.token}`;
+      }
+      additionalStartupWarnings.push(
+        [
+          'Web-remote is enabled. This exposes local execution to any client with the token.',
+          `Listening on http://${webRemoteHost}:${port}/`,
+          tokenNotice,
+        ].join('\n'),
+      );
+    }
+
     // Register config for telemetry shutdown
     // This ensures telemetry (including SessionEnd hooks) is properly flushed on exit
     registerTelemetryConfig(config);
@@ -562,6 +649,7 @@ export async function main() {
     const startupWarnings = [
       ...(await getStartupWarnings()),
       ...(await getUserStartupWarnings()),
+      ...additionalStartupWarnings,
     ];
 
     // Handle --resume flag
@@ -586,6 +674,21 @@ export async function main() {
     }
 
     cliStartupHandle?.end();
+    const voiceOverrides: VoiceOverrides | undefined =
+      argv.voice !== undefined ||
+      argv.voicePttKey !== undefined ||
+      argv.voiceStt !== undefined ||
+      argv.voiceTts !== undefined ||
+      argv.voiceMaxWords !== undefined
+        ? {
+            enabled: argv.voice,
+            pttKey: argv.voicePttKey,
+            sttProvider: argv.voiceStt,
+            ttsProvider: argv.voiceTts,
+            maxWords: argv.voiceMaxWords,
+          }
+        : undefined;
+
     // Render UI, passing necessary config values. Check that there is no command line question.
     if (config.isInteractive()) {
       await startInteractiveUI(
@@ -595,6 +698,7 @@ export async function main() {
         process.cwd(),
         resumedSessionData,
         initializationResult,
+        voiceOverrides,
       );
       return;
     }

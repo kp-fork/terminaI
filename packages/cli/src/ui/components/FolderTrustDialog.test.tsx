@@ -42,7 +42,7 @@ describe('FolderTrustDialog', () => {
 
     expect(lastFrame()).toContain('Do you trust this folder?');
     expect(lastFrame()).toContain(
-      'Trusting a folder allows Gemini to execute commands it suggests.',
+      'Trusting a folder allows TermAI to execute commands it suggests.',
     );
   });
 
@@ -74,7 +74,7 @@ describe('FolderTrustDialog', () => {
       <FolderTrustDialog onSelect={vi.fn()} isRestarting={true} />,
     );
 
-    expect(lastFrame()).toContain(' Gemini CLI is restarting');
+    expect(lastFrame()).toContain(' TermAI is restarting');
   });
 
   it('should call relaunchApp when isRestarting is true', async () => {

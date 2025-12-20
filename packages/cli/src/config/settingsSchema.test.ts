@@ -21,6 +21,7 @@ describe('SettingsSchema', () => {
         'mcpServers',
         'general',
         'ui',
+        'voice',
         'ide',
         'privacy',
         'telemetry',
@@ -55,6 +56,7 @@ describe('SettingsSchema', () => {
       const nestedSettings: Array<keyof Settings> = [
         'general',
         'ui',
+        'voice',
         'ide',
         'privacy',
         'model',

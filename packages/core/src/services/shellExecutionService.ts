@@ -426,7 +426,7 @@ export class ShellExecutionService {
             signal: signal ? os.constants.signals[signal] : null,
             error,
             aborted: abortSignal.aborted,
-            pid: undefined,
+            pid: child.pid,
             executionMethod: 'child_process',
           });
         };
@@ -487,7 +487,7 @@ export class ShellExecutionService {
         }
       });
 
-      return { pid: undefined, result };
+      return { pid: child.pid, result };
     } catch (e) {
       const error = e as Error;
       return {
@@ -831,6 +831,10 @@ export class ShellExecutionService {
   }
 
   static isPtyActive(pid: number): boolean {
+    if (!this.activePtys.has(pid)) {
+      return false;
+    }
+
     try {
       // process.kill with signal 0 is a way to check for the existence of a process.
       // It doesn't actually send a signal.

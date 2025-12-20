@@ -1537,6 +1537,29 @@ describe('screenReader configuration', () => {
     expect(config.getScreenReader()).toBe(true);
   });
 
+  it('should parse voice flags', async () => {
+    process.argv = [
+      'node',
+      'script.js',
+      '--voice',
+      '--voice-ptt-key',
+      'ctrl+space',
+      '--voice-stt',
+      'whispercpp',
+      '--voice-tts',
+      'none',
+      '--voice-max-words',
+      '25',
+    ];
+
+    const parsedArgs = await parseArguments({} as Settings);
+    expect(parsedArgs.voice).toBe(true);
+    expect(parsedArgs.voicePttKey).toBe('ctrl+space');
+    expect(parsedArgs.voiceStt).toBe('whispercpp');
+    expect(parsedArgs.voiceTts).toBe('none');
+    expect(parsedArgs.voiceMaxWords).toBe(25);
+  });
+
   it('should be false by default when no flag or setting is present', async () => {
     process.argv = ['node', 'script.js'];
     const argv = await parseArguments({} as Settings);
@@ -2075,6 +2098,97 @@ describe('Output format', () => {
     const argv = await parseArguments({} as Settings);
     const config = await loadCliConfig({}, 'test-session', argv);
     expect(config.getOutputFormat()).toBe(OutputFormat.STREAM_JSON);
+  });
+
+  it('should parse web-remote flags', async () => {
+    process.argv = [
+      'node',
+      'script.js',
+      '--web-remote',
+      '--web-remote-host',
+      '127.0.0.1',
+      '--web-remote-port',
+      '41242',
+      '--web-remote-allowed-origins',
+      'https://example.com,https://foo.test',
+      '--web-remote-token',
+      'test-token',
+    ];
+
+    const argv = await parseArguments({} as Settings);
+    expect(argv.webRemote).toBe(true);
+    expect(argv.webRemoteHost).toBe('127.0.0.1');
+    expect(argv.webRemotePort).toBe(41242);
+    expect(argv.webRemoteAllowedOrigins).toEqual([
+      'https://example.com',
+      'https://foo.test',
+    ]);
+    expect(argv.webRemoteToken).toBe('test-token');
+  });
+
+  it('should error on non-loopback web-remote host without consent', async () => {
+    process.argv = [
+      'node',
+      'script.js',
+      '--web-remote',
+      '--web-remote-host',
+      '0.0.0.0',
+    ];
+
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit called');
+    });
+    const mockConsoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    const debugErrorSpy = vi
+      .spyOn(debugLogger, 'error')
+      .mockImplementation(() => {});
+
+    await expect(parseArguments({} as Settings)).rejects.toThrow(
+      'process.exit called',
+    );
+    expect(debugErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Binding web-remote'),
+    );
+    expect(mockConsoleError).toHaveBeenCalled();
+
+    mockExit.mockRestore();
+    mockConsoleError.mockRestore();
+    debugErrorSpy.mockRestore();
+  });
+
+  it('should error on conflicting web-remote token flags', async () => {
+    process.argv = [
+      'node',
+      'script.js',
+      '--web-remote',
+      '--web-remote-token',
+      'token',
+      '--web-remote-rotate-token',
+    ];
+
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit called');
+    });
+    const mockConsoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    const debugErrorSpy = vi
+      .spyOn(debugLogger, 'error')
+      .mockImplementation(() => {});
+
+    await expect(parseArguments({} as Settings)).rejects.toThrow(
+      'process.exit called',
+    );
+    expect(debugErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('web-remote-token'),
+    );
+    expect(mockConsoleError).toHaveBeenCalled();
+
+    mockExit.mockRestore();
+    mockConsoleError.mockRestore();
+    debugErrorSpy.mockRestore();
   });
 
   it('should error on invalid --output-format argument', async () => {

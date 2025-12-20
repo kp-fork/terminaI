@@ -549,6 +549,18 @@ describe('gemini.tsx main function kitty protocol', () => {
       outputFormat: undefined,
       fakeResponses: undefined,
       recordResponses: undefined,
+      voice: undefined,
+      voicePttKey: undefined,
+      voiceStt: undefined,
+      voiceTts: undefined,
+      voiceMaxWords: undefined,
+      webRemote: undefined,
+      webRemoteHost: undefined,
+      webRemotePort: undefined,
+      webRemoteAllowedOrigins: undefined,
+      webRemoteToken: undefined,
+      webRemoteRotateToken: undefined,
+      iUnderstandWebRemoteRisk: undefined,
     });
 
     await act(async () => {
@@ -590,6 +602,11 @@ describe('gemini.tsx main function kitty protocol', () => {
 
     vi.mocked(parseArguments).mockResolvedValue({
       promptInteractive: false,
+      voice: undefined,
+      voicePttKey: undefined,
+      voiceStt: undefined,
+      voiceTts: undefined,
+      voiceMaxWords: undefined,
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const mockConfig = {
@@ -661,6 +678,11 @@ describe('gemini.tsx main function kitty protocol', () => {
 
     vi.mocked(parseArguments).mockResolvedValue({
       promptInteractive: false,
+      voice: undefined,
+      voicePttKey: undefined,
+      voiceStt: undefined,
+      voiceTts: undefined,
+      voiceMaxWords: undefined,
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     vi.mocked(loadSettings).mockReturnValue({
@@ -744,6 +766,11 @@ describe('gemini.tsx main function kitty protocol', () => {
 
     vi.mocked(parseArguments).mockResolvedValue({
       promptInteractive: false,
+      voice: undefined,
+      voicePttKey: undefined,
+      voiceStt: undefined,
+      voiceTts: undefined,
+      voiceMaxWords: undefined,
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(loadCliConfig).mockResolvedValue({
       isInteractive: () => false,
@@ -827,6 +854,11 @@ describe('gemini.tsx main function kitty protocol', () => {
     vi.mocked(parseArguments).mockResolvedValue({
       promptInteractive: false,
       resume: 'session-id',
+      voice: undefined,
+      voicePttKey: undefined,
+      voiceStt: undefined,
+      voiceTts: undefined,
+      voiceMaxWords: undefined,
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(loadCliConfig).mockResolvedValue({
       isInteractive: () => true,
@@ -905,6 +937,11 @@ describe('gemini.tsx main function kitty protocol', () => {
 
     vi.mocked(parseArguments).mockResolvedValue({
       promptInteractive: false,
+      voice: undefined,
+      voicePttKey: undefined,
+      voiceStt: undefined,
+      voiceTts: undefined,
+      voiceMaxWords: undefined,
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     vi.mocked(loadCliConfig).mockResolvedValue({
       isInteractive: () => false,

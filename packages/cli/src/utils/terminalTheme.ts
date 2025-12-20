@@ -48,7 +48,7 @@ export async function setupTerminalAndTheme(
       terminalBackground,
       themeManager.getAllThemes(),
       DEFAULT_THEME.name,
-      'Default Light',
+      'TermAI Light',
     );
     themeManager.setActiveTheme(themeName);
   }

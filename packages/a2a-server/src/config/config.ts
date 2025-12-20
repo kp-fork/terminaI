@@ -118,10 +118,8 @@ export async function loadConfig(
     logger.info('[Config] Using Gemini API Key');
     await config.refreshAuth(AuthType.USE_GEMINI);
   } else {
-    const errorMessage =
-      '[Config] Unable to set GeneratorConfig. Please provide a GEMINI_API_KEY or set USE_CCPA.';
-    logger.error(errorMessage);
-    throw new Error(errorMessage);
+    logger.info('[Config] Using OAuth (LOGIN_WITH_GOOGLE)');
+    await config.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
   }
 
   return config;

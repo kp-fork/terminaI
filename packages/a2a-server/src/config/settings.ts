@@ -34,6 +34,9 @@ export interface Settings {
   general?: {
     previewFeatures?: boolean;
   };
+  webRemote?: {
+    allowedOrigins?: string[];
+  };
 
   // Git-aware file filtering settings
   fileFiltering?: {
