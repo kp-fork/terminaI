@@ -2,29 +2,33 @@
 
 [![TermAI CI](https://github.com/Prof-Harita/termAI/actions/workflows/ci.yml/badge.svg)](https://github.com/Prof-Harita/termAI/actions/workflows/ci.yml)
 
-![TermAI Banner](./docs/assets/gemini-screenshot.png)
+![TermAI Banner](./docs/assets/termai-banner.png)
 
-**TermAI** is the next-generation, autonomous terminal agent. Built on the solid
-foundation of Google's Gemini CLI, TermAI extends the concept of a terminal
-assistant into a fully capable **Agent**.
+**TermAI** is the next-generation, general-purpose terminal agent. While it
+excels at coding, it is **not just a coding agent**.
 
-It doesn't just suggest commands; it can **speak** (Voice Mode), it can **act
-autonomously** (YOLO Mode), and it can be controlled **remotely** (Web Remote).
+It is a bridge between natural language and the unlimited power of the command
+line, designed for **everyone**—from the layman asking about the weather to the
+sysadmin managing a server fleet.
 
 ## 🚀 Why TermAI?
 
-TermAI is the "Unshackled" version of the terminal assistant.
+Most "agents" (like OpenCode or Claude Code) act like senior engineers. **TermAI
+acts like a universal translator for your computer.**
 
-- **🗣️ Voice-First**: Hands-free coding with `space` or `ctrl+space`
+- **🌍 For Everyone**:
+  - _Layman:_ "What is the weather in Tokyo?" -> Fetches real-time data.
+  - _Business User:_ "Send an email to the team with these meeting notes." ->
+    Automates communication.
+  - _Power User:_ "Find all large files >1GB and compress them." -> Orchestrates
+    system operations.
+- **🗣️ Voice-First**: Hands-free interactions with `space` or `ctrl+space`
   Push-to-Talk.
-- **⚡ YOLO Mode**: Autonomous execution. "Fix the build" without approving
-  every `ls` command.
+- **⚡ YOLO Mode**: Autonomous execution. "Fix the build" or "Organize my
+  downloads folder" without nagging.
 - **🌐 Web Remote**: Control your terminal from a browser/iPad.
-- **🧠 Model Agnostic**: (Coming Soon) Support for local LLMs and other
-  providers.
-- **🔧 All Gemini CLI Features**: Includes all the tools, MCP support, and
-  robust context of the upstream project.
-- **🛡️ Open Source**: Apache 2.0 licensed.
+- **🔧 Extensible**: Built on MCP (Model Context Protocol). If you can script
+  it, TermAI can use it.
 
 ## ✊ Our Mission
 
