@@ -7,6 +7,7 @@
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import process from 'node:process';
+import net from 'node:net';
 import { mcpCommand } from '../commands/mcp.js';
 import type { OutputFormat } from '@google/gemini-cli-core';
 import { extensionsCommand } from '../commands/extensions.js';
@@ -57,6 +58,18 @@ export interface CliArgs {
   debug: boolean | undefined;
   prompt: string | undefined;
   promptInteractive: string | undefined;
+  voice: boolean | undefined;
+  voicePttKey: string | undefined;
+  voiceStt: string | undefined;
+  voiceTts: string | undefined;
+  voiceMaxWords: number | undefined;
+  webRemote: boolean | undefined;
+  webRemoteHost: string | undefined;
+  webRemotePort: number | undefined;
+  webRemoteAllowedOrigins: string[] | undefined;
+  webRemoteToken: string | undefined;
+  webRemoteRotateToken: boolean | undefined;
+  iUnderstandWebRemoteRisk: boolean | undefined;
 
   yolo: boolean | undefined;
   approvalMode: string | undefined;
@@ -77,13 +90,28 @@ export interface CliArgs {
   recordResponses: string | undefined;
 }
 
+function isLoopbackHost(host: string): boolean {
+  const normalized = host.trim().toLowerCase();
+  if (normalized === 'localhost') {
+    return true;
+  }
+  const ipVersion = net.isIP(normalized);
+  if (ipVersion === 4) {
+    return normalized.startsWith('127.');
+  }
+  if (ipVersion === 6) {
+    return normalized === '::1';
+  }
+  return false;
+}
+
 export async function parseArguments(settings: Settings): Promise<CliArgs> {
   const rawArgv = hideBin(process.argv);
   const yargsInstance = yargs(rawArgv)
     .locale('en')
     .scriptName('gemini')
     .usage(
-      'Usage: gemini [options] [command]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
+      'Usage: gemini [options] [command]\n\nTermAI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
     )
 
     .option('debug', {
@@ -92,7 +120,7 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
       description: 'Run in debug mode?',
       default: false,
     })
-    .command('$0 [query..]', 'Launch Gemini CLI', (yargsInstance) =>
+    .command('$0 [query..]', 'Launch TermAI', (yargsInstance) =>
       yargsInstance
         .positional('query', {
           description:
@@ -222,6 +250,70 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
           type: 'boolean',
           description: 'Enable screen reader mode for accessibility.',
         })
+        .option('voice', {
+          type: 'boolean',
+          description: 'Enable voice mode (push-to-talk).',
+        })
+        .option('voice-ptt-key', {
+          type: 'string',
+          nargs: 1,
+          choices: ['space', 'ctrl+space'],
+          description: 'Push-to-talk key binding for voice mode.',
+        })
+        .option('voice-stt', {
+          type: 'string',
+          nargs: 1,
+          choices: ['auto', 'whispercpp', 'none'],
+          description: 'Speech-to-text provider for voice mode.',
+        })
+        .option('voice-tts', {
+          type: 'string',
+          nargs: 1,
+          choices: ['auto', 'none'],
+          description: 'Text-to-speech provider for voice mode.',
+        })
+        .option('voice-max-words', {
+          type: 'number',
+          nargs: 1,
+          description: 'Maximum words for spoken replies in voice mode.',
+        })
+        .option('web-remote', {
+          type: 'boolean',
+          description: 'Enable web-remote server (local execution surface).',
+        })
+        .option('web-remote-host', {
+          type: 'string',
+          nargs: 1,
+          description: 'Host to bind the web-remote server.',
+        })
+        .option('web-remote-port', {
+          type: 'number',
+          nargs: 1,
+          description: 'Port to bind the web-remote server (0 for random).',
+        })
+        .option('web-remote-allowed-origins', {
+          type: 'array',
+          string: true,
+          nargs: 1,
+          description:
+            'Allowlisted web origins for web-remote (comma-separated)',
+          coerce: (origins: string[]) =>
+            origins.flatMap((origin) => origin.split(',').map((o) => o.trim())),
+        })
+        .option('web-remote-token', {
+          type: 'string',
+          nargs: 1,
+          description: 'Use a specific token for web-remote (not persisted).',
+        })
+        .option('web-remote-rotate-token', {
+          type: 'boolean',
+          description: 'Rotate the persisted web-remote token and exit.',
+        })
+        .option('i-understand-web-remote-risk', {
+          type: 'boolean',
+          description:
+            'Acknowledge the security risk of binding web-remote to a non-loopback host.',
+        })
         .option('output-format', {
           alias: 'o',
           type: 'string',
@@ -275,6 +367,17 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
         )
       ) {
         return `Invalid values:\n  Argument: output-format, Given: "${argv['outputFormat']}", Choices: "text", "json", "stream-json"`;
+      }
+      if (argv['webRemoteToken'] && argv['webRemoteRotateToken']) {
+        return 'Cannot use both --web-remote-token and --web-remote-rotate-token together.';
+      }
+      const webRemoteHost = argv['webRemoteHost'] as string | undefined;
+      if (
+        webRemoteHost &&
+        !isLoopbackHost(webRemoteHost) &&
+        !argv['iUnderstandWebRemoteRisk']
+      ) {
+        return 'Binding web-remote to a non-loopback host requires --i-understand-web-remote-risk';
       }
       return true;
     });

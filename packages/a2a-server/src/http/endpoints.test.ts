@@ -15,7 +15,12 @@ import type { AddressInfo } from 'node:net';
 
 import { createApp, updateCoderAgentCardUrl } from './app.js';
 import type { TaskMetadata } from '../types.js';
-import { createMockConfig } from '../utils/testing_utils.js';
+import {
+  createAuthHeader,
+  createMockConfig,
+  createSignedHeaders,
+  TEST_REMOTE_TOKEN,
+} from '../utils/testing_utils.js';
 import { debugLogger, type Config } from '@google/gemini-cli-core';
 
 // Mock the logger to avoid polluting test output
@@ -77,16 +82,26 @@ describe('Agent Server Endpoints', () => {
   const createTask = (contextId: string) =>
     request(app)
       .post('/tasks')
+      .set(
+        createSignedHeaders('POST', '/tasks', {
+          contextId,
+          agentSettings: {
+            kind: 'agent-settings',
+            workspacePath: testWorkspace,
+          },
+        }),
+      )
+      .set('Content-Type', 'application/json')
       .send({
         contextId,
         agentSettings: {
           kind: 'agent-settings',
           workspacePath: testWorkspace,
         },
-      })
-      .set('Content-Type', 'application/json');
+      });
 
   beforeAll(async () => {
+    process.env['GEMINI_WEB_REMOTE_TOKEN'] = TEST_REMOTE_TOKEN;
     // Create a unique temporary directory for the workspace to avoid conflicts
     testWorkspace = fs.mkdtempSync(
       path.join(os.tmpdir(), 'gemini-agent-test-'),
@@ -110,6 +125,7 @@ describe('Agent Server Endpoints', () => {
         });
       });
     }
+    delete process.env['GEMINI_WEB_REMOTE_TOKEN'];
 
     if (testWorkspace) {
       try {
@@ -129,7 +145,9 @@ describe('Agent Server Endpoints', () => {
   it('should get metadata for a specific task via GET /tasks/:taskId/metadata', async () => {
     const createResponse = await createTask('test-context-2');
     const taskId = createResponse.body;
-    const response = await request(app).get(`/tasks/${taskId}/metadata`);
+    const response = await request(app)
+      .get(`/tasks/${taskId}/metadata`)
+      .set(createAuthHeader());
     expect(response.status).toBe(200);
     expect(response.body.metadata.id).toBe(taskId);
   }, 6000);
@@ -137,7 +155,9 @@ describe('Agent Server Endpoints', () => {
   it('should get metadata for all tasks via GET /tasks/metadata', async () => {
     const createResponse = await createTask('test-context-3');
     const taskId = createResponse.body;
-    const response = await request(app).get('/tasks/metadata');
+    const response = await request(app)
+      .get('/tasks/metadata')
+      .set(createAuthHeader());
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBeGreaterThan(0);
@@ -148,12 +168,16 @@ describe('Agent Server Endpoints', () => {
   });
 
   it('should return 404 for a non-existent task', async () => {
-    const response = await request(app).get('/tasks/fake-task/metadata');
+    const response = await request(app)
+      .get('/tasks/fake-task/metadata')
+      .set(createAuthHeader());
     expect(response.status).toBe(404);
   });
 
   it('should return agent metadata via GET /.well-known/agent-card.json', async () => {
-    const response = await request(app).get('/.well-known/agent-card.json');
+    const response = await request(app)
+      .get('/.well-known/agent-card.json')
+      .set(createAuthHeader());
     const port = (server.address() as AddressInfo).port;
     expect(response.status).toBe(200);
     expect(response.body.name).toBe('Gemini SDLC Agent');

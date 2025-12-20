@@ -34,6 +34,9 @@ import {
   assertTaskCreationAndWorkingStatus,
   createStreamMessageRequest,
   createMockConfig,
+  createAuthHeader,
+  createSignedHeaders,
+  TEST_REMOTE_TOKEN,
 } from '../utils/testing_utils.js';
 import { MockTool } from '@google/gemini-cli-core';
 import type { Command, CommandContext } from '../commands/types.js';
@@ -106,6 +109,7 @@ describe('E2E Tests', () => {
   let server: Server;
 
   beforeAll(async () => {
+    process.env['GEMINI_WEB_REMOTE_TOKEN'] = TEST_REMOTE_TOKEN;
     app = await createApp();
     server = app.listen(0); // Listen on a random available port
   });
@@ -118,6 +122,7 @@ describe('E2E Tests', () => {
     () =>
       new Promise<void>((resolve) => {
         server.close(() => {
+          delete process.env['GEMINI_WEB_REMOTE_TOKEN'];
           resolve();
         });
       }),
@@ -133,10 +138,12 @@ describe('E2E Tests', () => {
     });
 
     const agent = request.agent(app);
+    const body = createStreamMessageRequest('hello', 'a2a-test-message');
     const res = await agent
       .post('/')
-      .send(createStreamMessageRequest('hello', 'a2a-test-message'))
+      .set(createSignedHeaders('POST', '/', body))
       .set('Content-Type', 'application/json')
+      .send(body)
       .expect(200);
 
     const events = streamToSSEEvents(res.text);
@@ -195,10 +202,15 @@ describe('E2E Tests', () => {
     });
 
     const agent = request.agent(app);
+    const body = createStreamMessageRequest(
+      'run a tool',
+      'a2a-tool-test-message',
+    );
     const res = await agent
       .post('/')
-      .send(createStreamMessageRequest('run a tool', 'a2a-tool-test-message'))
+      .set(createSignedHeaders('POST', '/', body))
       .set('Content-Type', 'application/json')
+      .send(body)
       .expect(200);
 
     const events = streamToSSEEvents(res.text);
@@ -297,15 +309,15 @@ describe('E2E Tests', () => {
     });
 
     const agent = request.agent(app);
+    const body = createStreamMessageRequest(
+      'run two tools',
+      'a2a-multi-tool-test-message',
+    );
     const res = await agent
       .post('/')
-      .send(
-        createStreamMessageRequest(
-          'run two tools',
-          'a2a-multi-tool-test-message',
-        ),
-      )
+      .set(createSignedHeaders('POST', '/', body))
       .set('Content-Type', 'application/json')
+      .send(body)
       .expect(200);
 
     const events = streamToSSEEvents(res.text);
@@ -456,15 +468,15 @@ describe('E2E Tests', () => {
     });
 
     const agent = request.agent(app);
+    const body = createStreamMessageRequest(
+      'run two tools',
+      'a2a-multi-tool-test-message',
+    );
     const res = await agent
       .post('/')
-      .send(
-        createStreamMessageRequest(
-          'run two tools',
-          'a2a-multi-tool-test-message',
-        ),
-      )
+      .set(createSignedHeaders('POST', '/', body))
       .set('Content-Type', 'application/json')
+      .send(body)
       .expect(200);
 
     const events = streamToSSEEvents(res.text);
@@ -578,15 +590,15 @@ describe('E2E Tests', () => {
     });
 
     const agent = request.agent(app);
+    const body = createStreamMessageRequest(
+      'run a tool without approval',
+      'a2a-no-approval-test-message',
+    );
     const res = await agent
       .post('/')
-      .send(
-        createStreamMessageRequest(
-          'run a tool without approval',
-          'a2a-no-approval-test-message',
-        ),
-      )
+      .set(createSignedHeaders('POST', '/', body))
       .set('Content-Type', 'application/json')
+      .send(body)
       .expect(200);
 
     const events = streamToSSEEvents(res.text);
@@ -709,15 +721,15 @@ describe('E2E Tests', () => {
     });
 
     const agent = request.agent(app);
+    const body = createStreamMessageRequest(
+      'run a tool in yolo mode',
+      'a2a-yolo-mode-test-message',
+    );
     const res = await agent
       .post('/')
-      .send(
-        createStreamMessageRequest(
-          'run a tool in yolo mode',
-          'a2a-yolo-mode-test-message',
-        ),
-      )
+      .set(createSignedHeaders('POST', '/', body))
       .set('Content-Type', 'application/json')
+      .send(body)
       .expect(200);
 
     const events = streamToSSEEvents(res.text);
@@ -812,10 +824,12 @@ describe('E2E Tests', () => {
     });
 
     const agent = request.agent(app);
+    const body = createStreamMessageRequest('hello', 'a2a-trace-id-test');
     const res = await agent
       .post('/')
-      .send(createStreamMessageRequest('hello', 'a2a-trace-id-test'))
+      .set(createSignedHeaders('POST', '/', body))
       .set('Content-Type', 'application/json')
+      .send(body)
       .expect(200);
 
     const events = streamToSSEEvents(res.text);
@@ -867,7 +881,10 @@ describe('E2E Tests', () => {
         .mockReturnValue(mockCommands);
 
       const agent = request.agent(app);
-      const res = await agent.get('/listCommands').expect(200);
+      const res = await agent
+        .get('/listCommands')
+        .set(createAuthHeader())
+        .expect(200);
 
       expect(res.body).toEqual({
         commands: [
@@ -914,7 +931,10 @@ describe('E2E Tests', () => {
         .mockReturnValue([cyclicCommand]);
 
       const agent = request.agent(app);
-      const res = await agent.get('/listCommands').expect(200);
+      const res = await agent
+        .get('/listCommands')
+        .set(createAuthHeader())
+        .expect(200);
 
       expect(res.body.commands[0].name).toBe('cyclic-command');
       expect(res.body.commands[0].subCommands).toEqual([]);
@@ -952,10 +972,12 @@ describe('E2E Tests', () => {
       vi.spyOn(commandRegistry, 'get').mockReturnValue(mockExtensionsCommand);
 
       const agent = request.agent(app);
+      const body = { command: 'extensions list', args: [] };
       const res = await agent
         .post('/executeCommand')
-        .send({ command: 'extensions list', args: [] })
+        .set(createSignedHeaders('POST', '/executeCommand', body))
         .set('Content-Type', 'application/json')
+        .send(body)
         .expect(200);
 
       expect(res.body).toEqual({
@@ -969,10 +991,12 @@ describe('E2E Tests', () => {
       vi.spyOn(commandRegistry, 'get').mockReturnValue(undefined);
 
       const agent = request.agent(app);
+      const body = { command: 'invalid command' };
       const res = await agent
         .post('/executeCommand')
-        .send({ command: 'invalid command' })
+        .set(createSignedHeaders('POST', '/executeCommand', body))
         .set('Content-Type', 'application/json')
+        .send(body)
         .expect(404);
 
       expect(res.body.error).toBe('Command not found: invalid command');
@@ -981,20 +1005,24 @@ describe('E2E Tests', () => {
 
     it('should return 400 for missing command', async () => {
       const agent = request.agent(app);
+      const body = { args: [] };
       await agent
         .post('/executeCommand')
-        .send({ args: [] })
+        .set(createSignedHeaders('POST', '/executeCommand', body))
         .set('Content-Type', 'application/json')
+        .send(body)
         .expect(400);
       expect(getExtensionsSpy).not.toHaveBeenCalled();
     });
 
     it('should return 400 if args is not an array', async () => {
       const agent = request.agent(app);
+      const body = { command: 'extensions.list', args: 'not-an-array' };
       const res = await agent
         .post('/executeCommand')
-        .send({ command: 'extensions.list', args: 'not-an-array' })
+        .set(createSignedHeaders('POST', '/executeCommand', body))
         .set('Content-Type', 'application/json')
+        .send(body)
         .expect(400);
 
       expect(res.body.error).toBe('"args" field must be an array.');
@@ -1012,9 +1040,12 @@ describe('E2E Tests', () => {
       vi.spyOn(commandRegistry, 'get').mockReturnValue(mockCommand);
 
       delete process.env['CODER_AGENT_WORKSPACE_PATH'];
+      const body = { command: 'test-command', args: [] };
       const response = await request(app)
         .post('/executeCommand')
-        .send({ command: 'test-command', args: [] });
+        .set(createSignedHeaders('POST', '/executeCommand', body))
+        .set('Content-Type', 'application/json')
+        .send(body);
 
       expect(response.status).toBe(200);
       expect(response.body.data).toBe('success');
@@ -1032,9 +1063,12 @@ describe('E2E Tests', () => {
       vi.spyOn(commandRegistry, 'get').mockReturnValue(mockWorkspaceCommand);
 
       delete process.env['CODER_AGENT_WORKSPACE_PATH'];
+      const body = { command: 'workspace-command', args: [] };
       const response = await request(app)
         .post('/executeCommand')
-        .send({ command: 'workspace-command', args: [] });
+        .set(createSignedHeaders('POST', '/executeCommand', body))
+        .set('Content-Type', 'application/json')
+        .send(body);
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBe(
@@ -1054,9 +1088,12 @@ describe('E2E Tests', () => {
       vi.spyOn(commandRegistry, 'get').mockReturnValue(mockWorkspaceCommand);
 
       process.env['CODER_AGENT_WORKSPACE_PATH'] = '/tmp/test-workspace';
+      const body = { command: 'workspace-command', args: [] };
       const response = await request(app)
         .post('/executeCommand')
-        .send({ command: 'workspace-command', args: [] });
+        .set(createSignedHeaders('POST', '/executeCommand', body))
+        .set('Content-Type', 'application/json')
+        .send(body);
 
       expect(response.status).toBe(200);
       expect(response.body.data).toBe('success');
@@ -1076,10 +1113,12 @@ describe('E2E Tests', () => {
       vi.spyOn(commandRegistry, 'get').mockReturnValue(mockCommand);
 
       const agent = request.agent(app);
+      const body = { command: 'context-check-command', args: [] };
       const res = await agent
         .post('/executeCommand')
-        .send({ command: 'context-check-command', args: [] })
+        .set(createSignedHeaders('POST', '/executeCommand', body))
         .set('Content-Type', 'application/json')
+        .send(body)
         .expect(200);
 
       expect(res.body.data).toBe('success');
@@ -1116,11 +1155,13 @@ describe('E2E Tests', () => {
         vi.spyOn(commandRegistry, 'get').mockReturnValue(mockStreamCommand);
 
         const agent = request.agent(app);
+        const body = { command: 'stream-test', args: [] };
         agent
           .post('/executeCommand')
-          .send({ command: 'stream-test', args: [] })
+          .set(createSignedHeaders('POST', '/executeCommand', body))
           .set('Content-Type', 'application/json')
           .set('Accept', 'text/event-stream')
+          .send(body)
           .on('response', (res) => {
             let data = '';
             res.on('data', (chunk: Buffer) => {
@@ -1165,10 +1206,12 @@ describe('E2E Tests', () => {
         vi.spyOn(commandRegistry, 'get').mockReturnValue(mockNonStreamCommand);
 
         const agent = request.agent(app);
+        const body = { command: 'non-stream-test', args: [] };
         const res = await agent
           .post('/executeCommand')
-          .send({ command: 'non-stream-test', args: [] })
+          .set(createSignedHeaders('POST', '/executeCommand', body))
           .set('Content-Type', 'application/json')
+          .send(body)
           .expect(200);
 
         expect(res.body).toEqual({ name: 'non-stream-test', data: 'done' });

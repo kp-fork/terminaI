@@ -20,6 +20,10 @@ import {
 import { createMockMessageBus } from '@google/gemini-cli-core/src/test-utils/mock-message-bus.js';
 import type { Config, Storage } from '@google/gemini-cli-core';
 import { expect, vi } from 'vitest';
+import crypto from 'node:crypto';
+import { buildSignaturePayload, computeBodyHash } from '../http/replay.js';
+
+export const TEST_REMOTE_TOKEN = 'test-remote-token';
 
 export function createMockConfig(
   overrides: Partial<Config> = {},
@@ -130,6 +134,36 @@ export function createStreamMessageRequest(
   }
 
   return request;
+}
+
+export function createAuthHeader(token: string = TEST_REMOTE_TOKEN) {
+  return { Authorization: `Bearer ${token}` };
+}
+
+export function createSignedHeaders(
+  method: string,
+  path: string,
+  body: unknown,
+  token: string = TEST_REMOTE_TOKEN,
+  nonce: string = crypto.randomUUID(),
+) {
+  const rawBody = body ? JSON.stringify(body) : '';
+  const bodyHash = computeBodyHash(rawBody);
+  const payload = buildSignaturePayload({
+    method,
+    path,
+    bodyHash,
+    nonce,
+  });
+  const signature = crypto
+    .createHmac('sha256', token)
+    .update(payload)
+    .digest('hex');
+  return {
+    Authorization: `Bearer ${token}`,
+    'X-Gemini-Nonce': nonce,
+    'X-Gemini-Signature': signature,
+  };
 }
 
 export function assertUniqueFinalEventIsLast(

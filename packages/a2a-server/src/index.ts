@@ -6,4 +6,5 @@
 
 export * from './agent/executor.js';
 export * from './http/app.js';
+export * from './persistence/remoteAuthStore.js';
 export * from './types.js';

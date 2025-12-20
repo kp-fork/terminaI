@@ -88,7 +88,11 @@ import { useTextBuffer } from './components/shared/text-buffer.js';
 import { useLogger } from './hooks/useLogger.js';
 import { useGeminiStream } from './hooks/useGeminiStream.js';
 import { useVim } from './hooks/vim.js';
-import { type LoadableSettingScope, SettingScope } from '../config/settings.js';
+import {
+  type LoadableSettingScope,
+  SettingScope,
+  type Settings,
+} from '../config/settings.js';
 import { type InitializationResult } from '../core/initializer.js';
 import { useFocus } from './hooks/useFocus.js';
 import { useBracketedPaste } from './hooks/useBracketedPaste.js';
@@ -125,6 +129,9 @@ import { terminalCapabilityManager } from './utils/terminalCapabilityManager.js'
 import { useInputHistoryStore } from './hooks/useInputHistoryStore.js';
 import { enableBracketedPaste } from './utils/bracketedPaste.js';
 import { useBanner } from './hooks/useBanner.js';
+import { VoiceController } from '../voice/voiceController.js';
+import { deriveSpokenReply } from '../voice/spokenReply.js';
+import { resolveAutoTtsProvider } from '../voice/tts/auto.js';
 
 const WARNING_PROMPT_DURATION_MS = 1000;
 const QUEUE_ERROR_DISPLAY_DURATION_MS = 3000;
@@ -146,6 +153,7 @@ interface AppContainerProps {
   version: string;
   initializationResult: InitializationResult;
   resumedSessionData?: ResumedSessionData;
+  voiceOverrides?: VoiceOverrides;
 }
 
 /**
@@ -160,6 +168,128 @@ const SHELL_WIDTH_FRACTION = 0.89;
  */
 const SHELL_HEIGHT_PADDING = 10;
 
+export type VoiceOverrides = {
+  enabled?: boolean;
+  pttKey?: string;
+  sttProvider?: string;
+  ttsProvider?: string;
+  maxWords?: number;
+};
+
+type VoiceConfig = {
+  enabled: boolean;
+  pttKey: 'space' | 'ctrl+space';
+  sttProvider: 'auto' | 'whispercpp' | 'none';
+  ttsProvider: 'auto' | 'none';
+  maxWords: number;
+};
+
+const DEFAULT_VOICE_CONFIG: VoiceConfig = {
+  enabled: false,
+  pttKey: 'space',
+  sttProvider: 'auto',
+  ttsProvider: 'auto',
+  maxWords: 30,
+};
+
+function normalizePttKey(value: string | undefined): VoiceConfig['pttKey'] {
+  return value === 'ctrl+space' ? 'ctrl+space' : 'space';
+}
+
+function normalizeSttProvider(
+  value: string | undefined,
+): VoiceConfig['sttProvider'] {
+  if (value === 'whispercpp' || value === 'none') {
+    return value;
+  }
+  return 'auto';
+}
+
+function normalizeTtsProvider(
+  value: string | undefined,
+): VoiceConfig['ttsProvider'] {
+  return value === 'none' ? 'none' : 'auto';
+}
+
+function resolveVoiceConfig(
+  settingsVoice: Settings['voice'] | undefined,
+  overrides?: VoiceOverrides,
+): VoiceConfig {
+  const enabled =
+    overrides?.enabled ??
+    settingsVoice?.enabled ??
+    DEFAULT_VOICE_CONFIG.enabled;
+  const pttKey = normalizePttKey(
+    overrides?.pttKey ??
+      settingsVoice?.pushToTalk?.key ??
+      DEFAULT_VOICE_CONFIG.pttKey,
+  );
+  const sttProvider = normalizeSttProvider(
+    overrides?.sttProvider ??
+      settingsVoice?.stt?.provider ??
+      DEFAULT_VOICE_CONFIG.sttProvider,
+  );
+  const ttsProvider = normalizeTtsProvider(
+    overrides?.ttsProvider ??
+      settingsVoice?.tts?.provider ??
+      DEFAULT_VOICE_CONFIG.ttsProvider,
+  );
+  const maxWords =
+    overrides?.maxWords ??
+    settingsVoice?.spokenReply?.maxWords ??
+    DEFAULT_VOICE_CONFIG.maxWords;
+
+  return {
+    enabled,
+    pttKey,
+    sttProvider,
+    ttsProvider,
+    maxWords: Number.isFinite(maxWords)
+      ? Math.max(0, maxWords)
+      : DEFAULT_VOICE_CONFIG.maxWords,
+  };
+}
+
+function isPttKey(key: Key, pttKey: VoiceConfig['pttKey']): boolean {
+  if (pttKey === 'space') {
+    return key.name === 'space' && !key.ctrl && !key.meta && !key.shift;
+  }
+  return (
+    (key.name === 'space' && key.ctrl) ||
+    key.sequence === '\x00' ||
+    (key.name === 'undefined' && key.ctrl)
+  );
+}
+
+function getLatestGeminiResponse(
+  history: HistoryItem[],
+): { text: string; endId: number } | null {
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const item = history[i];
+    if (item.type === 'gemini' || item.type === 'gemini_content') {
+      const endId = item.id;
+      let start = i;
+      while (start >= 0) {
+        const candidate = history[start];
+        if (
+          candidate.type !== 'gemini' &&
+          candidate.type !== 'gemini_content'
+        ) {
+          break;
+        }
+        start -= 1;
+      }
+      const parts: string[] = [];
+      for (let j = start + 1; j <= i; j += 1) {
+        const text = history[j].text ?? '';
+        parts.push(text);
+      }
+      return { text: parts.join(''), endId };
+    }
+  }
+  return null;
+}
+
 export const AppContainer = (props: AppContainerProps) => {
   const { config, initializationResult, resumedSessionData } = props;
   const historyManager = useHistory({
@@ -167,6 +297,30 @@ export const AppContainer = (props: AppContainerProps) => {
   });
   useMemoryMonitor(historyManager);
   const settings = useSettings();
+  const voiceConfig = useMemo(
+    () => resolveVoiceConfig(settings.merged.voice, props.voiceOverrides),
+    [settings.merged.voice, props.voiceOverrides],
+  );
+  const voiceEnabled = voiceConfig.enabled;
+  const ttsProvider = useMemo(() => {
+    if (!voiceEnabled) {
+      return null;
+    }
+    if (voiceConfig.ttsProvider === 'none') {
+      return null;
+    }
+    if (voiceConfig.ttsProvider === 'auto') {
+      return resolveAutoTtsProvider();
+    }
+    return null;
+  }, [voiceEnabled, voiceConfig.ttsProvider]);
+  const voiceController = useMemo(
+    () => (voiceEnabled ? new VoiceController(ttsProvider) : null),
+    [voiceEnabled, ttsProvider],
+  );
+  useEffect(() => () => {
+      voiceController?.stopSpeaking();
+    }, [voiceController]);
   const isAlternateBuffer = useAlternateBuffer();
   const [corgiMode, setCorgiMode] = useState(false);
   const [debugMessage, setDebugMessage] = useState<string>('');
@@ -781,6 +935,51 @@ Logging in with Google... Restarting Gemini CLI to continue.
     embeddedShellFocused,
   );
 
+  const lastSpokenGeminiIdRef = useRef(0);
+  const responseInProgressRef = useRef(false);
+
+  useEffect(() => {
+    if (!voiceEnabled) {
+      responseInProgressRef.current = false;
+    }
+  }, [voiceEnabled]);
+
+  useEffect(() => {
+    if (
+      streamingState === StreamingState.Responding ||
+      streamingState === StreamingState.WaitingForConfirmation
+    ) {
+      responseInProgressRef.current = true;
+      return;
+    }
+    if (
+      !voiceEnabled ||
+      !voiceController ||
+      !responseInProgressRef.current ||
+      streamingState !== StreamingState.Idle
+    ) {
+      return;
+    }
+    const latest = getLatestGeminiResponse(historyManager.history);
+    if (!latest || latest.endId <= lastSpokenGeminiIdRef.current) {
+      return;
+    }
+    lastSpokenGeminiIdRef.current = latest.endId;
+    responseInProgressRef.current = false;
+    const { spokenText } = deriveSpokenReply(latest.text, voiceConfig.maxWords);
+    if (spokenText) {
+      void voiceController.speak(spokenText).catch((error) => {
+        debugLogger.warn(`Voice TTS failed: ${getErrorMessage(error)}`);
+      });
+    }
+  }, [
+    streamingState,
+    historyManager.history,
+    voiceEnabled,
+    voiceConfig.maxWords,
+    voiceController,
+  ]);
+
   // Auto-accept indicator
   const showAutoAcceptIndicator = useAutoAcceptIndicator({
     config,
@@ -1173,6 +1372,15 @@ Logging in with Google... Restarting Gemini CLI to continue.
 
   const handleGlobalKeypress = useCallback(
     (key: Key) => {
+      if (voiceController?.isSpeaking()) {
+        if (
+          key.insertable ||
+          key.name === 'escape' ||
+          isPttKey(key, voiceConfig.pttKey)
+        ) {
+          voiceController.stopSpeaking();
+        }
+      }
       if (copyModeEnabled) {
         setCopyModeEnabled(false);
         enableMouseEvents();
@@ -1259,6 +1467,8 @@ Logging in with Google... Restarting Gemini CLI to continue.
       setCopyModeEnabled,
       copyModeEnabled,
       isAlternateBuffer,
+      voiceController,
+      voiceConfig.pttKey,
     ],
   );
 
@@ -1424,7 +1634,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
           authType === AuthType.USE_VERTEX_AI
         ) {
           setDefaultBannerText(
-            'Gemini 3 Flash and Pro are now available. \nEnable "Preview features" in /settings. \nLearn more at https://goo.gle/enable-preview-features',
+            'TermAI is powered by Gemini 1.5 Pro and Flash. \nEnable "Preview features" in /settings. \nLearn more at https://goo.gle/enable-preview-features',
           );
         }
       }
