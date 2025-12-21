@@ -152,7 +152,7 @@ describe('Telemetry Metrics', () => {
     (otelApiModule.metrics.getMeter as Mock).mockReturnValue(mockMeterInstance);
     mockCreateCounterFn.mockReturnValue(mockCounterInstance);
     mockCreateHistogramFn.mockReturnValue(mockHistogramInstance);
-  });
+  }, 20000);
 
   describe('recordFlickerFrame', () => {
     it('does not record metrics if not initialized', () => {

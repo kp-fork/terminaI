@@ -318,9 +318,12 @@ export const AppContainer = (props: AppContainerProps) => {
     () => (voiceEnabled ? new VoiceController(ttsProvider) : null),
     [voiceEnabled, ttsProvider],
   );
-  useEffect(() => () => {
+  useEffect(
+    () => () => {
       voiceController?.stopSpeaking();
-    }, [voiceController]);
+    },
+    [voiceController],
+  );
   const isAlternateBuffer = useAlternateBuffer();
   const [corgiMode, setCorgiMode] = useState(false);
   const [debugMessage, setDebugMessage] = useState<string>('');

@@ -26,6 +26,14 @@ Usage:
 google_web_search(query="Your query goes here.")
 ```
 
+## Operator tips (TermAI)
+
+- Use `google_web_search` for discovery ("find sources about…") and then use
+  `web_fetch` for deep reads of specific URLs.
+- Ask for a short, cited summary to keep output concise and actionable.
+- If you need freshness, include a time hint ("today", "this week") and ask the
+  model to cite sources.
+
 ## `google_web_search` examples
 
 Get information on a topic:

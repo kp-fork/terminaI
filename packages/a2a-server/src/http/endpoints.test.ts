@@ -20,6 +20,9 @@ import {
   createMockConfig,
   createSignedHeaders,
   TEST_REMOTE_TOKEN,
+  canListenOnLocalhost,
+  listenOnLocalhost,
+  closeServer,
 } from '../utils/testing_utils.js';
 import { debugLogger, type Config } from '@google/gemini-cli-core';
 
@@ -74,7 +77,10 @@ vi.mock('../config/config.js', async () => {
   };
 });
 
-describe('Agent Server Endpoints', () => {
+const CAN_LISTEN = await canListenOnLocalhost();
+const describeIfListen = CAN_LISTEN ? describe : describe.skip;
+
+describeIfListen('Agent Server Endpoints', () => {
   let app: express.Express;
   let server: Server;
   let testWorkspace: string;
@@ -107,23 +113,14 @@ describe('Agent Server Endpoints', () => {
       path.join(os.tmpdir(), 'gemini-agent-test-'),
     );
     app = await createApp();
-    await new Promise<void>((resolve) => {
-      server = app.listen(0, () => {
-        const port = (server.address() as AddressInfo).port;
-        updateCoderAgentCardUrl(port);
-        resolve();
-      });
-    });
+    server = await listenOnLocalhost(app);
+    const port = (server.address() as AddressInfo).port;
+    updateCoderAgentCardUrl(port);
   });
 
   afterAll(async () => {
     if (server) {
-      await new Promise<void>((resolve, reject) => {
-        server.close((err) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
+      await closeServer(server);
     }
     delete process.env['GEMINI_WEB_REMOTE_TOKEN'];
 

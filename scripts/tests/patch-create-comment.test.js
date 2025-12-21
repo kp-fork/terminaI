@@ -5,32 +5,47 @@
  */
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { execSync } from 'node:child_process';
-import { join } from 'node:path';
+import { runPatchCreateComment as runPatchCreateCommentScript } from '../releasing/patch-create-comment.js';
 
 /**
  * Helper function to run the patch-create-comment script with given parameters
  */
-function runPatchCreateComment(args, env = {}) {
-  const scriptPath = join(
-    process.cwd(),
-    'scripts/releasing/patch-create-comment.js',
-  );
+async function runPatchCreateComment(args, env = {}) {
+  const argList = args.trim() ? args.trim().split(/\s+/) : [];
   const fullEnv = {
     ...process.env,
     ...env,
   };
+  const stdout = [];
+  const stderr = [];
+  const pushOutput =
+    (target) =>
+    (...items) => {
+      target.push(items.map((item) => String(item)).join(' '));
+    };
+  const logger = {
+    log: pushOutput(stdout),
+    warn: pushOutput(stderr),
+    error: pushOutput(stderr),
+  };
 
   try {
-    const result = execSync(`node ${scriptPath} ${args}`, {
-      encoding: 'utf8',
+    await runPatchCreateCommentScript({
+      argv: argList,
       env: fullEnv,
+      logger,
+      exitProcess: false,
     });
-    return { stdout: result, stderr: '', success: true };
-  } catch (error) {
     return {
-      stdout: error.stdout || '',
-      stderr: error.stderr || '',
+      stdout: stdout.join('\n'),
+      stderr: stderr.join('\n'),
+      success: true,
+    };
+  } catch (error) {
+    const errorMessage = error?.message ? String(error.message) : String(error);
+    return {
+      stdout: stdout.join('\n'),
+      stderr: [stderr.join('\n'), errorMessage].filter(Boolean).join('\n'),
       success: false,
       code: error.status,
     };
@@ -50,9 +65,9 @@ describe('patch-create-comment', () => {
   });
 
   describe('Environment flag', () => {
-    it('can be overridden with a flag', () => {
+    it('can be overridden with a flag', async () => {
       vi.stubEnv('ENVIRONMENT', 'dev');
-      const result = runPatchCreateComment(
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --environment prod --commit abc1234 --channel preview --repository google-gemini/gemini-cli --test',
       );
 
@@ -61,9 +76,9 @@ describe('patch-create-comment', () => {
       expect(result.stdout).toContain('Environment**: `prod`');
     });
 
-    it('reads from the ENVIRONMENT env variable', () => {
+    it('reads from the ENVIRONMENT env variable', async () => {
       vi.stubEnv('ENVIRONMENT', 'dev');
-      const result = runPatchCreateComment(
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit abc1234 --channel preview --repository google-gemini/gemini-cli --test',
       );
 
@@ -72,9 +87,9 @@ describe('patch-create-comment', () => {
       expect(result.stdout).toContain('Environment**: `dev`');
     });
 
-    it('fails if the ENVIRONMENT is bogus', () => {
+    it('fails if the ENVIRONMENT is bogus', async () => {
       vi.stubEnv('ENVIRONMENT', 'totally-bogus');
-      const result = runPatchCreateComment(
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit abc1234 --channel preview --repository google-gemini/gemini-cli --test',
       );
 
@@ -84,8 +99,8 @@ describe('patch-create-comment', () => {
       );
     });
 
-    it('defaults to prod if not specified', () => {
-      const result = runPatchCreateComment(
+    it('defaults to prod if not specified', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit abc1234 --channel preview --repository google-gemini/gemini-cli --test',
       );
 
@@ -96,8 +111,8 @@ describe('patch-create-comment', () => {
   });
 
   describe('Environment Variable vs File Reading', () => {
-    it('should prefer LOG_CONTENT environment variable over file', () => {
-      const result = runPatchCreateComment(
+    it('should prefer LOG_CONTENT environment variable over file', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit abc1234 --channel preview --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT:
@@ -111,8 +126,8 @@ describe('patch-create-comment', () => {
       expect(result.stdout).toContain('Commit**: `abc1234`');
     });
 
-    it('should use empty log content when LOG_CONTENT is not set', () => {
-      const result = runPatchCreateComment(
+    it('should use empty log content when LOG_CONTENT is not set', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 1 --commit abc1234 --channel stable --repository google-gemini/gemini-cli --test',
         {}, // No LOG_CONTENT env var
       );
@@ -126,8 +141,8 @@ describe('patch-create-comment', () => {
   });
 
   describe('Log Content Parsing - Success Scenarios', () => {
-    it('should generate success comment for clean cherry-pick', () => {
-      const result = runPatchCreateComment(
+    it('should generate success comment for clean cherry-pick', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit abc1234 --channel stable --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT:
@@ -142,8 +157,8 @@ describe('patch-create-comment', () => {
       expect(result.stdout).not.toContain('⚠️ Status');
     });
 
-    it('should generate conflict comment for cherry-pick with conflicts', () => {
-      const result = runPatchCreateComment(
+    it('should generate conflict comment for cherry-pick with conflicts', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit def5678 --channel preview --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT:
@@ -164,8 +179,8 @@ describe('patch-create-comment', () => {
   });
 
   describe('Log Content Parsing - Existing PR Scenarios', () => {
-    it('should detect existing PR and generate appropriate comment', () => {
-      const result = runPatchCreateComment(
+    it('should detect existing PR and generate appropriate comment', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit ghi9012 --channel stable --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT:
@@ -183,8 +198,8 @@ describe('patch-create-comment', () => {
       );
     });
 
-    it('should detect branch exists but no PR scenario', () => {
-      const result = runPatchCreateComment(
+    it('should detect branch exists but no PR scenario', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit jkl3456 --channel preview --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT:
@@ -204,8 +219,8 @@ describe('patch-create-comment', () => {
   });
 
   describe('Log Content Parsing - Failure Scenarios', () => {
-    it('should generate failure comment when exit code is non-zero', () => {
-      const result = runPatchCreateComment(
+    it('should generate failure comment when exit code is non-zero', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 1 --commit mno7890 --channel stable --repository google-gemini/gemini-cli --run-id 12345 --test',
         {
           LOG_CONTENT: 'Error: Failed to create patch',
@@ -222,8 +237,8 @@ describe('patch-create-comment', () => {
       );
     });
 
-    it('should generate fallback failure comment when no output is generated', () => {
-      const result = runPatchCreateComment(
+    it('should generate fallback failure comment when no output is generated', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 1 --commit pqr4567 --channel preview --repository google-gemini/gemini-cli --run-id 67890 --test',
         {
           LOG_CONTENT: '',
@@ -239,8 +254,8 @@ describe('patch-create-comment', () => {
   });
 
   describe('Channel and NPM Tag Detection', () => {
-    it('should correctly map stable channel to latest npm tag', () => {
-      const result = runPatchCreateComment(
+    it('should correctly map stable channel to latest npm tag', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit stu8901 --channel stable --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT:
@@ -252,8 +267,8 @@ describe('patch-create-comment', () => {
       expect(result.stdout).toContain('will publish to npm tag `latest`');
     });
 
-    it('should correctly map preview channel to preview npm tag', () => {
-      const result = runPatchCreateComment(
+    it('should correctly map preview channel to preview npm tag', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit vwx2345 --channel preview --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT:
@@ -267,8 +282,8 @@ describe('patch-create-comment', () => {
   });
 
   describe('No Original PR Scenario', () => {
-    it('should skip comment when no original PR is specified', () => {
-      const result = runPatchCreateComment(
+    it('should skip comment when no original PR is specified', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 0 --exit-code 0 --commit yza6789 --channel stable --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT:
@@ -285,8 +300,8 @@ describe('patch-create-comment', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle empty LOG_CONTENT gracefully', () => {
-      const result = runPatchCreateComment(
+    it('should handle empty LOG_CONTENT gracefully', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 1 --commit bcd0123 --channel stable --repository google-gemini/gemini-cli --test',
         { LOG_CONTENT: '' }, // Empty log content
       );
@@ -300,8 +315,8 @@ describe('patch-create-comment', () => {
   });
 
   describe('GitHub App Permission Scenarios', () => {
-    it('should parse manual commands with clipboard emoji correctly', () => {
-      const result = runPatchCreateComment(
+    it('should parse manual commands with clipboard emoji correctly', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 1 --commit abc1234 --channel stable --repository google-gemini/gemini-cli --test',
         {
           LOG_CONTENT: `❌ Failed to create release branch due to insufficient GitHub App permissions.
@@ -330,8 +345,8 @@ git push origin hotfix/v0.4.1/stable/cherry-pick-abc1234
   });
 
   describe('Test Mode Flag', () => {
-    it('should generate mock content in test mode for success', () => {
-      const result = runPatchCreateComment(
+    it('should generate mock content in test mode for success', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 0 --commit efg4567 --channel preview --repository google-gemini/gemini-cli --test',
       );
 
@@ -342,8 +357,8 @@ git push origin hotfix/v0.4.1/stable/cherry-pick-abc1234
       expect(result.stdout).toContain('🚀 **Patch PR Created!**');
     });
 
-    it('should generate mock content in test mode for failure', () => {
-      const result = runPatchCreateComment(
+    it('should generate mock content in test mode for failure', async () => {
+      const result = await runPatchCreateComment(
         '--original-pr 8655 --exit-code 1 --commit hij8901 --channel stable --repository google-gemini/gemini-cli --test',
       );
 

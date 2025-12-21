@@ -182,6 +182,38 @@ Sources:
       expect(result.sources).toHaveLength(2);
     });
 
+    it('should append sources when grounding supports are missing', async () => {
+      const params: WebSearchToolParams = { query: 'sources only query' };
+      (mockGeminiClient.generateContent as Mock).mockResolvedValue({
+        candidates: [
+          {
+            content: {
+              role: 'model',
+              parts: [{ text: 'Short response without citations.' }],
+            },
+            groundingMetadata: {
+              groundingChunks: [
+                { web: { uri: 'https://example.com', title: 'Example Site' } },
+              ],
+            },
+          },
+        ],
+      });
+
+      const invocation = tool.build(params);
+      const result = await invocation.execute(abortSignal);
+
+      const expectedLlmContent = `Web search results for "sources only query":
+
+Short response without citations.
+
+Sources:
+[1] Example Site (https://example.com)`;
+
+      expect(result.llmContent).toBe(expectedLlmContent);
+      expect(result.sources).toHaveLength(1);
+    });
+
     it('should insert markers at correct byte positions for multibyte text', async () => {
       const params: WebSearchToolParams = { query: 'multibyte query' };
       (mockGeminiClient.generateContent as Mock).mockResolvedValue({

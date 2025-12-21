@@ -214,6 +214,76 @@ When you run `/git:commit`, the CLI first executes `git diff --staged`, then
 replaces `!{git diff --staged}` with the output of that command before sending
 the final, complete prompt to the model.
 
+### Operator recipe examples (TermAI)
+
+These examples show concise, safe prompts for common terminal tasks. Adjust
+commands as needed for your OS and project.
+
+**Disk triage (`ops/disk-triage.toml`):**
+
+```toml
+description = "Summarizes disk usage and suggests safe cleanup steps."
+prompt = """
+Summarize disk usage and suggest safe cleanup steps. Keep it concise.
+
+Disk:
+!{df -h}
+
+Largest items (top level):
+!{du -sh ./*}
+"""
+```
+
+**Search TODOs (`ops/find-todos.toml`):**
+
+```toml
+description = "Finds TODO comments and summarizes hotspots."
+prompt = """
+Summarize where TODOs are concentrated.
+
+Results:
+!{rg -n "TODO" .}
+"""
+```
+
+**Tail and summarize logs (`ops/log-summarize.toml`):**
+
+```toml
+description = "Summarizes errors from recent log lines."
+prompt = """
+Summarize errors from the last 200 lines of server.log. Group by error type.
+
+Log tail:
+!{tail -n 200 server.log}
+"""
+```
+
+**CPU triage (`ops/cpu-triage.toml`):**
+
+```toml
+description = "Summarizes top CPU processes and suggests safe next steps."
+prompt = """
+Summarize the top CPU consumers and suggest safe next steps.
+
+Processes:
+!{ps -eo pid,comm,pcpu,pmem --sort=-pcpu | head -n 15}
+"""
+```
+
+**Repo search (`ops/repo-search.toml`):**
+
+```toml
+description = "Searches the repo for a pattern and summarizes hotspots."
+prompt = """
+Summarize where this pattern appears and highlight the most important files.
+
+Pattern: {{args}}
+
+Results:
+!{rg -n {{args}} .}
+"""
+```
+
 ### 4. Injecting file content with `@{...}`
 
 You can directly embed the content of a file or a directory listing into your

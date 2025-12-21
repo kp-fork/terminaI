@@ -14,6 +14,14 @@ import {
   computeBodyHash,
 } from './replay.js';
 import type { AuthenticatedRequest } from './auth.js';
+import {
+  canListenOnLocalhost,
+  listenOnLocalhost,
+  closeServer,
+} from '../utils/testing_utils.js';
+
+const CAN_LISTEN = await canListenOnLocalhost();
+const describeIfListen = CAN_LISTEN ? describe : describe.skip;
 
 const TOKEN = 'test-token';
 
@@ -29,7 +37,7 @@ function signRequest(
   return crypto.createHmac('sha256', TOKEN).update(payload).digest('hex');
 }
 
-describe('createReplayProtection', () => {
+describeIfListen('createReplayProtection', () => {
   it('accepts valid signatures and rejects replays', async () => {
     const app = express();
     app.use(
@@ -46,23 +54,25 @@ describe('createReplayProtection', () => {
     app.use(createReplayProtection({ ttlMs: 5000, maxEntries: 10 }));
     app.post('/test', (_req, res) => res.status(200).json({ ok: true }));
 
+    const server = await listenOnLocalhost(app);
     const body = { message: 'hi' };
     const nonce = 'nonce-1';
     const signature = signRequest('POST', '/test', body, nonce);
 
-    await request(app)
+    await request(server)
       .post('/test')
       .set('X-Gemini-Nonce', nonce)
       .set('X-Gemini-Signature', signature)
       .send(body)
       .expect(200);
 
-    await request(app)
+    await request(server)
       .post('/test')
       .set('X-Gemini-Nonce', nonce)
       .set('X-Gemini-Signature', signature)
       .send(body)
       .expect(401);
+    await closeServer(server);
   });
 
   it('rejects invalid signatures', async () => {
@@ -82,11 +92,13 @@ describe('createReplayProtection', () => {
     app.post('/test', (_req, res) => res.status(200).json({ ok: true }));
 
     const body = { message: 'hi' };
-    await request(app)
+    const server = await listenOnLocalhost(app);
+    await request(server)
       .post('/test')
       .set('X-Gemini-Nonce', 'nonce-2')
       .set('X-Gemini-Signature', 'bad-signature')
       .send(body)
       .expect(401);
+    await closeServer(server);
   });
 });

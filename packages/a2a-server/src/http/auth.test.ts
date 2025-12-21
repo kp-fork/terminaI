@@ -8,8 +8,16 @@ import { describe, it } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import { createAuthMiddleware, type AuthVerifier } from './auth.js';
+import {
+  canListenOnLocalhost,
+  listenOnLocalhost,
+  closeServer,
+} from '../utils/testing_utils.js';
 
-describe('createAuthMiddleware', () => {
+const CAN_LISTEN = await canListenOnLocalhost();
+const describeIfListen = CAN_LISTEN ? describe : describe.skip;
+
+describeIfListen('createAuthMiddleware', () => {
   const verifier: AuthVerifier = {
     verifyToken: (token: string) => token === 'good-token',
     source: 'env',
@@ -20,11 +28,13 @@ describe('createAuthMiddleware', () => {
     app.use(createAuthMiddleware(verifier));
     app.get('/protected', (_req, res) => res.status(200).send('ok'));
 
-    await request(app).get('/protected').expect(401);
-    await request(app)
+    const server = await listenOnLocalhost(app);
+    await request(server).get('/protected').expect(401);
+    await request(server)
       .get('/protected')
       .set('Authorization', 'Bearer bad-token')
       .expect(401);
+    await closeServer(server);
   });
 
   it('allows valid tokens', async () => {
@@ -32,10 +42,12 @@ describe('createAuthMiddleware', () => {
     app.use(createAuthMiddleware(verifier));
     app.get('/protected', (_req, res) => res.status(200).send('ok'));
 
-    await request(app)
+    const server = await listenOnLocalhost(app);
+    await request(server)
       .get('/protected')
       .set('Authorization', 'Bearer good-token')
       .expect(200);
+    await closeServer(server);
   });
 
   it('bypasses configured paths', async () => {
@@ -47,6 +59,8 @@ describe('createAuthMiddleware', () => {
     );
     app.get('/healthz', (_req, res) => res.status(200).json({ status: 'ok' }));
 
-    await request(app).get('/healthz').expect(200);
+    const server = await listenOnLocalhost(app);
+    await request(server).get('/healthz').expect(200);
+    await closeServer(server);
   });
 });

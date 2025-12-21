@@ -29,6 +29,8 @@ import { SmartEditTool } from '../tools/smart-edit.js';
 import { ShellTool } from '../tools/shell.js';
 import { ProcessManagerTool } from '../tools/process-manager.js';
 import { WriteFileTool } from '../tools/write-file.js';
+import { FileOpsTool } from '../tools/file-ops.js';
+import { AgentControlTool } from '../tools/agent-control.js';
 import { WebFetchTool } from '../tools/web-fetch.js';
 import { MemoryTool, setGeminiMdFilename } from '../tools/memoryTool.js';
 import { WebSearchTool } from '../tools/web-search.js';
@@ -1634,9 +1636,11 @@ export class Config {
       registerCoreTool(EditTool, this);
     }
     registerCoreTool(WriteFileTool, this);
+    registerCoreTool(FileOpsTool, this);
     registerCoreTool(WebFetchTool, this);
     registerCoreTool(ShellTool, this);
     registerCoreTool(ProcessManagerTool, this);
+    registerCoreTool(AgentControlTool, this);
     registerCoreTool(MemoryTool);
     registerCoreTool(WebSearchTool, this);
     if (this.getUseWriteTodos()) {

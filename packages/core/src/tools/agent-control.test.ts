@@ -5,9 +5,9 @@
  */
 
 import {
+  beforeEach,
   afterEach,
   beforeAll,
-  beforeEach,
   describe,
   expect,
   it,
@@ -24,37 +24,29 @@ vi.mock('../services/shellExecutionService.js', () => ({
   ShellExecutionService: mockShellExecutionService,
 }));
 
-import { initializeShellParsers } from '../utils/shell-utils.js';
-import {
-  ProcessManagerTool,
-  getSharedProcessManagerState,
-} from './process-manager.js';
-import type {
-  ShellExecutionResult,
-  ShellOutputEvent,
-} from '../services/shellExecutionService.js';
 import type { Config } from '../config/config.js';
 import { WorkspaceContext } from '../utils/workspaceContext.js';
+import { AgentControlTool } from './agent-control.js';
+import { getSharedProcessManagerState } from './process-manager.js';
+import type { ShellExecutionResult } from '../services/shellExecutionService.js';
+import { initializeShellParsers } from '../utils/shell-utils.js';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-describe('ProcessManagerTool', () => {
+describe('AgentControlTool', () => {
+  let mockConfig: Config;
+  let tempRootDir: string;
+
   beforeAll(async () => {
     await initializeShellParsers();
   });
-
-  let mockConfig: Config;
-  let tempRootDir: string;
-  let outputCallback: (event: ShellOutputEvent) => void;
 
   beforeEach(() => {
     vi.clearAllMocks();
     getSharedProcessManagerState().sessions.clear();
 
-    tempRootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'process-manager-'));
-    fs.mkdirSync(path.join(tempRootDir, 'subdir'));
-    outputCallback = () => {};
+    tempRootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-control-'));
 
     mockConfig = {
       getAllowedTools: vi.fn().mockReturnValue([]),
@@ -69,15 +61,11 @@ describe('ProcessManagerTool', () => {
         .mockReturnValue(new WorkspaceContext(tempRootDir)),
     } as unknown as Config;
 
-    mockShellExecutionService.execute.mockImplementation(
-      (_command, _cwd, callback) => {
-        outputCallback = callback;
-        return {
-          pid: 123,
-          result: new Promise<ShellExecutionResult>(() => {}),
-        };
-      },
-    );
+    mockShellExecutionService.execute.mockImplementation((command) => ({
+      pid: 456,
+      result: new Promise<ShellExecutionResult>(() => {}),
+      command,
+    }));
 
     mockShellExecutionService.isPtyActive.mockReturnValue(true);
   });
@@ -88,72 +76,72 @@ describe('ProcessManagerTool', () => {
     }
   });
 
-  it('requires background=true to start a session', () => {
-    const tool = new ProcessManagerTool(mockConfig);
+  it('requires background=true to start an agent session', () => {
+    const tool = new AgentControlTool(mockConfig);
     expect(() =>
       tool.build({
         operation: 'start',
-        name: 'dev',
-        command: 'node -e "console.log(1)"',
+        name: 'agent',
+        agent: 'claude',
       }),
     ).toThrow('background');
   });
 
-  it('starts a session and lists it', async () => {
-    const tool = new ProcessManagerTool(mockConfig);
-    const startInvocation = tool.build({
+  it('rejects non-allowlisted agent binaries', () => {
+    const tool = new AgentControlTool(mockConfig);
+    expect(() =>
+      tool.build({
+        operation: 'start',
+        name: 'agent',
+        agent: 'unknown-agent',
+        background: true,
+      }),
+    ).toThrow('allowlist');
+  });
+
+  it('starts an agent session and passes args to the command', async () => {
+    const tool = new AgentControlTool(mockConfig);
+    const invocation = tool.build({
       operation: 'start',
-      name: 'dev',
-      command: 'node -e "console.log(1)"',
+      name: 'agent',
+      agent: 'claude',
+      args: ['--help'],
       background: true,
     });
 
-    const startResult = await startInvocation.execute(
-      new AbortController().signal,
-    );
-    const startData = JSON.parse(startResult.llmContent as string);
-    expect(startData.session.name).toBe('dev');
-
-    outputCallback({ type: 'data', chunk: 'ready\n' });
-
-    const readResult = await tool
-      .build({ operation: 'read', name: 'dev', lines: 5 })
-      .execute(new AbortController().signal);
-    expect(readResult.llmContent).toContain('ready');
-
-    const listResult = await tool
-      .build({ operation: 'list' })
-      .execute(new AbortController().signal);
-    const listData = JSON.parse(listResult.llmContent as string);
-    expect(listData.sessions).toHaveLength(1);
-    expect(listData.sessions[0].name).toBe('dev');
+    const result = await invocation.execute(new AbortController().signal);
+    expect(result.returnDisplay).toContain('Started session');
+    expect(mockShellExecutionService.execute).toHaveBeenCalled();
+    const command = mockShellExecutionService.execute.mock.calls[0][0];
+    expect(command).toContain('claude');
+    expect(command).toContain('--help');
   });
 
-  it('sends input to an active PTY session', async () => {
-    const tool = new ProcessManagerTool(mockConfig);
+  it('sends input to an active agent session', async () => {
+    const tool = new AgentControlTool(mockConfig);
     await tool
       .build({
         operation: 'start',
-        name: 'dev',
-        command: 'node -e "console.log(1)"',
+        name: 'agent',
+        agent: 'claude',
         background: true,
       })
       .execute(new AbortController().signal);
 
     const result = await tool
-      .build({ operation: 'send', name: 'dev', text: 'hello\n' })
+      .build({ operation: 'send', name: 'agent', text: 'hello\n' })
       .execute(new AbortController().signal);
 
     expect(result.llmContent).toContain('Sent input');
     expect(mockShellExecutionService.writeToPty).toHaveBeenCalledWith(
-      123,
+      456,
       'hello\n',
     );
   });
 
   it('requires confirmation for stop', async () => {
-    const tool = new ProcessManagerTool(mockConfig);
-    const invocation = tool.build({ operation: 'stop', name: 'dev' });
+    const tool = new AgentControlTool(mockConfig);
+    const invocation = tool.build({ operation: 'stop', name: 'agent' });
     const confirmation = await invocation.shouldConfirmExecute(
       new AbortController().signal,
     );
@@ -162,5 +150,18 @@ describe('ProcessManagerTool', () => {
       throw new Error('Confirmation should not be false');
     }
     expect(confirmation.type).toBe('exec');
+  });
+
+  it('rejects cwd outside workspace', () => {
+    const tool = new AgentControlTool(mockConfig);
+    expect(() =>
+      tool.build({
+        operation: 'start',
+        name: 'agent',
+        agent: 'claude',
+        background: true,
+        cwd: '/etc',
+      }),
+    ).toThrow('Directory');
   });
 });

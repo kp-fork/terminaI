@@ -57,3 +57,45 @@ run-npx:
 
 create-alias:
 	scripts/create_alias.sh
+You are working on TermAI, a fork of gemini-cli located at /home/profharita/Code/termAI.
+
+## What's Already Done (MVP)
+Per tasks.md section "1. Current State":
+- TermAI identity and "General Terminal Tasks" workflows in prompts.ts
+- Node-derived system snapshot in environmentContext.ts
+- Process Manager Tool implemented with full API (start/list/status/read/send/signal/stop)
+- Unit tests for process-manager.ts
+
+## Your Task: Build, Test, and Verify
+
+### Step 1: Build
+cd /home/profharita/Code/termAI
+npm ci
+npm run build
+
+### Step 2: Run Tests
+npm run test:ci --workspace @google/gemini-cli-core
+
+### Step 3: Interactive Verification
+Start the CLI:
+npm run start
+
+Then manually test these flows:
+1. "What's eating my CPU?" - should inspect system and summarize
+2. "How much disk do I have?" - should run df/du and report
+3. "Start `node -e 'setInterval(() => console.log(Date.now()), 1000)'` as `ticker`" - tests Process Manager
+4. "Show me the last 10 lines from `ticker`"
+5. "Stop `ticker`" - should ask for confirmation
+6. "What's the weather in Austin?" - tests web search
+
+### Step 4: Fix Any Issues
+If tests fail or verification doesn't work, debug and fix.
+
+### Step 5: Report Results
+After verification, summarize:
+- Build status
+- Test results (pass/fail count)
+- Each manual verification result
+- Any bugs found and fixed
+
+Read tasks.md for full context. Good luck.

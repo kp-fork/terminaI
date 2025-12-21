@@ -154,6 +154,15 @@ numbers.
   ```
 - **Confirmation:** No.
 
+### Search best practices (large repos)
+
+- Prefer `search_file_content` or `glob` for structured results and bounded
+  output.
+- Use `include` to narrow the search scope (for example, `"*.ts"` or
+  `"src/**/*.{ts,tsx}"`).
+- For very large repos, use `run_shell_command` with `rg` and quiet flags, and
+  consider redirecting output to a temp file to avoid huge responses.
+
 ## 6. `replace` (Edit)
 
 `replace` replaces text within a file. By default, replaces a single occurrence,
@@ -212,6 +221,48 @@ context around the `old_string` to ensure it modifies the correct location.
     `Failed to edit, expected 1 occurrences but found 2...`).
 - **Confirmation:** Yes. Shows a diff of the proposed changes and asks for user
   approval before writing to the file.
+
+## 7. `file_ops` (FileOps)
+
+`file_ops` groups common file operations under a single tool. It is scoped to
+the current workspace and intended for safe organization tasks (mkdir, move,
+copy, delete, and directory tree listing).
+
+- **Tool name:** `file_ops`
+- **Display name:** FileOps
+- **File:** `file-ops.ts`
+- **Parameters:**
+  - `operation` (string, required): One of `mkdir`, `move`, `copy`, `delete`,
+    `list_tree`.
+  - `path` (string, optional): Path for `mkdir`, `delete`, `list_tree`.
+  - `from` (string, optional): Source path for `move`/`copy`.
+  - `to` (string, optional): Destination path for `move`/`copy`.
+  - `parents` (boolean, optional): Whether `mkdir` should create parent
+    directories.
+  - `overwrite` (boolean, optional): Whether `move`/`copy` can overwrite
+    existing destinations.
+  - `recursive` (boolean, optional): Required for directory `copy` and directory
+    `delete`.
+  - `maxDepth` (number, optional): Depth limit for `list_tree` (default 3).
+  - `maxEntries` (number, optional): Maximum entries for `list_tree` (default
+    200).
+- **Behavior:**
+  - Operations are restricted to workspace paths.
+  - `delete` and overwrite/recursive operations require confirmation.
+  - `list_tree` returns a bounded, depth-limited tree view.
+- **Output (`llmContent`):** A concise success message or a bounded tree
+  listing.
+- **Confirmation:** Yes for destructive or recursive operations.
+
+Example usage:
+
+```
+file_ops(operation="mkdir", path="build", parents=true)
+file_ops(operation="move", from="notes.txt", to="archive/notes.txt")
+file_ops(operation="copy", from="assets", to="backup/assets", recursive=true)
+file_ops(operation="delete", path="tmp", recursive=true)
+file_ops(operation="list_tree", path=".", maxDepth=2, maxEntries=200)
+```
 
 These file system tools provide a foundation for the Gemini CLI to understand
 and interact with your local project context.

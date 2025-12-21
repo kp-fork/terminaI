@@ -369,6 +369,25 @@ describe('WebFetchTool', () => {
       });
     });
 
+    it('should include multiple urls in confirmation details', async () => {
+      const tool = new WebFetchTool(mockConfig);
+      const params = {
+        prompt: 'fetch https://example.com https://example.org/docs',
+      };
+      const invocation = tool.build(params);
+      const confirmationDetails = await invocation.shouldConfirmExecute(
+        new AbortController().signal,
+      );
+
+      expect(confirmationDetails).toEqual({
+        type: 'info',
+        title: 'Confirm Web Fetch',
+        prompt: 'fetch https://example.com https://example.org/docs',
+        urls: ['https://example.com/', 'https://example.org/docs'],
+        onConfirm: expect.any(Function),
+      });
+    });
+
     it('should return false if approval mode is AUTO_EDIT', async () => {
       vi.spyOn(mockConfig, 'getApprovalMode').mockReturnValue(
         ApprovalMode.AUTO_EDIT,

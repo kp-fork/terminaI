@@ -10,6 +10,7 @@ import * as fs from 'node:fs/promises';
 import type * as os from 'node:os';
 import * as path from 'node:path';
 import * as http from 'node:http';
+import net from 'node:net';
 import { IDEServer } from './ide-server.js';
 import type { DiffManager } from './diff-manager.js';
 
@@ -79,7 +80,20 @@ const getPortFromMock = (
   return port;
 };
 
-describe('IDEServer', () => {
+const CAN_LISTEN = await new Promise<boolean>((resolve) => {
+  try {
+    const server = net.createServer();
+    server.once('error', () => resolve(false));
+    server.listen(0, '127.0.0.1', () => {
+      server.close(() => resolve(true));
+    });
+  } catch (_error) {
+    resolve(false);
+  }
+});
+const describeIfListen = CAN_LISTEN ? describe : describe.skip;
+
+describeIfListen('IDEServer', () => {
   let ideServer: IDEServer;
   let mockContext: vscode.ExtensionContext;
   let mockLog: (message: string) => void;
@@ -449,7 +463,7 @@ const request = (
     req.end();
   });
 
-describe('IDEServer HTTP endpoints', () => {
+describeIfListen('IDEServer HTTP endpoints', () => {
   let ideServer: IDEServer;
   let mockContext: vscode.ExtensionContext;
   let mockLog: (message: string) => void;
