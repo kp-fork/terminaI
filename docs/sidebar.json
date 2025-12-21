@@ -7,6 +7,22 @@
         "slug": "docs"
       },
       {
+        "label": "TermAI operator recipes",
+        "slug": "docs/termai-operator-recipes"
+      },
+      {
+        "label": "TermAI quickstart",
+        "slug": "docs/termai-quickstart"
+      },
+      {
+        "label": "What can TermAI do?",
+        "slug": "docs/termai-examples"
+      },
+      {
+        "label": "TermAI comparison",
+        "slug": "docs/termai-comparison"
+      },
+      {
         "label": "Architecture overview",
         "slug": "docs/architecture"
       },
@@ -19,6 +35,10 @@
   {
     "label": "Get started",
     "items": [
+      {
+        "label": "TermAI quickstart",
+        "slug": "docs/termai-quickstart"
+      },
       {
         "label": "Gemini CLI quickstart",
         "slug": "docs/get-started"
@@ -71,6 +91,10 @@
       {
         "label": "Headless mode",
         "slug": "docs/cli/headless"
+      },
+      {
+        "label": "TermAI process manager",
+        "slug": "docs/termai-process-manager"
       },
       {
         "label": "Keyboard shortcuts",

@@ -4,6 +4,8 @@
 
 ![TermAI Banner](./docs/assets/termai-banner.png)
 
+![TermAI Demo](./docs/assets/termai-demo.gif)
+
 **TermAI** is the next-generation, general-purpose terminal agent. While it
 excels at coding, it is **not just a coding agent**.
 
@@ -45,6 +47,19 @@ superpower known to mankind.
 
 ## 📦 Installation
 
+### Quickstart (npx)
+
+```bash
+npx termai
+```
+
+### Global install (npm)
+
+```bash
+npm install -g termai
+termai
+```
+
 ### From Source (Recommended for now)
 
 ```bash
@@ -52,10 +67,23 @@ git clone https://github.com/Prof-Harita/termAI.git
 cd termAI
 npm ci
 npm run build
-npm link --workspace packages/cli
+npm link --workspace packages/termai
 ```
 
-You can now run `gemini` (alias) or use the `termAI` binary once we publish.
+You can now run `termai` locally. For prompt overrides, see
+[`docs/termai-system.md`](./docs/termai-system.md).
+
+### Optional install script
+
+```bash
+./scripts/termai-install.sh --dry-run
+```
+
+To install and add a `gemini` alias:
+
+```bash
+./scripts/termai-install.sh --alias-gemini
+```
 
 ## Release Cadence and Tags
 
@@ -204,19 +232,19 @@ For Google Workspace accounts and other authentication methods, see the
 #### Start in current directory
 
 ```bash
-gemini
+termai
 ```
 
 #### Include multiple directories
 
 ```bash
-gemini --include-directories ../lib,../docs
+termai --include-directories ../lib,../docs
 ```
 
 #### Use specific model
 
 ```bash
-gemini -m gemini-2.5-flash
+termai -m gemini-2.5-flash
 ```
 
 #### Non-interactive mode for scripts
@@ -224,14 +252,14 @@ gemini -m gemini-2.5-flash
 Get a simple text response:
 
 ```bash
-gemini -p "Explain the architecture of this codebase"
+termai -p "Explain the architecture of this codebase"
 ```
 
 For more advanced scripting, including how to parse JSON and handle errors, use
 the `--output-format json` flag to get structured output:
 
 ```bash
-gemini -p "Explain the architecture of this codebase" --output-format json
+termai -p "Explain the architecture of this codebase" --output-format json
 ```
 
 For real-time event streaming (useful for monitoring long-running operations),
@@ -266,6 +294,8 @@ gemini
 
 - [**Quickstart Guide**](./docs/get-started/index.md) - Get up and running
   quickly.
+- [**TermAI Operator Recipes**](./docs/termai-operator-recipes.md) - Practical,
+  safe prompts for common terminal tasks.
 - [**Authentication Setup**](./docs/get-started/authentication.md) - Detailed
   auth configuration.
 - [**Configuration Guide**](./docs/get-started/configuration.md) - Settings and
@@ -281,6 +311,10 @@ gemini
   reusable commands.
 - [**Context Files (GEMINI.md)**](./docs/cli/gemini-md.md) - Provide persistent
   context to Gemini CLI.
+- [**System Prompt Override (GEMINI_SYSTEM_MD)**](./docs/cli/system-prompt.md) -
+  Replace the built-in system prompt with your own.
+- [**TermAI System Prompt Example**](./docs/termai-system.md) - Example TermAI
+  system prompt file to use with `GEMINI_SYSTEM_MD`.
 - [**Checkpointing**](./docs/cli/checkpointing.md) - Save and resume
   conversations.
 - [**Token Caching**](./docs/cli/token-caching.md) - Optimize token usage.

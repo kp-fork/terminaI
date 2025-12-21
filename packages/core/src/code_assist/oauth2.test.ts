@@ -22,6 +22,7 @@ import http from 'node:http';
 import open from 'open';
 import crypto from 'node:crypto';
 import * as os from 'node:os';
+import net from 'node:net';
 import { AuthType } from '../core/contentGenerator.js';
 import type { Config } from '../config/config.js';
 import readline from 'node:readline';
@@ -29,6 +30,19 @@ import { FORCE_ENCRYPTED_FILE_ENV_VAR } from '../mcp/token-storage/index.js';
 import { GEMINI_DIR } from '../utils/paths.js';
 import { debugLogger } from '../utils/debugLogger.js';
 import { writeToStdout } from '../utils/stdio.js';
+
+const CAN_LISTEN = await new Promise<boolean>((resolve) => {
+  try {
+    const server = net.createServer();
+    server.once('error', () => resolve(false));
+    server.listen(0, '127.0.0.1', () => {
+      server.close(() => resolve(true));
+    });
+  } catch (_error) {
+    resolve(false);
+  }
+});
+const describeIfListen = CAN_LISTEN ? describe : describe.skip;
 
 vi.mock('os', async (importOriginal) => {
   const os = await importOriginal<typeof import('os')>();
@@ -77,7 +91,7 @@ const mockConfig = {
 // Mock fetch globally
 global.fetch = vi.fn();
 
-describe('oauth2', () => {
+describeIfListen('oauth2', () => {
   describe('with encrypted flag false', () => {
     let tempHomeDir: string;
 

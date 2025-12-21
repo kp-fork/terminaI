@@ -551,6 +551,7 @@ export function getAvailablePort(): Promise<number> {
     let port = 0;
     try {
       const portStr = process.env['OAUTH_CALLBACK_PORT'];
+      const host = process.env['OAUTH_CALLBACK_HOST'] || '127.0.0.1';
       if (portStr) {
         port = parseInt(portStr, 10);
         if (isNaN(port) || port <= 0 || port > 65535) {
@@ -561,7 +562,7 @@ export function getAvailablePort(): Promise<number> {
         return resolve(port);
       }
       const server = net.createServer();
-      server.listen(0, () => {
+      server.listen(0, host, () => {
         const address = server.address()! as net.AddressInfo;
         port = address.port;
       });

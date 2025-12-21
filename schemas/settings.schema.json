@@ -346,6 +346,94 @@
       },
       "additionalProperties": false
     },
+    "voice": {
+      "title": "Voice",
+      "description": "Voice mode settings.",
+      "markdownDescription": "Voice mode settings.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `{}`",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "title": "Enable Voice Mode",
+          "description": "Enable push-to-talk voice mode.",
+          "markdownDescription": "Enable push-to-talk voice mode.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `false`",
+          "default": false,
+          "type": "boolean"
+        },
+        "pushToTalk": {
+          "title": "Push-to-Talk",
+          "description": "Push-to-talk key settings.",
+          "markdownDescription": "Push-to-talk key settings.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `{}`",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "key": {
+              "title": "Push-to-Talk Key",
+              "description": "Key binding for push-to-talk.",
+              "markdownDescription": "Key binding for push-to-talk.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `space`",
+              "default": "space",
+              "type": "string",
+              "enum": ["space", "ctrl+space"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "stt": {
+          "title": "Speech-to-Text",
+          "description": "Speech-to-text provider settings.",
+          "markdownDescription": "Speech-to-text provider settings.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `{}`",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "provider": {
+              "title": "STT Provider",
+              "description": "Speech-to-text provider.",
+              "markdownDescription": "Speech-to-text provider.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `auto`",
+              "default": "auto",
+              "type": "string",
+              "enum": ["auto", "whispercpp", "none"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "tts": {
+          "title": "Text-to-Speech",
+          "description": "Text-to-speech provider settings.",
+          "markdownDescription": "Text-to-speech provider settings.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `{}`",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "provider": {
+              "title": "TTS Provider",
+              "description": "Text-to-speech provider.",
+              "markdownDescription": "Text-to-speech provider.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `auto`",
+              "default": "auto",
+              "type": "string",
+              "enum": ["auto", "none"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "spokenReply": {
+          "title": "Spoken Reply",
+          "description": "Spoken reply settings.",
+          "markdownDescription": "Spoken reply settings.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `{}`",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "maxWords": {
+              "title": "Max Words",
+              "description": "Maximum words to speak in voice replies.",
+              "markdownDescription": "Maximum words to speak in voice replies.\n\n- Category: `Voice`\n- Requires restart: `no`\n- Default: `30`",
+              "default": 30,
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "ide": {
       "title": "IDE",
       "description": "IDE integration settings.",

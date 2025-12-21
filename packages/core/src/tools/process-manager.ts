@@ -29,13 +29,9 @@ import type {
   ToolExecuteConfirmationDetails,
   ToolInvocation,
   ToolResult,
-
-  ToolConfirmationOutcome} from './tools.js';
-import {
-  BaseDeclarativeTool,
-  BaseToolInvocation,
-  Kind
+  ToolConfirmationOutcome,
 } from './tools.js';
+import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 import { ToolErrorType } from './tool-error.js';
 import { PROCESS_MANAGER_TOOL_NAME } from './tool-names.js';
 
@@ -112,6 +108,11 @@ class ProcessManagerState {
   readonly sessions = new Map<string, ProcessSession>();
 }
 
+const sharedProcessManagerState = new ProcessManagerState();
+
+export const getSharedProcessManagerState = (): ProcessManagerState =>
+  sharedProcessManagerState;
+
 const normalizeLines = (lines: string[], maxLines: number): string[] => {
   if (lines.length <= maxLines) {
     return lines;
@@ -182,118 +183,32 @@ const sendSignal = (pid: number, signal: ProcessManagerSignal): void => {
   }
 };
 
-class ProcessManagerToolInvocation extends BaseToolInvocation<
-  ProcessManagerToolParams,
-  ToolResult
-> {
+export class ProcessManager {
   constructor(
     private readonly config: Config,
     private readonly state: ProcessManagerState,
-    params: ProcessManagerToolParams,
-    messageBus?: MessageBus,
-    _toolName?: string,
-    _toolDisplayName?: string,
-  ) {
-    super(params, messageBus, _toolName, _toolDisplayName);
-  }
+  ) {}
 
-  getDescription(): string {
-    switch (this.params.operation) {
-      case 'start':
-        return `Start session "${this.params.name}" with command: ${this.params.command}`;
-      case 'list':
-        return 'List process sessions';
-      case 'status':
-        return `Get status for session "${this.params.name}"`;
-      case 'read':
-        return `Read output from session "${this.params.name}"`;
-      case 'send':
-        return `Send input to session "${this.params.name}"`;
-      case 'signal':
-        return `Send signal ${this.params.signal} to session "${this.params.name}"`;
-      case 'stop':
-        return `Stop session "${this.params.name}"`;
-      case 'restart':
-        return `Restart session "${this.params.name}"`;
-      default:
-        return 'Manage process sessions';
-    }
-  }
-
-  protected override async getConfirmationDetails(
-    _abortSignal: AbortSignal,
-  ): Promise<ToolCallConfirmationDetails | false> {
-    if (
-      this.params.operation !== 'stop' &&
-      this.params.operation !== 'signal' &&
-      this.params.operation !== 'restart'
-    ) {
-      return false;
-    }
-
-    const signal =
-      this.params.operation === 'signal'
-        ? this.params.signal
-        : (this.params.signal ?? 'SIGTERM');
-
-    const command = `${this.params.operation} ${this.params.name}${
-      signal ? ` ${signal}` : ''
-    }`;
-
-    const confirmationDetails: ToolExecuteConfirmationDetails = {
-      type: 'exec',
-      title: 'Confirm Process Action',
-      command,
-      rootCommand: this.params.operation,
-      onConfirm: async (outcome: ToolConfirmationOutcome) => {
-        await this.publishPolicyUpdate(outcome);
-      },
-    };
-    return confirmationDetails;
-  }
-
-  async execute(_signal: AbortSignal): Promise<ToolResult> {
-    switch (this.params.operation) {
-      case 'start':
-        return this.startSession();
-      case 'list':
-        return this.listSessions();
-      case 'status':
-        return this.getStatus();
-      case 'read':
-        return this.readOutput();
-      case 'send':
-        return this.sendInput();
-      case 'signal':
-        return this.signalSession();
-      case 'stop':
-        return this.stopSession();
-      case 'restart':
-        return this.restartSession();
-      default:
-        return this.errorResult(
-          `Unsupported operation: ${this.params.operation}`,
-        );
-    }
-  }
-
-  private errorResult(message: string): ToolResult {
+  private errorResult(
+    message: string,
+    type = ToolErrorType.EXECUTION_FAILED,
+  ): ToolResult {
     return {
       llmContent: `Error: ${message}`,
       returnDisplay: message,
       error: {
         message,
-        type: ToolErrorType.EXECUTION_FAILED,
+        type,
       },
     };
   }
 
-  private resolveCwd(): string {
-    if (!this.params.cwd) {
+  private resolveCwd(cwd?: string): string {
+    if (!cwd) {
       return this.config.getTargetDir();
     }
 
-    return path.resolve(this.config.getTargetDir(), this.params.cwd);
+    return path.resolve(this.config.getTargetDir(), cwd);
   }
 
   private buildShellExecutionConfig(): ShellExecutionConfig {
@@ -378,10 +293,15 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     );
   }
 
-  private async startSession(): Promise<ToolResult> {
-    const name = (this.params.name ?? '').trim();
-    const command = (this.params.command ?? '').trim();
-    const resolvedCwd = this.resolveCwd();
+  async startSession(params: {
+    name: string;
+    command: string;
+    cwd?: string;
+    env?: Record<string, string>;
+  }): Promise<ToolResult> {
+    const name = params.name.trim();
+    const command = params.command.trim();
+    const resolvedCwd = this.resolveCwd(params.cwd);
 
     if (this.state.sessions.has(name)) {
       return this.errorResult(`Session "${name}" already exists.`);
@@ -392,7 +312,7 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
       name,
       command,
       cwd: resolvedCwd,
-      env: this.params.env,
+      env: params.env,
       background: true,
       startedAt: Date.now(),
       status: 'running',
@@ -405,8 +325,8 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     this.state.sessions.set(name, session);
 
     try {
-      const commandToExecute = this.params.env
-        ? getEnvPrefix(command, this.params.env)
+      const commandToExecute = params.env
+        ? getEnvPrefix(command, params.env)
         : command;
 
       const handle = await ShellExecutionService.execute(
@@ -455,7 +375,7 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     }
   }
 
-  private listSessions(): ToolResult {
+  listSessions(): ToolResult {
     const sessions = [...this.state.sessions.values()].map(buildSessionSummary);
     return {
       llmContent: JSON.stringify({ sessions }, null, 2),
@@ -465,10 +385,10 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     };
   }
 
-  private getStatus(): ToolResult {
-    const session = this.state.sessions.get((this.params.name ?? '').trim());
+  getStatus(name: string): ToolResult {
+    const session = this.state.sessions.get(name.trim());
     if (!session) {
-      return this.errorResult(`Session "${this.params.name}" does not exist.`);
+      return this.errorResult(`Session "${name}" does not exist.`);
     }
 
     return {
@@ -481,16 +401,13 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     };
   }
 
-  private readOutput(): ToolResult {
-    const session = this.state.sessions.get((this.params.name ?? '').trim());
+  readOutput(name: string, lines?: number): ToolResult {
+    const session = this.state.sessions.get(name.trim());
     if (!session) {
-      return this.errorResult(`Session "${this.params.name}" does not exist.`);
+      return this.errorResult(`Session "${name}" does not exist.`);
     }
 
-    const requestedLines = Math.max(
-      1,
-      Math.floor(this.params.lines ?? DEFAULT_READ_LINES),
-    );
+    const requestedLines = Math.max(1, Math.floor(lines ?? DEFAULT_READ_LINES));
     const linesToRead = Math.min(requestedLines, MAX_OUTPUT_LINES);
     const outputLines = session.pendingLine
       ? session.outputLines.concat(session.pendingLine)
@@ -510,10 +427,10 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     };
   }
 
-  private sendInput(): ToolResult {
-    const session = this.state.sessions.get((this.params.name ?? '').trim());
+  sendInput(name: string, text: string): ToolResult {
+    const session = this.state.sessions.get(name.trim());
     if (!session) {
-      return this.errorResult(`Session "${this.params.name}" does not exist.`);
+      return this.errorResult(`Session "${name}" does not exist.`);
     }
 
     if (!session.pid || !ShellExecutionService.isPtyActive(session.pid)) {
@@ -522,20 +439,19 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
       );
     }
 
-    ShellExecutionService.writeToPty(session.pid, this.params.text ?? '');
+    ShellExecutionService.writeToPty(session.pid, text);
     return {
       llmContent: `Sent input to "${session.name}".`,
       returnDisplay: `Sent input to "${session.name}".`,
     };
   }
 
-  private signalSession(): ToolResult {
-    const session = this.state.sessions.get((this.params.name ?? '').trim());
+  signalSession(name: string, signal: ProcessManagerSignal): ToolResult {
+    const session = this.state.sessions.get(name.trim());
     if (!session) {
-      return this.errorResult(`Session "${this.params.name}" does not exist.`);
+      return this.errorResult(`Session "${name}" does not exist.`);
     }
 
-    const signal = this.params.signal ?? 'SIGTERM';
     if (!session.pid) {
       return this.errorResult(
         `Session "${session.name}" does not have a PID available for signaling.`,
@@ -555,15 +471,14 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     }
   }
 
-  private stopSession(): ToolResult {
-    const signal = this.params.signal ?? 'SIGTERM';
+  stopSession(name: string, signal: ProcessManagerSignal): ToolResult {
     if (!ALLOWED_SIGNALS.has(signal)) {
       return this.errorResult(`Unsupported signal: ${signal}`);
     }
 
-    const session = this.state.sessions.get((this.params.name ?? '').trim());
+    const session = this.state.sessions.get(name.trim());
     if (!session) {
-      return this.errorResult(`Session "${this.params.name}" does not exist.`);
+      return this.errorResult(`Session "${name}" does not exist.`);
     }
 
     if (!session.pid) {
@@ -587,13 +502,15 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     }
   }
 
-  private async restartSession(): Promise<ToolResult> {
-    const session = this.state.sessions.get((this.params.name ?? '').trim());
+  async restartSession(
+    name: string,
+    signal: ProcessManagerSignal,
+  ): Promise<ToolResult> {
+    const session = this.state.sessions.get(name.trim());
     if (!session) {
-      return this.errorResult(`Session "${this.params.name}" does not exist.`);
+      return this.errorResult(`Session "${name}" does not exist.`);
     }
 
-    const signal = this.params.signal ?? 'SIGTERM';
     if (!ALLOWED_SIGNALS.has(signal)) {
       return this.errorResult(`Unsupported signal: ${signal}`);
     }
@@ -628,11 +545,132 @@ class ProcessManagerToolInvocation extends BaseToolInvocation<
     }
 
     this.state.sessions.delete(session.name);
-    this.params.command = session.command;
-    this.params.cwd = session.cwd;
-    this.params.env = session.env;
-    this.params.background = true;
-    return this.startSession();
+    return this.startSession({
+      name: session.name,
+      command: session.command,
+      cwd: session.cwd,
+      env: session.env,
+    });
+  }
+}
+
+class ProcessManagerToolInvocation extends BaseToolInvocation<
+  ProcessManagerToolParams,
+  ToolResult
+> {
+  constructor(
+    private readonly processManager: ProcessManager,
+    params: ProcessManagerToolParams,
+    messageBus?: MessageBus,
+    _toolName?: string,
+    _toolDisplayName?: string,
+  ) {
+    super(params, messageBus, _toolName, _toolDisplayName);
+  }
+
+  getDescription(): string {
+    switch (this.params.operation) {
+      case 'start':
+        return `Start session "${this.params.name}" with command: ${this.params.command}`;
+      case 'list':
+        return 'List process sessions';
+      case 'status':
+        return `Get status for session "${this.params.name}"`;
+      case 'read':
+        return `Read output from session "${this.params.name}"`;
+      case 'send':
+        return `Send input to session "${this.params.name}"`;
+      case 'signal':
+        return `Send signal ${this.params.signal} to session "${this.params.name}"`;
+      case 'stop':
+        return `Stop session "${this.params.name}"`;
+      case 'restart':
+        return `Restart session "${this.params.name}"`;
+      default:
+        return 'Manage process sessions';
+    }
+  }
+
+  protected override async getConfirmationDetails(
+    _abortSignal: AbortSignal,
+  ): Promise<ToolCallConfirmationDetails | false> {
+    if (
+      this.params.operation !== 'stop' &&
+      this.params.operation !== 'signal' &&
+      this.params.operation !== 'restart'
+    ) {
+      return false;
+    }
+
+    const signal =
+      this.params.operation === 'signal'
+        ? this.params.signal
+        : (this.params.signal ?? 'SIGTERM');
+
+    const command = `${this.params.operation} ${this.params.name}${
+      signal ? ` ${signal}` : ''
+    }`;
+
+    const confirmationDetails: ToolExecuteConfirmationDetails = {
+      type: 'exec',
+      title: 'Confirm Process Action',
+      command,
+      rootCommand: this.params.operation,
+      onConfirm: async (outcome: ToolConfirmationOutcome) => {
+        await this.publishPolicyUpdate(outcome);
+      },
+    };
+    return confirmationDetails;
+  }
+
+  async execute(_signal: AbortSignal): Promise<ToolResult> {
+    switch (this.params.operation) {
+      case 'start':
+        return this.processManager.startSession({
+          name: (this.params.name ?? '').trim(),
+          command: (this.params.command ?? '').trim(),
+          cwd: this.params.cwd,
+          env: this.params.env,
+        });
+      case 'list':
+        return this.processManager.listSessions();
+      case 'status':
+        return this.processManager.getStatus((this.params.name ?? '').trim());
+      case 'read':
+        return this.processManager.readOutput(
+          (this.params.name ?? '').trim(),
+          this.params.lines,
+        );
+      case 'send':
+        return this.processManager.sendInput(
+          (this.params.name ?? '').trim(),
+          this.params.text ?? '',
+        );
+      case 'signal':
+        return this.processManager.signalSession(
+          (this.params.name ?? '').trim(),
+          this.params.signal ?? 'SIGTERM',
+        );
+      case 'stop':
+        return this.processManager.stopSession(
+          (this.params.name ?? '').trim(),
+          this.params.signal ?? 'SIGTERM',
+        );
+      case 'restart':
+        return this.processManager.restartSession(
+          (this.params.name ?? '').trim(),
+          this.params.signal ?? 'SIGTERM',
+        );
+      default:
+        return {
+          llmContent: `Error: Unsupported operation: ${this.params.operation}`,
+          returnDisplay: `Unsupported operation: ${this.params.operation}`,
+          error: {
+            message: `Unsupported operation: ${this.params.operation}`,
+            type: ToolErrorType.EXECUTION_FAILED,
+          },
+        };
+    }
   }
 }
 
@@ -642,15 +680,13 @@ export class ProcessManagerTool extends BaseDeclarativeTool<
 > {
   static readonly Name = PROCESS_MANAGER_TOOL_NAME;
 
-  private readonly state = new ProcessManagerState();
+  private readonly processManager: ProcessManager;
 
   constructor(
     private readonly config: Config,
     messageBus?: MessageBus,
+    state: ProcessManagerState = sharedProcessManagerState,
   ) {
-    void initializeShellParsers().catch(() => {
-      // Errors are surfaced when parsing commands.
-    });
     super(
       ProcessManagerTool.Name,
       'ProcessManager',
@@ -714,6 +750,10 @@ export class ProcessManagerTool extends BaseDeclarativeTool<
       false,
       messageBus,
     );
+    void initializeShellParsers().catch(() => {
+      // Errors are surfaced when parsing commands.
+    });
+    this.processManager = new ProcessManager(config, state);
   }
 
   protected override validateToolParamValues(
@@ -802,8 +842,7 @@ export class ProcessManagerTool extends BaseDeclarativeTool<
     _toolDisplayName?: string,
   ): ToolInvocation<ProcessManagerToolParams, ToolResult> {
     return new ProcessManagerToolInvocation(
-      this.config,
-      this.state,
+      this.processManager,
       params,
       messageBus,
       _toolName,

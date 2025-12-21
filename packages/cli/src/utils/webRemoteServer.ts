@@ -8,11 +8,11 @@ import type { Server } from 'node:http';
 import {
   createApp,
   updateCoderAgentCardUrl,
-
   createRemoteAuthState,
   getRemoteAuthPath,
   loadRemoteAuthState,
-  saveRemoteAuthState} from '@google/gemini-cli-a2a-server';
+  saveRemoteAuthState,
+} from '@google/gemini-cli-a2a-server';
 import crypto from 'node:crypto';
 import net from 'node:net';
 

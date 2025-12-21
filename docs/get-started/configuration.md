@@ -266,6 +266,35 @@ their corresponding top-level category object in your `settings.json` file.
   - **Default:** `false`
   - **Requires restart:** Yes
 
+#### `voice`
+
+- **`voice.enabled`** (boolean):
+  - **Description:** Enable push-to-talk voice mode.
+  - **Default:** `false`
+
+- **`voice.pushToTalk.key`** (enum):
+  - **Description:** Key binding for push-to-talk.
+  - **Default:** `"space"`
+  - **Values:** `"space"`, `"ctrl+space"`
+
+- **`voice.stt.provider`** (enum):
+  - **Description:** Speech-to-text provider.
+  - **Default:** `"auto"`
+  - **Values:** `"auto"`, `"whispercpp"`, `"none"`
+
+- **`voice.tts.provider`** (enum):
+  - **Description:** Text-to-speech provider.
+  - **Default:** `"auto"`
+  - **Values:** `"auto"`, `"none"`
+
+- **`voice.spokenReply.maxWords`** (number):
+  - **Description:** Maximum words to speak in voice replies.
+  - **Default:** `30`
+
+Note: voice mode currently supports **TTS-only spoken replies**. Push-to-talk
+audio capture and STT transcription are not yet wired in the CLI, but the
+settings are reserved for future support.
+
 #### `ide`
 
 - **`ide.enabled`** (boolean):

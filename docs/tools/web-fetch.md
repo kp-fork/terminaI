@@ -37,6 +37,16 @@ Usage:
 web_fetch(prompt="Your prompt, including a URL such as https://google.com.")
 ```
 
+## Operator tips (TermAI)
+
+- Use `web_fetch` when you already have specific URLs. If you need to discover
+  sources first, use `google_web_search`.
+- Ask for a concise answer and citations when accuracy matters (for example:
+  "summarize in 3 bullets and cite sources").
+- If a URL is inaccessible to the Gemini API, `web_fetch` falls back to a local
+  fetch and then summarizes the content. Keep prompts clear and specific so the
+  summary stays tight and relevant.
+
 ## `web_fetch` examples
 
 Summarize a single article:

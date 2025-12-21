@@ -19,11 +19,52 @@ import {
 } from '@google/gemini-cli-core';
 import { createMockMessageBus } from '@google/gemini-cli-core/src/test-utils/mock-message-bus.js';
 import type { Config, Storage } from '@google/gemini-cli-core';
+import type express from 'express';
+import type { Server } from 'node:http';
 import { expect, vi } from 'vitest';
 import crypto from 'node:crypto';
+import net from 'node:net';
 import { buildSignaturePayload, computeBodyHash } from '../http/replay.js';
 
 export const TEST_REMOTE_TOKEN = 'test-remote-token';
+
+let canListenCache: Promise<boolean> | undefined;
+
+export async function canListenOnLocalhost(): Promise<boolean> {
+  if (!canListenCache) {
+    canListenCache = new Promise((resolve) => {
+      try {
+        const server = net.createServer();
+        server.once('error', () => resolve(false));
+        server.listen(0, '127.0.0.1', () => {
+          server.close(() => resolve(true));
+        });
+      } catch (_error) {
+        resolve(false);
+      }
+    });
+  }
+  return canListenCache;
+}
+
+export async function listenOnLocalhost(app: express.Express): Promise<Server> {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(0, '127.0.0.1', () => resolve(server));
+    server.on('error', (err) => reject(err));
+  });
+}
+
+export async function closeServer(server: Server): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    server.close((err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve();
+    });
+  });
+}
 
 export function createMockConfig(
   overrides: Partial<Config> = {},

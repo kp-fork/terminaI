@@ -78,3 +78,18 @@ A typical interaction with the Gemini CLI follows this flow:
   capabilities to be added.
 - **User experience:** The CLI focuses on providing a rich and interactive
   terminal experience.
+
+## TermAI extensions in this repo
+
+This fork includes additional TermAI-focused components and tools:
+
+- **Distribution wrapper:** `packages/termai` ships a `termai` binary that
+  launches the core CLI with a bundled `system.md`.
+- **File organization tool:** `file_ops` enables safe mkdir/move/copy/delete and
+  bounded directory trees.
+- **Process orchestration tool:** `process_manager` enables named long-running
+  sessions with bounded output and safe termination.
+- **Agent supervision tool:** `agent_control` manages external agent CLIs as
+  sessions.
+- **Voice mode (TTS-only):** spoken replies are supported via local OS TTS; STT
+  capture is still pending.

@@ -12,14 +12,19 @@
  */
 
 import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
+import { fileURLToPath } from 'node:url';
 
-async function main() {
-  const argv = await yargs(hideBin(process.argv))
+export async function runPatchCreateComment({
+  argv = process.argv.slice(2),
+  env = process.env,
+  logger = console,
+  exitProcess = true,
+} = {}) {
+  const yargsInstance = yargs(argv)
     .option('original-pr', {
       description: 'The original PR number to comment on',
       type: 'number',
-      demandOption: !process.env.GITHUB_ACTIONS,
+      demandOption: !env.GITHUB_ACTIONS,
     })
     .option('exit-code', {
       description: 'Exit code from patch creation step',
@@ -29,18 +34,18 @@ async function main() {
     .option('commit', {
       description: 'The commit SHA being patched',
       type: 'string',
-      demandOption: !process.env.GITHUB_ACTIONS,
+      demandOption: !env.GITHUB_ACTIONS,
     })
     .option('channel', {
       description: 'The channel (stable or preview)',
       type: 'string',
       choices: ['stable', 'preview'],
-      demandOption: !process.env.GITHUB_ACTIONS,
+      demandOption: !env.GITHUB_ACTIONS,
     })
     .option('repository', {
       description: 'The GitHub repository (owner/repo format)',
       type: 'string',
-      demandOption: !process.env.GITHUB_ACTIONS,
+      demandOption: !env.GITHUB_ACTIONS,
     })
     .option('run-id', {
       description: 'The GitHub workflow run ID',
@@ -49,7 +54,7 @@ async function main() {
     .option('environment', {
       choices: ['prod', 'dev'],
       type: 'string',
-      default: process.env.ENVIRONMENT || 'prod',
+      default: env.ENVIRONMENT || 'prod',
     })
     .option('test', {
       description: 'Test mode - validate logic without GitHub API calls',
@@ -65,39 +70,50 @@ async function main() {
       'Test failure comment',
     )
     .help()
-    .alias('help', 'h').argv;
+    .alias('help', 'h');
 
-  const testMode = argv.test || process.env.TEST_MODE === 'true';
+  if (!exitProcess) {
+    yargsInstance
+      .exitProcess(false)
+      .showHelpOnFail(false)
+      .fail((msg, err) => {
+        throw new Error(msg || err?.message || 'Invalid arguments');
+      });
+  }
+
+  const argvResult = await yargsInstance.parse();
+
+  const testMode = argvResult.test || env.TEST_MODE === 'true';
 
   // GitHub CLI is available in the workflow environment
   const hasGitHubCli = !testMode;
 
   // Get inputs from CLI args or environment
-  const originalPr = argv.originalPr || process.env.ORIGINAL_PR;
+  const originalPr = argvResult.originalPr || env.ORIGINAL_PR;
   const exitCode =
-    argv.exitCode !== undefined
-      ? argv.exitCode
-      : parseInt(process.env.EXIT_CODE || '1');
-  const commit = argv.commit || process.env.COMMIT;
-  const channel = argv.channel || process.env.CHANNEL;
-  const environment = argv.environment;
+    argvResult.exitCode !== undefined
+      ? argvResult.exitCode
+      : parseInt(env.EXIT_CODE || '1');
+  const commit = argvResult.commit || env.COMMIT;
+  const channel = argvResult.channel || env.CHANNEL;
+  const environment = argvResult.environment;
   const repository =
-    argv.repository || process.env.REPOSITORY || 'google-gemini/gemini-cli';
-  const runId = argv.runId || process.env.GITHUB_RUN_ID || '0';
+    argvResult.repository || env.REPOSITORY || 'google-gemini/gemini-cli';
+  const runId = argvResult.runId || env.GITHUB_RUN_ID || '0';
 
   // Validate required parameters
   if (!runId || runId === '0') {
-    console.warn(
+    logger.warn?.(
       'Warning: No valid GitHub run ID found, workflow links may not work correctly',
     );
   }
 
   if (!originalPr) {
-    console.log('No original PR specified, skipping comment');
+    logger.log?.('No original PR specified, skipping comment');
     return;
   }
 
-  console.log(
+  logger.log?.(
     `Analyzing patch creation result for PR ${originalPr} (exit code: ${exitCode})`,
   );
 
@@ -105,21 +121,21 @@ async function main() {
   const npmTag = channel === 'stable' ? 'latest' : 'preview';
 
   if (testMode) {
-    console.log('\n🧪 TEST MODE - No API calls will be made');
-    console.log('\n📋 Inputs:');
-    console.log(`  - Original PR: ${originalPr}`);
-    console.log(`  - Exit Code: ${exitCode}`);
-    console.log(`  - Commit: ${commit}`);
-    console.log(`  - Channel: ${channel} → npm tag: ${npmTag}`);
-    console.log(`  - Repository: ${repository}`);
-    console.log(`  - Run ID: ${runId}`);
+    logger.log?.('\n🧪 TEST MODE - No API calls will be made');
+    logger.log?.('\n📋 Inputs:');
+    logger.log?.(`  - Original PR: ${originalPr}`);
+    logger.log?.(`  - Exit Code: ${exitCode}`);
+    logger.log?.(`  - Commit: ${commit}`);
+    logger.log?.(`  - Channel: ${channel} → npm tag: ${npmTag}`);
+    logger.log?.(`  - Repository: ${repository}`);
+    logger.log?.(`  - Run ID: ${runId}`);
   }
 
   let commentBody;
   let logContent = '';
 
   // Get log content from environment variable or generate mock content for testing
-  if (testMode && !process.env.LOG_CONTENT) {
+  if (testMode && !env.LOG_CONTENT) {
     // Create mock log content for testing only if LOG_CONTENT is not provided
     if (exitCode === 0) {
       logContent = `Creating hotfix branch hotfix/v0.5.3/${channel}/cherry-pick-${commit.substring(0, 7)} from release/v0.5.3`;
@@ -128,7 +144,7 @@ async function main() {
     }
   } else {
     // Use log content from environment variable
-    logContent = process.env.LOG_CONTENT || '';
+    logContent = env.LOG_CONTENT || '';
   }
 
   if (
@@ -299,7 +315,7 @@ The patch release PR for this change has been created on branch [\`${branch}\`](
 - [View all patch PRs](https://github.com/${repository}/pulls?q=is%3Apr+is%3Aopen+label%3Apatch)`;
           }
         } catch (error) {
-          console.log('Error finding PR for branch:', error.message);
+          logger.log?.('Error finding PR for branch:', error.message);
           // Fallback
           commentBody = `🚀 **Patch PR Created!**
 
@@ -335,11 +351,11 @@ No output was generated during patch creation.
   }
 
   if (testMode) {
-    console.log('\n💬 Would post comment:');
-    console.log('----------------------------------------');
-    console.log(commentBody);
-    console.log('----------------------------------------');
-    console.log('\n✅ Comment generation working correctly!');
+    logger.log?.('\n💬 Would post comment:');
+    logger.log?.('----------------------------------------');
+    logger.log?.(commentBody);
+    logger.log?.('----------------------------------------');
+    logger.log?.('\n✅ Comment generation working correctly!');
   } else if (hasGitHubCli) {
     const { spawnSync } = await import('node:child_process');
     const { writeFileSync, unlinkSync } = await import('node:fs');
@@ -365,7 +381,7 @@ No output was generated during patch creation.
         throw new Error(`gh pr comment failed with status ${result.status}`);
       }
 
-      console.log(`Successfully commented on PR ${originalPr}`);
+      logger.log?.(`Successfully commented on PR ${originalPr}`);
     } finally {
       // Clean up temp file
       try {
@@ -375,11 +391,16 @@ No output was generated during patch creation.
       }
     }
   } else {
-    console.log('No GitHub CLI available');
+    logger.log?.('No GitHub CLI available');
   }
 }
 
-main().catch((error) => {
-  console.error('Error commenting on PR:', error);
-  process.exit(1);
-});
+const isCliEntry =
+  process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isCliEntry) {
+  runPatchCreateComment().catch((error) => {
+    console.error('Error commenting on PR:', error);
+    process.exit(1);
+  });
+}
