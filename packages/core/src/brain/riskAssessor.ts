@@ -189,54 +189,22 @@ export async function assessRisk(
   const environment = detectEnvironment();
   const heuristic = command ? assessRiskHeuristic(command) : null;
 
-  if (heuristic && heuristic.confidence && heuristic.confidence > 80) {
-    const dimensionsWithDefaults = applyDefaults(heuristic, environment);
-    const { dimensions, historyNote } = applyHistoricalAdjustment(
-      dimensionsWithDefaults,
-      command,
-    );
-    const overallRisk = calculateOverallRisk(dimensions);
-    return {
-      dimensions,
-      overallRisk,
-      reasoning: buildReasoning('Matched known pattern', historyNote),
-      suggestedStrategy: selectStrategy(overallRisk, dimensions.environment),
-    };
-  }
-
-  let dimensions: RiskDimensions;
-  let reasoning = 'Using heuristic fallback';
-
-  if (model) {
-    try {
-      const llmResult = await assessRiskWithLLM(
-        request,
-        systemContext,
-        model,
-      );
-      dimensions = applyDefaults(llmResult, environment);
-      reasoning = llmResult.reasoning;
-    } catch (error) {
-      dimensions = applyDefaults({}, environment);
-      reasoning = `LLM risk assessment failed: ${(
-        error as Error
-      ).message}. Using defaults.`;
-    }
-  } else {
-    dimensions = applyDefaults({}, environment);
-    reasoning = 'No model available; using default risk profile.';
-  }
-
-  const historical = applyHistoricalAdjustment(dimensions, command);
-  const overallRisk = calculateOverallRisk(historical.dimensions);
+  // Disabled: LLM risk assessment for Stable Core v0.21 (performance)
+  // Always use fast heuristic path
+  const dimensionsWithDefaults = applyDefaults(heuristic || {}, environment);
+  const { dimensions, historyNote } = applyHistoricalAdjustment(
+    dimensionsWithDefaults,
+    command,
+  );
+  const overallRisk = calculateOverallRisk(dimensions);
+  const baseReasoning = heuristic?.confidence && heuristic.confidence > 80
+    ? 'Matched known pattern'
+    : 'Using heuristic fallback';
 
   return {
-    dimensions: historical.dimensions,
+    dimensions,
     overallRisk,
-    reasoning: buildReasoning(reasoning, historical.historyNote),
-    suggestedStrategy: selectStrategy(
-      overallRisk,
-      historical.dimensions.environment,
-    ),
+    reasoning: buildReasoning(baseReasoning, historyNote),
+    suggestedStrategy: selectStrategy(overallRisk, dimensions.environment),
   };
 }
