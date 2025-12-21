@@ -180,6 +180,26 @@ function buildReasoning(base: string, historyNote?: string): string {
   return base;
 }
 
+/**
+ * Assess the risk of executing a command.
+ * 
+ * NOTE: LLM-based risk assessment is DISABLED in Stable Core v0.21.0 for performance.
+ * 
+ * Previously, this function would:
+ * 1. Check heuristic patterns for high-confidence matches
+ * 2. Fall back to LLM assessment via assessRiskWithLLM() if no match
+ * 3. Apply historical adjustments
+ * 
+ * Current behavior (simplified):
+ * - Uses only fast heuristic-based assessment
+ * - No LLM calls → no JSON parsing errors → no latency
+ * - Unknown commands get sensible default risk values
+ * 
+ * To re-enable LLM assessment (if JSON parsing is fixed):
+ * - Uncomment the block below marked "DISABLED LLM ASSESSMENT"
+ * - Comment out the current fast-path implementation
+ * - Ensure RISK_ASSESSMENT_PROMPT returns valid JSON
+ */
 export async function assessRisk(
   request: string,
   command: string | null,
@@ -189,8 +209,10 @@ export async function assessRisk(
   const environment = detectEnvironment();
   const heuristic = command ? assessRiskHeuristic(command) : null;
 
-  // Disabled: LLM risk assessment for Stable Core v0.21 (performance)
-  // Always use fast heuristic path
+  // ============================================================================
+  // FAST-PATH IMPLEMENTATION (Stable Core v0.21.0)
+  // ============================================================================
+  // Always use fast heuristic path - no LLM calls
   const dimensionsWithDefaults = applyDefaults(heuristic || {}, environment);
   const { dimensions, historyNote } = applyHistoricalAdjustment(
     dimensionsWithDefaults,
@@ -207,4 +229,68 @@ export async function assessRisk(
     reasoning: buildReasoning(baseReasoning, historyNote),
     suggestedStrategy: selectStrategy(overallRisk, dimensions.environment),
   };
+
+  // ============================================================================
+  // DISABLED LLM ASSESSMENT (Original Implementation)
+  // ============================================================================
+  // Disabled due to: JSON parsing errors, latency, unnecessary complexity
+  // The LLM would return markdown instead of JSON, causing:
+  // "Failed to parse risk assessment response: Unexpected token '*'..."
+  //
+  // To re-enable:
+  // 1. Comment out the FAST-PATH block above
+  // 2. Uncomment this block
+  // 3. Fix RISK_ASSESSMENT_PROMPT to enforce JSON output
+  // 4. Test thoroughly with various commands
+  //
+  // if (heuristic && heuristic.confidence && heuristic.confidence > 80) {
+  //   const dimensionsWithDefaults = applyDefaults(heuristic, environment);
+  //   const { dimensions, historyNote } = applyHistoricalAdjustment(
+  //     dimensionsWithDefaults,
+  //     command,
+  //   );
+  //   const overallRisk = calculateOverallRisk(dimensions);
+  //   return {
+  //     dimensions,
+  //     overallRisk,
+  //     reasoning: buildReasoning('Matched known pattern', historyNote),
+  //     suggestedStrategy: selectStrategy(overallRisk, dimensions.environment),
+  //   };
+  // }
+  //
+  // let dimensions: RiskDimensions;
+  // let reasoning = 'Using heuristic fallback';
+  //
+  // if (model) {
+  //   try {
+  //     const llmResult = await assessRiskWithLLM(
+  //       request,
+  //       systemContext,
+  //       model,
+  //     );
+  //     dimensions = applyDefaults(llmResult, environment);
+  //     reasoning = llmResult.reasoning;
+  //   } catch (error) {
+  //     dimensions = applyDefaults({}, environment);
+  //     reasoning = `LLM risk assessment failed: ${(
+  //       error as Error
+  //     ).message}. Using defaults.`;
+  //   }
+  // } else {
+  //   dimensions = applyDefaults({}, environment);
+  //   reasoning = 'No model available; using default risk profile.';
+  // }
+  //
+  // const historical = applyHistoricalAdjustment(dimensions, command);
+  // const overallRisk = calculateOverallRisk(historical.dimensions);
+  //
+  // return {
+  //   dimensions: historical.dimensions,
+  //   overallRisk,
+  //   reasoning: buildReasoning(reasoning, historical.historyNote),
+  //   suggestedStrategy: selectStrategy(
+  //     overallRisk,
+  //     historical.dimensions.environment,
+  //   ),
+  // };
 }
