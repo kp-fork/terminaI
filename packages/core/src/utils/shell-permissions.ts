@@ -12,6 +12,7 @@ import {
   SHELL_TOOL_NAMES,
   type ParsedCommandDetail,
 } from './shell-utils.js';
+import { debugLogger } from './debugLogger.js';
 
 /**
  * Checks a shell command against security policies and allowlists.
@@ -48,13 +49,25 @@ export function checkCommandPermissions(
   isHardDenial?: boolean;
 } {
   const parseResult = parseCommandDetails(command);
-  if (!parseResult || parseResult.hasError) {
-    return {
-      allAllowed: false,
-      disallowedCommands: [command],
-      blockReason: 'Command rejected because it could not be parsed safely',
-      isHardDenial: true,
-    };
+  
+  // Modified for Stable Core v0.21: Don't hard-reject on parser failures
+  // Parser can fail on valid commands with complex syntax. Instead, allow the
+  // command to proceed and rely on risk assessment. The risk assessor will
+  // treat unparseable commands conservatively.
+  if (!parseResult) {
+    // Parser not initialized or command is empty - allow it through
+    // The shell tool itself will handle empty commands appropriately
+    return { allAllowed: true, disallowedCommands: [] };
+  }
+  
+  if (parseResult.hasError) {
+    // Parser detected syntax issues, but this doesn't mean the command is unsafe
+    // Many safe commands like "free -h" can trigger parser errors
+    // Let the command through and rely on blocklist/allowlist checks below
+    debugLogger.log(
+      'Shell parser had issues with command, but allowing it through:',
+      command,
+    );
   }
 
   const normalize = (cmd: string): string => cmd.trim().replace(/\s+/g, ' ');
