@@ -20,7 +20,7 @@ import { removeCommand } from './remove.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { GEMINI_DIR, debugLogger } from '@google/gemini-cli-core';
+import { GEMINI_DIR, debugLogger } from '@terminai/core';
 
 vi.mock('fs/promises', () => ({
   readFile: vi.fn(),

@@ -12,7 +12,7 @@ import {
   Logger,
   uiTelemetryService,
   type Config,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { CommandService } from './services/CommandService.js';
 import { FileCommandLoader } from './services/FileCommandLoader.js';
 import { McpPromptLoader } from './services/McpPromptLoader.js';

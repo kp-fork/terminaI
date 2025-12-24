@@ -19,7 +19,7 @@ import type {
   Config,
   ExtensionsStartingEvent,
   ExtensionsStoppingEvent,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import {
   GitService,
   Logger,
@@ -29,7 +29,7 @@ import {
   ToolConfirmationOutcome,
   Storage,
   IdeClient,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import type {
   Message,

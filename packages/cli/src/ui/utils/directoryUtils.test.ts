@@ -10,9 +10,8 @@ import { expandHomeDir } from './directoryUtils.js';
 import type * as osActual from 'node:os';
 import * as path from 'node:path';
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@terminai/core')>();
   return {
     ...original,
     loadServerHierarchicalMemory: vi.fn().mockResolvedValue({

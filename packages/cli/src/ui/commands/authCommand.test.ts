@@ -11,8 +11,8 @@ import { type CommandContext } from './types.js';
 import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
 import { SettingScope } from '../../config/settings.js';
 
-vi.mock('@google/gemini-cli-core', async () => {
-  const actual = await vi.importActual('@google/gemini-cli-core');
+vi.mock('@terminai/core', async () => {
+  const actual = await vi.importActual('@terminai/core');
   return {
     ...actual,
     clearCachedCredentialFile: vi.fn().mockResolvedValue(undefined),
@@ -74,9 +74,7 @@ describe('authCommand', () => {
       const logoutCommand = authCommand.subCommands?.[1];
       expect(logoutCommand?.name).toBe('logout');
 
-      const { clearCachedCredentialFile } = await import(
-        '@google/gemini-cli-core'
-      );
+      const { clearCachedCredentialFile } = await import('@terminai/core');
 
       await logoutCommand!.action!(mockContext, '');
 

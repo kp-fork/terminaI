@@ -1,5 +1,8 @@
 # Voice Guide
 
+> [!NOTE] Voice Mode is currently in **beta**. Full offline STT support is
+> coming soon.
+
 terminaI supports offline voice (download once → offline) via the Desktop app.
 
 ## Overview

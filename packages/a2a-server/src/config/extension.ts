@@ -12,7 +12,7 @@ import {
   type MCPServerConfig,
   type ExtensionInstallMetadata,
   type GeminiCLIExtension,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';

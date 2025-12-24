@@ -65,7 +65,7 @@ import {
   generateSummary,
   sessionNotifier,
   type SessionEvent,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { validateAuthMethod } from '../config/auth.js';
 import process from 'node:process';
 import { useHistory } from './hooks/useHistoryManager.js';

@@ -12,14 +12,13 @@ import {
   logIdeConnection,
   logCliConfiguration,
   type Config,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { performInitialAuth } from './auth.js';
 import { validateTheme } from './theme.js';
 import { type LoadedSettings } from '../config/settings.js';
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@terminai/core')>();
   return {
     ...actual,
     IdeClient: {

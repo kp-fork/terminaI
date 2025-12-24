@@ -43,9 +43,9 @@ import {
   type SettingsValue,
   TOGGLE_TYPES,
 } from '../../config/settingsSchema.js';
-import { debugLogger } from '@google/gemini-cli-core';
+import { debugLogger } from '@terminai/core';
 import { keyMatchers, Command } from '../keyMatchers.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@terminai/core';
 import { useUIState } from '../contexts/UIStateContext.js';
 import { useTextBuffer } from './shared/text-buffer.js';
 import { TextInput } from './shared/TextInput.js';

@@ -7,10 +7,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { ToolConfirmationMessage } from './ToolConfirmationMessage.js';
-import type {
-  ToolCallConfirmationDetails,
-  Config,
-} from '@google/gemini-cli-core';
+import type { ToolCallConfirmationDetails, Config } from '@terminai/core';
 import {
   renderWithProviders,
   createMockSettings,

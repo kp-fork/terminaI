@@ -7,7 +7,7 @@
 
 import { Text } from 'ink';
 import { theme } from '../semantic-colors.js';
-import { tokenLimit } from '@google/gemini-cli-core';
+import { tokenLimit } from '@terminai/core';
 
 export const ContextUsageDisplay = ({
   promptTokenCount,

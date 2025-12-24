@@ -30,7 +30,7 @@ import {
   type AnsiOutput,
   EDIT_TOOL_NAMES,
   processRestorableToolCalls,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import type { RequestContext } from '@a2a-js/sdk/server';
 import { type ExecutionEventBus } from '@a2a-js/sdk/server';
 import type {

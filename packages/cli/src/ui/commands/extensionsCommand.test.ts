@@ -5,10 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  ExtensionLoader,
-  GeminiCLIExtension,
-} from '@google/gemini-cli-core';
+import type { ExtensionLoader, GeminiCLIExtension } from '@terminai/core';
 import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
 import { MessageType } from '../types.js';
 import {

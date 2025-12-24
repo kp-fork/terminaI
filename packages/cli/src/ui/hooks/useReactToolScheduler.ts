@@ -20,8 +20,8 @@ import type {
   ToolCall,
   Status as CoreStatus,
   EditorType,
-} from '@google/gemini-cli-core';
-import { CoreToolScheduler, debugLogger } from '@google/gemini-cli-core';
+} from '@terminai/core';
+import { CoreToolScheduler, debugLogger } from '@terminai/core';
 import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
 import type {
   HistoryItemToolGroup,

@@ -17,12 +17,11 @@ import {
   refreshServerHierarchicalMemory,
   SimpleExtensionLoader,
   type FileDiscoveryService,
-} from '@google/gemini-cli-core';
-import type { LoadServerHierarchicalMemoryResponse } from '@google/gemini-cli-core/index.js';
+} from '@terminai/core';
+import type { LoadServerHierarchicalMemoryResponse } from '@terminai/core/index.js';
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@terminai/core')>();
   return {
     ...original,
     getErrorMessage: vi.fn((error: unknown) => {

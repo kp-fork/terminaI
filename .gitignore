@@ -58,4 +58,4 @@ patch_output.log
 .gemini-clipboard/
 
 # Local scratch files (not committed)
-.local/
+# .local/

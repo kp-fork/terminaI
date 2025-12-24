@@ -8,11 +8,7 @@
 import { render } from '../../test-utils/render.js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PrivacyNotice } from './PrivacyNotice.js';
-import type {
-  AuthType,
-  Config,
-  ContentGeneratorConfig,
-} from '@google/gemini-cli-core';
+import type { AuthType, Config, ContentGeneratorConfig } from '@terminai/core';
 
 // Mock child components
 vi.mock('./GeminiPrivacyNotice.js', async () => {

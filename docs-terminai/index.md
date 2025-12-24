@@ -18,7 +18,8 @@ to sysadmins — built on a stable upstream core.
   (Desktop + browser `/ui` use this)
 - **Authentication**: Model access via OAuth or `GEMINI_API_KEY`; remote clients
   via A2A token + replay signatures
-- **Safety**: Deterministic approval ladder (A/B/C) with Level C PIN
+- **Safety**: Deterministic approval ladder (A/B/C) with Level C PIN protection
+  (`security.approvalPin`)
 - **🔧 Extensible**: MCP (Model Context Protocol) ecosystem support
 
 ## Quick Links
@@ -42,6 +43,7 @@ to sysadmins — built on a stable upstream core.
 - [A2A Protocol](./a2a.md)
 - [Case studies](./case-studies.md)
 - [Developer API reference](./api-reference.md)
+- [Comprehensive Use Case Commands](./use_cases.md)
 
 ## Architecture
 
@@ -50,7 +52,8 @@ terminaI extends Gemini CLI with:
 - **System Awareness**: CPU, memory, disk, and process monitoring
 - **Process Orchestration**: Background process management (`/sessions`)
 - **Voice**: CLI TTS spoken replies + interruption primitives; Desktop offline
-  STT+TTS with barge-in
+  STT+TTS with barge-in (`useVoiceTurnTaking` state machine)
+- **Accessibility**: ARIA-compliant desktop interface
 - **Web Remote**: A2A server for local/remote clients (Desktop, browser `/ui`,
   custom)
 

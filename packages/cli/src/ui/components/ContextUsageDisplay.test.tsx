@@ -9,7 +9,7 @@ import { render } from '../../test-utils/render.js';
 import { ContextUsageDisplay } from './ContextUsageDisplay.js';
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('@google/gemini-cli-core', () => ({
+vi.mock('@terminai/core', () => ({
   tokenLimit: () => 10000,
 }));
 

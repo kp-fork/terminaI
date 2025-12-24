@@ -11,7 +11,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { Text } from 'ink';
 import { type UIState } from '../contexts/UIStateContext.js';
 import { type RestartReason } from '../hooks/useIdeTrustListener.js';
-import { type IdeInfo } from '@google/gemini-cli-core';
+import { type IdeInfo } from '@terminai/core';
 import { type ShellConfirmationRequest } from '../types.js';
 
 // Mock child components

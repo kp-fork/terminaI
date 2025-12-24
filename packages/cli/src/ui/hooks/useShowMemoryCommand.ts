@@ -7,7 +7,7 @@
 
 import type { Message } from '../types.js';
 import { MessageType } from '../types.js';
-import { debugLogger, type Config } from '@google/gemini-cli-core';
+import { debugLogger, type Config } from '@terminai/core';
 import type { LoadedSettings } from '../../config/settings.js';
 
 export function createShowMemoryAction(

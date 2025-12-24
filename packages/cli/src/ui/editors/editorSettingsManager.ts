@@ -10,7 +10,7 @@ import {
   checkHasEditorType,
   type EditorType,
   EDITOR_DISPLAY_NAMES,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 
 export interface EditorDisplay {
   name: string;

@@ -24,7 +24,7 @@ import type {
   UserTierId,
   IdeInfo,
   FallbackIntent,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import type { DOMElement } from 'ink';
 import type { SessionStatsState } from '../contexts/SessionContext.js';
 import type { ExtensionUpdateState } from '../state/extensions.js';

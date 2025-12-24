@@ -6,7 +6,7 @@
  */
 
 import React, { useContext } from 'react';
-import { type Config } from '@google/gemini-cli-core';
+import { type Config } from '@terminai/core';
 
 export const ConfigContext = React.createContext<Config | undefined>(undefined);
 

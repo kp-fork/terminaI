@@ -13,7 +13,7 @@ import {
   getScopedEnvContents,
 } from '../../config/extensions/extensionSettings.js';
 import { getExtensionAndManager } from './utils.js';
-import { debugLogger } from '@google/gemini-cli-core';
+import { debugLogger } from '@terminai/core';
 import { exitCli } from '../utils.js';
 
 // --- SET COMMAND ---

@@ -23,17 +23,16 @@ import {
   type CompletedToolCall,
   ApprovalMode,
   ToolConfirmationOutcome,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { createMockConfig } from '../utils/testing_utils.js';
 import type { ExecutionEventBus, RequestContext } from '@a2a-js/sdk/server';
 import { CoderAgentEvent } from '../types.js';
-import type { ToolCall } from '@google/gemini-cli-core';
+import type { ToolCall } from '@terminai/core';
 
 const mockProcessRestorableToolCalls = vi.hoisted(() => vi.fn());
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@terminai/core')>();
   return {
     ...original,
     processRestorableToolCalls: mockProcessRestorableToolCalls,
@@ -144,7 +143,7 @@ describe('Task', () => {
       const requests: ToolCallRequestInfo[] = [
         {
           callId: '1',
-          name: 'replace',
+          name: 'edit_file',
           args: {
             file_path: 'test.txt',
             old_string: 'old',
@@ -185,7 +184,7 @@ describe('Task', () => {
       const requests: ToolCallRequestInfo[] = [
         {
           callId: '1',
-          name: 'replace',
+          name: 'edit_file',
           args: {
             file_path: 'test.txt',
             old_string: 'old',
@@ -196,7 +195,7 @@ describe('Task', () => {
         },
         {
           callId: '2',
-          name: 'write_file',
+          name: 'smart_edit_file',
           args: { file_path: 'test2.txt', content: 'new content' },
           isClientInitiated: false,
           prompt_id: 'prompt-id-2',

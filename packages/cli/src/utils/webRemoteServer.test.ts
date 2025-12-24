@@ -14,7 +14,7 @@ const loadRemoteAuthStateSpy = vi.fn();
 const saveRemoteAuthStateSpy = vi.fn();
 const getRemoteAuthPathSpy = vi.fn(() => '/tmp/web-remote-auth.json');
 
-vi.mock('@google/gemini-cli-a2a-server', () => ({
+vi.mock('@terminai/a2a-server', () => ({
   createApp: createAppSpy,
   updateCoderAgentCardUrl: updateCoderAgentCardUrlSpy,
   createRemoteAuthState: createRemoteAuthStateSpy,

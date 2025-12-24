@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { FileSystemService } from '@google/gemini-cli-core';
+import type { FileSystemService } from '@terminai/core';
 import type * as acp from '@agentclientprotocol/sdk';
 
 /**

@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { sessionsCommand } from './sessionsCommand.js';
-import { PROCESS_MANAGER_TOOL_NAME } from '@google/gemini-cli-core';
+import { PROCESS_MANAGER_TOOL_NAME } from '@terminai/core';
 import type { CommandContext } from './types.js';
 
 describe('sessionsCommand', () => {

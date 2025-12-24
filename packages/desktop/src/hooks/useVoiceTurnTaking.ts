@@ -9,7 +9,17 @@ import { useEffect, useRef, useState } from 'react';
 import { createVoiceStateMachine, type VoiceState } from '../voice/voiceState';
 
 /**
- * Hook for managing voice turn-taking with barge-in support
+ * Hook for managing voice turn-taking with barge-in support.
+ * Implements state machine: IDLE ↔ LISTENING ↔ PROCESSING ↔ SPEAKING.
+ * Barge-in: User speech interrupts TTS by transitioning to LISTENING state.
+ * @returns {Object} Voice state and control methods
+ * @returns {VoiceState} state - Current voice state
+ * @returns {function} startListening - Start listening for speech
+ * @returns {function} stopListening - Stop listening
+ * @returns {function} startSpeaking - Start TTS, returns abort signal
+ * @returns {function} stopSpeaking - Stop TTS
+ * @returns {function} handleUserInterrupt - Handle user barge-in
+ * @returns {function} handleSttResult - Handle STT completion
  */
 export function useVoiceTurnTaking() {
   const stateMachine = useRef(createVoiceStateMachine());

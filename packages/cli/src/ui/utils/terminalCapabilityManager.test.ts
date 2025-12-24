@@ -15,7 +15,7 @@ vi.mock('node:fs', () => ({
 }));
 
 // Mock core
-vi.mock('@google/gemini-cli-core', () => ({
+vi.mock('@terminai/core', () => ({
   debugLogger: {
     log: vi.fn(),
     warn: vi.fn(),

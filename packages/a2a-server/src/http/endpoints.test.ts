@@ -25,7 +25,7 @@ import {
   listenOnLocalhost,
   closeServer,
 } from '../utils/testing_utils.js';
-import { debugLogger, type Config } from '@google/gemini-cli-core';
+import { debugLogger, type Config } from '@terminai/core';
 
 // Mock the logger to avoid polluting test output
 // Comment out to help debug

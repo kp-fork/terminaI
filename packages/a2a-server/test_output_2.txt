@@ -1,5 +1,5 @@
 
-> @google/gemini-cli-a2a-server@0.21.0-nightly.20251219.70696e364 test
+> @terminai/a2a-server@0.21.0-nightly.20251219.70696e364 test
 > vitest run src/http/app.test.ts
 
 
@@ -372,7 +372,7 @@ JUNIT report written to /home/profharita/Code/termAI/packages/a2a-server/junit.x
 npm error Lifecycle script `test` failed with error:
 npm error code 1
 npm error path /home/profharita/Code/termAI/packages/a2a-server
-npm error workspace @google/gemini-cli-a2a-server@0.21.0-nightly.20251219.70696e364
+npm error workspace @terminai/a2a-server@0.21.0-nightly.20251219.70696e364
 npm error location /home/profharita/Code/termAI/packages/a2a-server
 npm error command failed
 npm error command sh -c vitest run src/http/app.test.ts

@@ -16,7 +16,7 @@ import {
 import { renderHook } from '../../test-utils/render.js';
 import { useBanner } from './useBanner.js';
 import { persistentState } from '../../utils/persistentState.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@terminai/core';
 import crypto from 'node:crypto';
 
 vi.mock('../../utils/persistentState.js', () => ({

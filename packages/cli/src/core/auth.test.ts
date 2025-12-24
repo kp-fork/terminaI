@@ -7,9 +7,9 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { performInitialAuth } from './auth.js';
-import { type Config } from '@google/gemini-cli-core';
+import { type Config } from '@terminai/core';
 
-vi.mock('@google/gemini-cli-core', () => ({
+vi.mock('@terminai/core', () => ({
   AuthType: {
     OAUTH: 'oauth',
   },

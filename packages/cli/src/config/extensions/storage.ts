@@ -12,7 +12,7 @@ import {
   EXTENSION_SETTINGS_FILENAME,
   EXTENSIONS_CONFIG_FILENAME,
 } from './variables.js';
-import { Storage } from '@google/gemini-cli-core';
+import { Storage } from '@terminai/core';
 
 export class ExtensionStorage {
   private readonly extensionName: string;

@@ -11,7 +11,7 @@ import type {
   ResumedSessionData,
   CompletedToolCall,
   UserFeedbackPayload,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { isSlashCommand } from './ui/utils/commandUtils.js';
 import type { LoadedSettings } from './config/settings.js';
 import {
@@ -29,7 +29,7 @@ import {
   CoreEvent,
   createWorkingStdio,
   recordToolCallInteractions,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 
 import type { Content, Part } from '@google/genai';
 import readline from 'node:readline';

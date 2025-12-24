@@ -11,7 +11,7 @@ import {
   type CodeAssistServer,
   UserTierId,
   getCodeAssistServer,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 
 export interface PrivacyState {
   isLoading: boolean;

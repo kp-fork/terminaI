@@ -8,12 +8,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getStartupWarnings } from './startupWarnings.js';
 import * as fs from 'node:fs/promises';
-import { getErrorMessage } from '@google/gemini-cli-core';
+import { getErrorMessage } from '@terminai/core';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@terminai/core')>();
   return {
     ...actual,
     getErrorMessage: vi.fn(),

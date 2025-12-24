@@ -13,7 +13,7 @@ import {
   getRemoteAuthPath,
   loadRemoteAuthState,
   saveRemoteAuthState,
-} from '@google/gemini-cli-a2a-server';
+} from '@terminai/a2a-server';
 import crypto from 'node:crypto';
 import net from 'node:net';
 import path from 'node:path';
@@ -107,18 +107,23 @@ export async function startWebRemoteServer(
   updateCoderAgentCardUrl(actualPort, options.host);
 
   // Build the user-facing URL using the token from authResult
+  // NOTE: Token in URL is intentional for QR code sharing.
+  // For production use, rotate tokens and use HTTPS.
   const token = authResult.token;
   const url = `http://${options.host}:${actualPort}/ui${
     token ? `?token=${encodeURIComponent(token)}` : ''
   }`;
 
   // Render QR code if the dependency is available, otherwise fall back to text.
+  type QRCodeModule = {
+    generate: (text: string, opts?: { small?: boolean }) => void;
+  };
+
   try {
     const module = await import('qrcode-terminal');
     const qrcode = module?.default ?? (module as { generate?: unknown });
     if (qrcode && typeof qrcode.generate === 'function') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (qrcode as any).generate(url, { small: true });
+      (qrcode as QRCodeModule).generate(url, { small: true });
     }
   } catch {
     // Ignore missing dependency; QR is optional.

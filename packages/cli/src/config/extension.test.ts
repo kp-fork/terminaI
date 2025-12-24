@@ -25,7 +25,7 @@ import {
   ExtensionEnableEvent,
   GEMINI_DIR,
   KeychainTokenStorage,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { loadSettings, SettingScope } from './settings.js';
 import {
   isWorkspaceTrusted,
@@ -97,9 +97,8 @@ const mockLogExtensionInstallEvent = vi.hoisted(() => vi.fn());
 const mockLogExtensionUninstall = vi.hoisted(() => vi.fn());
 const mockLogExtensionUpdateEvent = vi.hoisted(() => vi.fn());
 const mockLogExtensionDisable = vi.hoisted(() => vi.fn());
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@terminai/core')>();
   return {
     ...actual,
     logExtensionEnable: mockLogExtensionEnable,

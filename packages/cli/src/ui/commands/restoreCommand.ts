@@ -15,7 +15,7 @@ import {
   getTruncatedCheckpointNames,
   performRestore,
   type ToolCallData,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import {
   type CommandContext,
   type SlashCommand,

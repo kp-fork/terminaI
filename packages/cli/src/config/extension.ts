@@ -5,10 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  MCPServerConfig,
-  ExtensionInstallMetadata,
-} from '@google/gemini-cli-core';
+import type { MCPServerConfig, ExtensionInstallMetadata } from '@terminai/core';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { INSTALL_METADATA_FILENAME } from './extensions/variables.js';

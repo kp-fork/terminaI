@@ -22,8 +22,8 @@ import {
   makeFakeConfig,
   debugLogger,
   ExitCodes,
-} from '@google/gemini-cli-core';
-import type { Config } from '@google/gemini-cli-core';
+} from '@terminai/core';
+import type { Config } from '@terminai/core';
 import * as auth from './config/auth.js';
 import { type LoadedSettings } from './config/settings.js';
 

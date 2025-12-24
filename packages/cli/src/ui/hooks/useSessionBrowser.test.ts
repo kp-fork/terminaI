@@ -15,11 +15,7 @@ import {
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import { getSessionFiles, type SessionInfo } from '../../utils/sessionUtils.js';
-import type {
-  Config,
-  ConversationRecord,
-  MessageRecord,
-} from '@google/gemini-cli-core';
+import type { Config, ConversationRecord, MessageRecord } from '@terminai/core';
 
 // Mock modules
 vi.mock('fs/promises');

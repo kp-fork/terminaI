@@ -96,6 +96,7 @@ function App() {
             className="btn btn-ghost"
             onClick={() => setIsPaletteOpen(true)}
             title="Command Palette (⌘K)"
+            aria-label="Open command palette"
             style={{
               fontSize: 'var(--text-xs)',
               padding: 'var(--space-2) var(--space-3)',
@@ -107,6 +108,7 @@ function App() {
             className="btn btn-ghost"
             onClick={() => setIsSettingsOpen(true)}
             title="Settings (⌘,)"
+            aria-label="Open settings"
             style={{ fontSize: 'var(--text-base)', padding: 'var(--space-2)' }}
           >
             ⚙️
@@ -115,7 +117,7 @@ function App() {
       </header>
 
       {/* Main content area */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0" role="main">
         <SplitLayout
           leftPanel={
             <ChatView

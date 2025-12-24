@@ -14,7 +14,7 @@ import {
 } from './consent.js';
 import type { ConfirmationRequest } from '../../ui/types.js';
 import type { ExtensionConfig } from '../extension.js';
-import { debugLogger } from '@google/gemini-cli-core';
+import { debugLogger } from '@terminai/core';
 
 const mockReadline = vi.hoisted(() => ({
   createInterface: vi.fn().mockReturnValue({
@@ -29,9 +29,8 @@ vi.mock('node:readline', () => ({
   createInterface: mockReadline.createInterface,
 }));
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@terminai/core')>();
   return {
     ...actual,
     debugLogger: {

@@ -22,6 +22,6 @@ if (!process.env['GEMINI_SYSTEM_MD']) {
 process.env['GEMINI_CLI_NO_RELAUNCH'] = 'true';
 
 const require = createRequire(import.meta.url);
-const cliEntry = require.resolve('@google/gemini-cli/dist/index.js');
+const cliEntry = require.resolve('@terminai/cli/dist/index.js');
 
 await import(cliEntry);

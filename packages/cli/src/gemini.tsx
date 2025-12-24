@@ -65,7 +65,7 @@ import {
   fireSessionEndHook,
   getVersion,
   ApprovalMode,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import {
   initializeApp,
   type InitializationResult,
@@ -485,7 +485,7 @@ export async function main() {
     }
 
     const webRemoteHost = argv.webRemoteHost ?? '127.0.0.1';
-    const webRemotePort = argv.webRemotePort ?? 0;
+    const webRemotePort = argv.webRemotePort ?? 41242;
     const webRemoteAllowedOrigins = argv.webRemoteAllowedOrigins ?? [];
     const additionalStartupWarnings: string[] = [];
 
