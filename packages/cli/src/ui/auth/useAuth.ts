@@ -7,13 +7,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { LoadedSettings } from '../../config/settings.js';
-import {
-  AuthType,
-  type Config,
-  loadApiKey,
-  debugLogger,
-} from '@google/gemini-cli-core';
-import { getErrorMessage } from '@google/gemini-cli-core';
+import { AuthType, type Config, loadApiKey, debugLogger } from '@terminai/core';
+import { getErrorMessage } from '@terminai/core';
 import { AuthState } from '../types.js';
 import { validateAuthMethod } from '../../config/auth.js';
 

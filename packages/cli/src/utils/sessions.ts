@@ -9,7 +9,7 @@ import {
   ChatRecordingService,
   generateSummary,
   type Config,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import {
   formatRelativeTime,
   SessionSelector,

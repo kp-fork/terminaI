@@ -21,7 +21,7 @@ import { checkForExtensionUpdate } from './github.js';
 import { loadInstallMetadata } from '../extension.js';
 import * as fs from 'node:fs';
 import type { ExtensionManager } from '../extension-manager.js';
-import type { GeminiCLIExtension } from '@google/gemini-cli-core';
+import type { GeminiCLIExtension } from '@terminai/core';
 
 // Mock dependencies
 vi.mock('./storage.js', () => ({
@@ -94,7 +94,7 @@ describe('Extension Update Logic', () => {
     it('should throw error and set state to ERROR if install metadata type is unknown', async () => {
       vi.mocked(loadInstallMetadata).mockReturnValue({
         type: undefined,
-      } as unknown as import('@google/gemini-cli-core').ExtensionInstallMetadata);
+      } as unknown as import('@terminai/core').ExtensionInstallMetadata);
 
       await expect(
         updateExtension(

@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { MCPServerConfig } from '@google/gemini-cli-core';
-import { MCPServerStatus } from '@google/gemini-cli-core';
+import type { MCPServerConfig } from '@terminai/core';
+import { MCPServerStatus } from '@terminai/core';
 import { Box, Text } from 'ink';
 import type React from 'react';
 import { theme } from '../../semantic-colors.js';

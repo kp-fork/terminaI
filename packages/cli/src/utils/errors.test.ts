@@ -6,8 +6,8 @@
  */
 
 import { vi, type MockInstance } from 'vitest';
-import type { Config } from '@google/gemini-cli-core';
-import { OutputFormat, FatalInputError } from '@google/gemini-cli-core';
+import type { Config } from '@terminai/core';
+import { OutputFormat, FatalInputError } from '@terminai/core';
 import {
   getErrorMessage,
   handleError,
@@ -17,9 +17,8 @@ import {
 } from './errors.js';
 
 // Mock the core modules
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@terminai/core')>();
 
   return {
     ...original,

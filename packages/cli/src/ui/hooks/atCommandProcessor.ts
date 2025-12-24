@@ -12,14 +12,14 @@ import type {
   AnyToolInvocation,
   Config,
   DiscoveredMCPResource,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import {
   debugLogger,
   getErrorMessage,
   isNodeError,
   unescapePath,
   ReadManyFilesTool,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { Buffer } from 'node:buffer';
 import type { HistoryItem, IndividualToolCallDisplay } from '../types.js';
 import { ToolCallStatus } from '../types.js';

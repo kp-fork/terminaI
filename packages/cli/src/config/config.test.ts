@@ -17,10 +17,10 @@ import {
   WEB_FETCH_TOOL_NAME,
   type ExtensionLoader,
   debugLogger,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { loadCliConfig, parseArguments, type CliArgs } from './config.js';
 import type { Settings } from './settings.js';
-import * as ServerConfig from '@google/gemini-cli-core';
+import * as ServerConfig from '@terminai/core';
 import { isWorkspaceTrusted } from './trustedFolders.js';
 import { ExtensionManager } from './extension-manager.js';
 import { RESUME_LATEST } from '../utils/sessionUtils.js';
@@ -85,10 +85,9 @@ vi.mock('read-package-up', () => ({
   ),
 }));
 
-vi.mock('@google/gemini-cli-core', async () => {
-  const actualServer = await vi.importActual<typeof ServerConfig>(
-    '@google/gemini-cli-core',
-  );
+vi.mock('@terminai/core', async () => {
+  const actualServer =
+    await vi.importActual<typeof ServerConfig>('@terminai/core');
   return {
     ...actualServer,
     IdeClient: {

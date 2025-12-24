@@ -12,7 +12,7 @@ import {
   SessionEndReason,
   SessionStartSource,
   flushTelemetry,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import type { SlashCommand } from './types.js';
 import { CommandKind } from './types.js';
 import { randomUUID } from 'node:crypto';

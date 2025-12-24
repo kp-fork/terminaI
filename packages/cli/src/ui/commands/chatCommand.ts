@@ -19,7 +19,7 @@ import {
   decodeTagName,
   type MessageActionReturn,
   INITIAL_HISTORY_LENGTH,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import path from 'node:path';
 import type {
   HistoryItemWithoutId,

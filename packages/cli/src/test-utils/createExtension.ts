@@ -10,7 +10,7 @@ import * as path from 'node:path';
 import {
   type MCPServerConfig,
   type ExtensionInstallMetadata,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import {
   EXTENSIONS_CONFIG_FILENAME,
   INSTALL_METADATA_FILENAME,

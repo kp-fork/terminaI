@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import type { Config, ResumedSessionData } from '@google/gemini-cli-core';
+import type { Config, ResumedSessionData } from '@terminai/core';
 import type { Part } from '@google/genai';
 import type { HistoryItemWithoutId } from '../types.js';
 import type { UseHistoryManagerReturn } from './useHistoryManager.js';

@@ -23,10 +23,48 @@ type JsonRpcResponse = {
   error?: any;
 };
 
+const CODER_KIND = {
+  TEXT_CONTENT: 'text-content',
+  TOOL_CALL_CONFIRMATION: 'tool-call-confirmation',
+  TOOL_CALL_UPDATE: 'tool-call-update',
+} as const;
+
 function normalizeBaseUrl(input: string): string {
   const trimmed = input.trim();
   if (!trimmed) return '';
   return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+}
+
+async function postToAgent(
+  baseUrl: string,
+  token: string,
+  body: Record<string, unknown>,
+  abortSignal: AbortSignal,
+): Promise<ReadableStream<Uint8Array>> {
+  const bodyString = JSON.stringify(body);
+  const signedHeaders = await buildSignedHeaders({
+    token,
+    method: 'POST',
+    pathWithQuery: '/',
+    bodyString,
+  });
+
+  const res = await fetch(`${baseUrl}/`, {
+    method: 'POST',
+    headers: {
+      ...signedHeaders,
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    },
+    body: bodyString,
+    signal: abortSignal,
+  });
+
+  if (!res.ok || !res.body) {
+    throw new Error(`Agent request failed: ${res.status} ${res.statusText}`);
+  }
+
+  return res.body;
 }
 
 async function buildSignedHeaders(input: {
@@ -51,6 +89,17 @@ async function buildSignedHeaders(input: {
   };
 }
 
+/**
+ * Hook for managing CLI process communication with A2A backend.
+ * @returns {Object} Hook state and methods
+ * @returns {Message[]} messages - Array of chat messages
+ * @returns {boolean} isConnected - Whether connected to agent
+ * @returns {boolean} isProcessing - Whether agent is processing
+ * @returns {string | null} activeTerminalSession - Active terminal session ID
+ * @returns {function} sendMessage - Send message to agent
+ * @returns {function} respondToConfirmation - Respond to tool confirmation
+ * @returns {function} closeTerminal - Close terminal session
+ */
 export function useCliProcess() {
   const agentUrl = useSettingsStore((s) => s.agentUrl);
   const agentToken = useSettingsStore((s) => s.agentToken);
@@ -156,7 +205,7 @@ export function useCliProcess() {
 
       const coderKind = result.metadata?.coderAgent?.kind;
 
-      if (coderKind === 'text-content') {
+      if (coderKind === CODER_KIND.TEXT_CONTENT) {
         const parts = result.status?.message?.parts ?? [];
         for (const part of parts) {
           if (part?.kind === 'text' && typeof part.text === 'string') {
@@ -165,7 +214,7 @@ export function useCliProcess() {
         }
       }
 
-      if (coderKind === 'tool-call-confirmation') {
+      if (coderKind === CODER_KIND.TOOL_CALL_CONFIRMATION) {
         const part = result.status?.message?.parts?.find(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (p: any) => p?.kind === 'data' && p.data,
@@ -215,6 +264,24 @@ export function useCliProcess() {
               signal,
               volume: Math.max(0, Math.min(1, voiceVolume / 100)),
             });
+          }
+        }
+      }
+
+      // Handle tool execution output (terminal output, command results, etc.)
+      if (coderKind === CODER_KIND.TOOL_CALL_UPDATE) {
+        const parts = result.status?.message?.parts ?? [];
+        for (const part of parts) {
+          // Handle text output from tool execution
+          if (part?.kind === 'text' && typeof part.text === 'string') {
+            appendToAssistant(part.text);
+          }
+          // Handle data output (e.g., tool result summaries)
+          if (part?.kind === 'data' && part.data) {
+            const output = part.data?.output ?? part.data?.result;
+            if (typeof output === 'string' && output.trim()) {
+              appendToAssistant(`\n\`\`\`\n${output}\n\`\`\`\n`);
+            }
           }
         }
       }
@@ -277,6 +344,11 @@ export function useCliProcess() {
     void checkConnection();
   }, [checkConnection]);
 
+  /**
+   * Send a message to the agent via A2A protocol.
+   * Establishes WebSocket-like streaming connection for real-time responses.
+   * @param text - The message text to send
+   */
   const sendMessage = useCallback(
     async (text: string) => {
       const baseUrl = normalizeBaseUrl(agentUrl);
@@ -327,41 +399,27 @@ export function useCliProcess() {
         },
       };
 
-      const bodyString = JSON.stringify(body);
-      const signedHeaders = await buildSignedHeaders({
-        token,
-        method: 'POST',
-        pathWithQuery: '/',
-        bodyString,
-      });
-
-      const res = await fetch(`${baseUrl}/`, {
-        method: 'POST',
-        headers: {
-          ...signedHeaders,
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
-        body: bodyString,
-        signal: abortController.signal,
-      });
-
-      if (!res.ok || !res.body) {
+      try {
+        const stream = await postToAgent(
+          baseUrl,
+          token,
+          body,
+          abortController.signal,
+        );
+        await readSseStream(stream, (msg) => {
+          try {
+            const parsed = JSON.parse(msg.data) as JsonRpcResponse;
+            handleJsonRpc(parsed);
+          } catch {
+            // ignore
+          }
+        });
+      } catch (error) {
         setIsProcessing(false);
         appendToAssistant(
-          `\n[Agent request failed] ${res.status} ${res.statusText}\n`,
+          `\n[Agent request failed] ${error instanceof Error ? error.message : 'Unknown error'}\n`,
         );
-        return;
       }
-
-      await readSseStream(res.body, (msg) => {
-        try {
-          const parsed = JSON.parse(msg.data) as JsonRpcResponse;
-          handleJsonRpc(parsed);
-        } catch {
-          // ignore
-        }
-      });
     },
     [
       agentToken,
@@ -374,6 +432,13 @@ export function useCliProcess() {
     ],
   );
 
+  /**
+   * Respond to a tool call confirmation from the agent.
+   * Sends approval/rejection with optional PIN for high-risk operations.
+   * @param callId - The tool call ID
+   * @param approved - Whether to approve the action
+   * @param pin - Optional PIN for secured confirmations
+   */
   const respondToConfirmation = useCallback(
     async (callId: string, approved: boolean, pin?: string) => {
       const baseUrl = normalizeBaseUrl(agentUrl);
@@ -422,41 +487,27 @@ export function useCliProcess() {
         },
       };
 
-      const bodyString = JSON.stringify(body);
-      const signedHeaders = await buildSignedHeaders({
-        token,
-        method: 'POST',
-        pathWithQuery: '/',
-        bodyString,
-      });
-
-      const res = await fetch(`${baseUrl}/`, {
-        method: 'POST',
-        headers: {
-          ...signedHeaders,
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
-        body: bodyString,
-        signal: abortController.signal,
-      });
-
-      if (!res.ok || !res.body) {
+      try {
+        const stream = await postToAgent(
+          baseUrl,
+          token,
+          body,
+          abortController.signal,
+        );
+        await readSseStream(stream, (msg) => {
+          try {
+            const parsed = JSON.parse(msg.data) as JsonRpcResponse;
+            handleJsonRpc(parsed);
+          } catch {
+            // ignore
+          }
+        });
+      } catch (error) {
         setIsProcessing(false);
         appendToAssistant(
-          `\n[Agent request failed] ${res.status} ${res.statusText}\n`,
+          `\n[Agent request failed] ${error instanceof Error ? error.message : 'Unknown error'}\n`,
         );
-        return;
       }
-
-      await readSseStream(res.body, (msg) => {
-        try {
-          const parsed = JSON.parse(msg.data) as JsonRpcResponse;
-          handleJsonRpc(parsed);
-        } catch {
-          // ignore
-        }
-      });
     },
     [
       agentToken,

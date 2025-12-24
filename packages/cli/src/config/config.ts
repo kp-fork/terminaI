@@ -10,7 +10,7 @@ import { hideBin } from 'yargs/helpers';
 import process from 'node:process';
 import net from 'node:net';
 import { mcpCommand } from '../commands/mcp.js';
-import type { OutputFormat } from '@google/gemini-cli-core';
+import type { OutputFormat } from '@terminai/core';
 import { extensionsCommand } from '../commands/extensions.js';
 import { hooksCommand } from '../commands/hooks.js';
 import { voiceCommand } from '../commands/voice.js';
@@ -36,7 +36,7 @@ import {
   WEB_FETCH_TOOL_NAME,
   getVersion,
   PREVIEW_GEMINI_MODEL_AUTO,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import type { Settings } from './settings.js';
 
 import { loadSandboxConfig } from './sandboxConfig.js';
@@ -47,7 +47,7 @@ import { RESUME_LATEST } from '../utils/sessionUtils.js';
 import { isWorkspaceTrusted } from './trustedFolders.js';
 import { createPolicyEngineConfig } from './policy.js';
 import { ExtensionManager } from './extension-manager.js';
-import type { ExtensionEvents } from '@google/gemini-cli-core/src/utils/extensionLoader.js';
+import type { ExtensionEvents } from '@terminai/core/src/utils/extensionLoader.js';
 import { requestConsentNonInteractive } from './extensions/consent.js';
 import { promptForSetting } from './extensions/extensionSettings.js';
 import type { EventEmitter } from 'node:stream';

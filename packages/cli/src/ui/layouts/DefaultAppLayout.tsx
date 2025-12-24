@@ -19,11 +19,11 @@ import { useFlickerDetector } from '../hooks/useFlickerDetector.js';
 import { useAlternateBuffer } from '../hooks/useAlternateBuffer.js';
 import { CopyModeWarning } from '../components/CopyModeWarning.js';
 import { VoiceOrb } from '../components/VoiceOrb.js';
-import { ShellExecutionService } from '@google/gemini-cli-core';
+import { ShellExecutionService } from '@terminai/core';
 import { useUIActions } from '../contexts/UIActionsContext.js';
 import { FullScreenTerminalView } from '../components/FullScreenTerminalView.js';
 import { PasswordInputModal } from '../components/PasswordInputModal.js';
-import type { AnsiOutput } from '@google/gemini-cli-core';
+import type { AnsiOutput } from '@terminai/core';
 import { ToolCallStatus } from '../types.js';
 
 export const DefaultAppLayout: React.FC = () => {

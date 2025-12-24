@@ -17,7 +17,7 @@ import type {
   ThoughtSummary,
   ToolCallRequestInfo,
   GeminiErrorEventValue,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import {
   GeminiEventType as ServerGeminiEventType,
   getErrorMessage,
@@ -40,7 +40,7 @@ import {
   EDIT_TOOL_NAMES,
   processRestorableToolCalls,
   recordToolCallInteractions,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { type Part, type PartListUnion, FinishReason } from '@google/genai';
 import type {
   HistoryItem,

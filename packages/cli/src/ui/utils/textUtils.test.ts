@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import type {
   ToolCallConfirmationDetails,
   ToolEditConfirmationDetails,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { escapeAnsiCtrlCodes, stripUnsafeCharacters } from './textUtils.js';
 
 describe('textUtils', () => {

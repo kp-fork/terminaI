@@ -10,10 +10,10 @@ import { act, useState } from 'react';
 import { renderHook } from '../../test-utils/render.js';
 import { waitFor } from '../../test-utils/async.js';
 import { useAtCompletion } from './useAtCompletion.js';
-import type { Config, FileSearch } from '@google/gemini-cli-core';
-import { FileSearchFactory } from '@google/gemini-cli-core';
-import type { FileSystemStructure } from '@google/gemini-cli-test-utils';
-import { createTmpDir, cleanupTmpDir } from '@google/gemini-cli-test-utils';
+import type { Config, FileSearch } from '@terminai/core';
+import { FileSearchFactory } from '@terminai/core';
+import type { FileSystemStructure } from '@terminai/test-utils';
+import { createTmpDir, cleanupTmpDir } from '@terminai/test-utils';
 import type { Suggestion } from '../components/SuggestionsDisplay.js';
 
 // Test harness to capture the state from the hook's callbacks.

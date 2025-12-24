@@ -9,8 +9,8 @@ import { Box, Text, useInput } from 'ink';
 import type React from 'react';
 import { theme } from '../semantic-colors.js';
 import { AnsiOutputText } from './AnsiOutput.js';
-import type { AnsiOutput as AnsiOutputType } from '@google/gemini-cli-core';
-import { ShellExecutionService } from '@google/gemini-cli-core';
+import type { AnsiOutput as AnsiOutputType } from '@terminai/core';
+import { ShellExecutionService } from '@terminai/core';
 import { keyToAnsi } from '../hooks/keyToAnsi.js';
 
 export interface FullScreenTerminalViewProps {

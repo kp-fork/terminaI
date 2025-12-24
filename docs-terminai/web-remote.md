@@ -99,7 +99,20 @@ The Web Remote is designed to be **safe by default**:
 - The server binds to `127.0.0.1` by default. To expose it to the network, set
   `--web-remote-host` and you must also pass `--i-understand-web-remote-risk`.
 - The built-in browser UI is intended for development and internal use; prefer
-  Desktop for “daily driver” usage.
+  Desktop for "daily driver" usage.
+
+## Security Considerations
+
+**Token-in-URL Behavior:**
+
+When tokens appear in URLs (e.g., `?token=...`), they may be logged in:
+
+- Browser history
+- Server access logs
+- HTTP referrer headers
+
+For sensitive environments, use HTTPS and rotate tokens frequently with
+`--web-remote-rotate-token`.
 
 ## Configuration
 

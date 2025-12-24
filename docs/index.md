@@ -7,8 +7,19 @@ a command-line interface.
 ## Gemini CLI overview
 
 Gemini CLI brings the capabilities of Gemini models to your terminal in an
-interactive Read-Eval-Print Loop (REPL) environment. Gemini CLI consists of a
-client-side application (`packages/cli`) that communicates with a local server
+interactive Read-Eval-Print Loop (REPL) environment.
+
+> [!NOTE] **Using TerminaI?** This repository is home to **TerminaI**, an
+> enhanced distribution of Gemini CLI featuring a Desktop GUI, Voice Mode, and
+> Web Remote.
+>
+> 👉 **[Go to TerminaI Documentation](../docs-terminai/index.md)** for:
+>
+> - Desktop App & Voice
+> - Web Remote (A2A)
+> - TerminaI-specific configuration
+
+The core CLI application (`packages/cli`) communicates with a local server
 (`packages/core`), which in turn manages requests to the Gemini API and its AI
 models. Gemini CLI also contains a variety of tools for tasks such as performing
 file system operations, running shells, and web fetching, which are managed by

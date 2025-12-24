@@ -11,14 +11,13 @@ import {
   Storage,
   shutdownTelemetry,
   isTelemetrySdkInitialized,
-} from '@google/gemini-cli-core';
-import type { Config } from '@google/gemini-cli-core';
+ computerSessionManager } from '@terminai/core';
+import type { Config } from '@terminai/core';
 
 const cleanupFunctions: Array<(() => void) | (() => Promise<void>)> = [];
 const syncCleanupFunctions: Array<() => void> = [];
 let configForTelemetry: Config | null = null;
 
-import { computerSessionManager } from '@terminai/core';
 
 export function registerCleanup(fn: (() => void) | (() => Promise<void>)) {
   cleanupFunctions.push(fn);

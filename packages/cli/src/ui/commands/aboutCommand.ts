@@ -14,7 +14,7 @@ import {
   UserAccountManager,
   debugLogger,
   getVersion,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 
 export const aboutCommand: SlashCommand = {
   name: 'about',

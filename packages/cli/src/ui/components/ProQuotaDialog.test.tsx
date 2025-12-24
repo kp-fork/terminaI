@@ -15,7 +15,7 @@ import {
   PREVIEW_GEMINI_MODEL,
   UserTierId,
   DEFAULT_GEMINI_FLASH_MODEL,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 
 // Mock the child component to make it easier to test the parent
 vi.mock('./shared/RadioButtonSelect.js', () => ({

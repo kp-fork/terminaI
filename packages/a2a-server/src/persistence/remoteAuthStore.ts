@@ -9,7 +9,7 @@ import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as crypto from 'node:crypto';
-import { GEMINI_DIR } from '@google/gemini-cli-core';
+import { GEMINI_DIR } from '@terminai/core';
 
 export const REMOTE_AUTH_FILENAME = 'web-remote-auth.json';
 

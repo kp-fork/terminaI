@@ -28,7 +28,7 @@ import {
   type UserFeedbackPayload,
   type ResumedSessionData,
   AuthType,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 
 // Mock coreEvents
 const mockCoreEvents = vi.hoisted(() => ({
@@ -48,9 +48,8 @@ const mocks = vi.hoisted(() => ({
   mockStdout: { write: vi.fn() },
 }));
 
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+vi.mock('@terminai/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@terminai/core')>();
   return {
     ...actual,
     coreEvents: mockCoreEvents,
@@ -180,7 +179,7 @@ import {
   writeToStdout,
   enableMouseEvents,
   disableMouseEvents,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import { type ExtensionManager } from '../config/extension-manager.js';
 
 describe('AppContainer State Management', () => {

@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import pathMod from 'node:path';
 import { useState, useCallback, useEffect, useMemo, useReducer } from 'react';
-import { coreEvents, CoreEvent } from '@google/gemini-cli-core';
+import { coreEvents, CoreEvent } from '@terminai/core';
 import {
   toCodePoints,
   cpLen,

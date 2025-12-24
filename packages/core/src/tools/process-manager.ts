@@ -189,6 +189,10 @@ const sendSignal = (pid: number, signal: ProcessManagerSignal): void => {
   }
 };
 
+/**
+ * Manages background process sessions with full lifecycle control.
+ * Provides start/stop/restart operations with output streaming and notifications.
+ */
 export class ProcessManager {
   constructor(
     private readonly config: Config,
@@ -308,6 +312,21 @@ export class ProcessManager {
     );
   }
 
+  /**
+   * Start a new background process session.
+   * @param params - Session parameters
+   * @param params.name - Unique session name
+   * @param params.command - Command to execute
+   * @param params.cwd - Optional working directory
+   * @param params.env - Optional environment variables
+   * @returns Promise resolving to tool result with session info
+   * @example
+   * const result = await manager.startSession({
+   *   name: 'my-server',
+   *   command: 'npm start',
+   *   cwd: '/path/to/project'
+   * });
+   */
   async startSession(params: {
     name: string;
     command: string;
@@ -528,6 +547,14 @@ export class ProcessManager {
     }
   }
 
+  /**
+   * Stop a running process session with specified signal.
+   * @param name - Session name to stop
+   * @param signal - Signal to send (SIGINT, SIGTERM, SIGKILL)
+   * @returns Tool result indicating stop request
+   * @example
+   * manager.stopSession('my-server', 'SIGTERM');
+   */
   stopSession(name: string, signal: ProcessManagerSignal): ToolResult {
     if (!ALLOWED_SIGNALS.has(signal)) {
       return this.errorResult(`Unsupported signal: ${signal}`);
@@ -559,6 +586,14 @@ export class ProcessManager {
     }
   }
 
+  /**
+   * Restart a process session by stopping and starting with same parameters.
+   * @param name - Session name to restart
+   * @param signal - Signal to use for stopping
+   * @returns Promise resolving to new session result
+   * @example
+   * const result = await manager.restartSession('my-server', 'SIGTERM');
+   */
   async restartSession(
     name: string,
     signal: ProcessManagerSignal,

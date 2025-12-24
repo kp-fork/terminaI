@@ -9,7 +9,7 @@ import { act } from 'react';
 import { renderHook } from '../../test-utils/render.js';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useInputHistoryStore } from './useInputHistoryStore.js';
-import { debugLogger } from '@google/gemini-cli-core';
+import { debugLogger } from '@terminai/core';
 
 describe('useInputHistoryStore', () => {
   beforeEach(() => {

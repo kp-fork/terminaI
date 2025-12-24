@@ -10,7 +10,7 @@ import * as path from 'node:path';
 import { homedir } from 'node:os';
 import * as dotenv from 'dotenv';
 
-import type { TelemetryTarget } from '@google/gemini-cli-core';
+import type { TelemetryTarget } from '@terminai/core';
 import {
   AuthType,
   Config,
@@ -24,7 +24,7 @@ import {
   type ExtensionLoader,
   startupProfiler,
   PREVIEW_GEMINI_MODEL,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 
 import { logger } from '../utils/logger.js';
 import type { Settings } from './settings.js';

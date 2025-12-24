@@ -11,6 +11,23 @@ and it does not implement its own OAuth.
 - ✅ Voice: offline STT+TTS (download once → offline), with barge-in and spoken
   confirmations (including PIN prompts)
 
+## Platform Support
+
+| Platform | Status         |
+| -------- | -------------- |
+| Linux    | ✅ Supported   |
+| Windows  | ✅ Supported   |
+| macOS    | 🚧 Coming Soon |
+
+## Accessibility
+
+The Desktop app strives for WCAG compliance:
+
+- **Screen readers**: Full ARIA support, including `role="main"` regions and
+  labeled controls.
+- **Keyboard navigation**: Full keyboard support.
+- **Voice**: Hands-free operation via "system operator" voice mode.
+
 ## Run (from repo)
 
 ```bash

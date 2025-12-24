@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@terminai/core';
 import {
   GeminiEventType,
   ApprovalMode,
   type ToolCallConfirmationDetails,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import type {
   TaskStatusUpdateEvent,
   SendStreamingMessageSuccessResponse,
@@ -42,7 +42,7 @@ import {
   listenOnLocalhost,
   closeServer,
 } from '../utils/testing_utils.js';
-import { MockTool } from '@google/gemini-cli-core';
+import { MockTool } from '@terminai/core';
 import type { Command, CommandContext } from '../commands/types.js';
 
 const mockToolConfirmationFn = async () =>
@@ -106,8 +106,8 @@ vi.mock('../config/config.js', async () => {
 
 // Mock the GeminiClient to avoid actual API calls
 const sendMessageStreamSpy = vi.fn();
-vi.mock('@google/gemini-cli-core', async () => {
-  const actual = await vi.importActual('@google/gemini-cli-core');
+vi.mock('@terminai/core', async () => {
+  const actual = await vi.importActual('@terminai/core');
   return {
     ...actual,
     GeminiClient: vi.fn().mockImplementation(() => ({

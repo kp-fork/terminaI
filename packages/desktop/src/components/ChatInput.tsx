@@ -73,6 +73,7 @@ export function ChatInput({ onSend, disabled, inputRef }: Props) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
+          aria-label="Message input"
           style={{
             flex: 1,
             minHeight: '48px',

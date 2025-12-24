@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { debugLogger } from '@google/gemini-cli-core';
+import { debugLogger } from '@terminai/core';
 
 import type { ConfirmationRequest } from '../../ui/types.js';
 import { escapeAnsiCtrlCodes } from '../../ui/utils/textUtils.js';

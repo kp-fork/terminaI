@@ -9,7 +9,7 @@ import { Box, Text, useInput } from 'ink';
 import type React from 'react';
 import { useState, useCallback } from 'react';
 import { theme } from '../semantic-colors.js';
-import { ShellExecutionService } from '@google/gemini-cli-core';
+import { ShellExecutionService } from '@terminai/core';
 
 export interface PasswordInputModalProps {
   /** The password prompt text to display */

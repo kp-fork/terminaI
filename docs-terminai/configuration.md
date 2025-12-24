@@ -9,7 +9,13 @@ TerminaI uses the same settings file layout as the upstream Gemini CLI.
 Common options:
 
 - `security.approvalPin` (string, 6 digits)
-  - Used for Level C approvals (default: `"000000"`).
+  - Used for Level C approvals (default: `"000000"`). Example: `"123456"`
+- `security.approvalMode` (string: "safe" | "prompt" | "yolo")
+  - Controls approval ladder behavior (default: `"prompt"`).
+- `previewMode` (boolean)
+  - Enables experimental features (default: `false`).
+- `provider` (string: "gemini" | "ollama")
+  - AI model provider (default: `"gemini"`).
 - `voice.enabled` (boolean)
   - Enables CLI spoken replies (TTS).
 - `voice.pushToTalk.key` (string)

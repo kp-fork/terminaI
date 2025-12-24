@@ -13,11 +13,7 @@ import {
   useTransition,
 } from 'react';
 import type { ConsoleMessageItem } from '../types.js';
-import {
-  coreEvents,
-  CoreEvent,
-  type ConsoleLogPayload,
-} from '@google/gemini-cli-core';
+import { coreEvents, CoreEvent, type ConsoleLogPayload } from '@terminai/core';
 
 export interface UseConsoleMessagesReturn {
   consoleMessages: ConsoleMessageItem[];

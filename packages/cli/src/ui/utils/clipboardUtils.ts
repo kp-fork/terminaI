@@ -12,7 +12,7 @@ import {
   spawnAsync,
   unescapePath,
   escapePath,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 
 /**
  * Supported image file extensions based on Gemini API.

@@ -8,11 +8,8 @@
 import type { SlashCommand, CommandContext } from './types.js';
 import { CommandKind } from './types.js';
 import { MessageType, type HistoryItemHooksList } from '../types.js';
-import type {
-  HookRegistryEntry,
-  MessageActionReturn,
-} from '@google/gemini-cli-core';
-import { getErrorMessage } from '@google/gemini-cli-core';
+import type { HookRegistryEntry, MessageActionReturn } from '@terminai/core';
+import { getErrorMessage } from '@terminai/core';
 import { SettingScope } from '../../config/settings.js';
 
 /**

@@ -6,8 +6,8 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import type { Config } from '@google/gemini-cli-core';
-import { debugLogger, getResponseText } from '@google/gemini-cli-core';
+import type { Config } from '@terminai/core';
+import { debugLogger, getResponseText } from '@terminai/core';
 import type { Content } from '@google/genai';
 import type { TextBuffer } from '../components/shared/text-buffer.js';
 import { isSlashCommand } from '../utils/commandUtils.js';

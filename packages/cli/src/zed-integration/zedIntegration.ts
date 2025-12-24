@@ -11,7 +11,7 @@ import type {
   ToolResult,
   ToolCallConfirmationDetails,
   FilterFilesOptions,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import {
   AuthType,
   logToolCall,
@@ -31,7 +31,7 @@ import {
   getEffectiveModel,
   createWorkingStdio,
   startupProfiler,
-} from '@google/gemini-cli-core';
+} from '@terminai/core';
 import * as acp from '@agentclientprotocol/sdk';
 import { AcpFileSystemService } from './fileSystemService.js';
 import { Readable, Writable } from 'node:stream';

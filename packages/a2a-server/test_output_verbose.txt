@@ -6,12 +6,12 @@
 ⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
 
  FAIL  src/http/app.test.ts [ src/http/app.test.ts ]
-Error: Failed to resolve entry for package "@google/gemini-cli-core". The package may have incorrect main/module/exports specified in its package.json.
+Error: Failed to resolve entry for package "@terminai/core". The package may have incorrect main/module/exports specified in its package.json.
   Plugin: vite:import-analysis
   File: /home/profharita/Code/termAI/packages/a2a-server/src/http/app.test.ts:8:0
   34 |    };
   35 |  });
-  36 |  const __vi_import_0__ = await import("@google/gemini-cli-core");
+  36 |  const __vi_import_0__ = await import("@terminai/core");
      |                                       ^
   37 |  const __vi_import_1__ = await import("supertest");
   38 |  const __vi_import_2__ = await import("./app.js");

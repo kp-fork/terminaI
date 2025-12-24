@@ -10,7 +10,7 @@ import {
   type CommandContext,
   CommandKind,
 } from './types.js';
-import { PROCESS_MANAGER_TOOL_NAME } from '@google/gemini-cli-core';
+import { PROCESS_MANAGER_TOOL_NAME } from '@terminai/core';
 
 const parseArgs = (argString: string): string[] => {
   const tokens: string[] = [];
