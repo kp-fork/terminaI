@@ -30,6 +30,11 @@ jobs:
       - name: 'Build'
         run: 'npm run build'
 
+      - name: 'Run Tests'
+        run: 'npm run test:ci'
+        env:
+          NO_COLOR: true
+
       # Publish Core (dependency of others)
       - name: 'Publish @terminai/core'
         run: "npm publish -w @terminai/core --tag ${{ github.event.inputs.tag || 'latest' }} --access public"
