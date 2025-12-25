@@ -147,14 +147,14 @@ Contact us for a commercial trademark license if you want to:
 - Technical support and consultation
 - Early access to new features
 
-**Contact:** sastry.nittala.nv@gmail.com
+**Contact:** prof.harita@gmail.com
 
 ## Enforcement
 
 ### Reporting Violations
 
 If you believe someone is misusing the TerminaI trademark, please report it to:
-sastry.nittala.nv@gmail.com
+prof.harita@gmail.com
 
 ### Our Response
 
@@ -179,7 +179,7 @@ Continued use of the TerminaI trademark after changes constitutes acceptance.
 
 For questions about trademark usage, please contact:
 
-- **Email:** sastry.nittala.nv@gmail.com
+- **Email:** prof.harita@gmail.com
 - **GitHub:** https://github.com/Prof-Harita/terminaI/discussions
 
 ---
