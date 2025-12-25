@@ -51,6 +51,11 @@ describe('getInstallationInfo', () => {
     // Mock process.cwd() for isGitRepository
     vi.spyOn(process, 'cwd').mockReturnValue(projectRoot);
     vi.spyOn(debugLogger, 'log').mockImplementation(() => {});
+
+    // Default execSync to throw error so we don't accidentally detect homebrew on macos CI
+    mockedExecSync.mockImplementation(() => {
+      throw new Error('Command failed');
+    });
   });
 
   afterEach(() => {

@@ -17,7 +17,13 @@ import { Language, Parser, Query } from 'web-tree-sitter';
 import { loadWasmBinary } from './fileUtils.js';
 import { debugLogger } from './debugLogger.js';
 
-export const SHELL_TOOL_NAMES = ['run_shell_command', 'ShellTool'];
+import { SHELL_TOOL_NAME } from '../tools/tool-names.js';
+
+export const SHELL_TOOL_NAMES = [
+  'run_shell_command',
+  'ShellTool',
+  SHELL_TOOL_NAME,
+];
 
 /**
  * An identifier for the shell type.

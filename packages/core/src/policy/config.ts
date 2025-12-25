@@ -119,7 +119,6 @@ export async function createPolicyEngineConfig(
   defaultPoliciesDir?: string,
 ): Promise<PolicyEngineConfig> {
   const policyDirs = getPolicyDirectories(defaultPoliciesDir);
-
   // Load policies from TOML files
   const {
     rules: tomlRules,

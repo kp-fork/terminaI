@@ -40,6 +40,7 @@ import {
   EDIT_TOOL_NAMES,
   processRestorableToolCalls,
   recordToolCallInteractions,
+  SHELL_TOOL_NAME,
 } from '@terminai/core';
 import { type Part, type PartListUnion, FinishReason } from '@google/genai';
 import type {
@@ -205,7 +206,9 @@ export const useGeminiStream = (
   const activeToolPtyId = useMemo(() => {
     const executingShellTool = toolCalls?.find(
       (tc) =>
-        tc.status === 'executing' && tc.request.name === 'run_shell_command',
+        tc.status === 'executing' &&
+        (tc.request.name === SHELL_TOOL_NAME ||
+          tc.request.name === 'run_shell_command'),
     );
     if (executingShellTool) {
       return (executingShellTool as { pid?: number }).pid;

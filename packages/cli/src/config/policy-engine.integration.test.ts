@@ -38,7 +38,7 @@ describe('Policy Engine Integration Tests', () => {
 
       // Other write tools should ask user
       expect(
-        (await engine.check({ name: 'replace' }, undefined)).decision,
+        (await engine.check({ name: 'edit_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ASK_USER);
 
       // Unknown tools should use default
@@ -148,7 +148,7 @@ describe('Policy Engine Integration Tests', () => {
         tools: {
           autoAccept: true, // Allows read-only tools
           allowed: ['custom-tool', 'my-server__special-tool'],
-          exclude: ['glob', 'dangerous-tool'],
+          exclude: ['glob_files', 'dangerous-tool'],
         },
         mcp: {
           allowed: ['allowed-server'],
@@ -174,17 +174,17 @@ describe('Policy Engine Integration Tests', () => {
         (await engine.check({ name: 'read_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ALLOW);
       expect(
-        (await engine.check({ name: 'list_directory' }, undefined)).decision,
+        (await engine.check({ name: 'list_files' }, undefined)).decision,
       ).toBe(PolicyDecision.ALLOW);
 
       // But glob is explicitly excluded, so it should be denied
-      expect((await engine.check({ name: 'glob' }, undefined)).decision).toBe(
-        PolicyDecision.DENY,
-      );
+      expect(
+        (await engine.check({ name: 'glob_files' }, undefined)).decision,
+      ).toBe(PolicyDecision.DENY);
 
       // Replace should ask user (normal write tool behavior)
       expect(
-        (await engine.check({ name: 'replace' }, undefined)).decision,
+        (await engine.check({ name: 'edit_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ASK_USER);
 
       // Explicitly allowed tools
@@ -212,7 +212,7 @@ describe('Policy Engine Integration Tests', () => {
 
       // Write tools should ask by default
       expect(
-        (await engine.check({ name: 'write_file' }, undefined)).decision,
+        (await engine.check({ name: 'write_to_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ASK_USER);
     });
 
@@ -234,7 +234,7 @@ describe('Policy Engine Integration Tests', () => {
         (await engine.check({ name: 'run_shell_command' }, undefined)).decision,
       ).toBe(PolicyDecision.ALLOW);
       expect(
-        (await engine.check({ name: 'write_file' }, undefined)).decision,
+        (await engine.check({ name: 'write_to_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ALLOW);
       expect(
         (await engine.check({ name: 'unknown_tool' }, undefined)).decision,
@@ -257,10 +257,10 @@ describe('Policy Engine Integration Tests', () => {
 
       // Edit tools should be allowed in AUTO_EDIT mode
       expect(
-        (await engine.check({ name: 'replace' }, undefined)).decision,
+        (await engine.check({ name: 'edit_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ALLOW);
       expect(
-        (await engine.check({ name: 'write_file' }, undefined)).decision,
+        (await engine.check({ name: 'write_to_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ALLOW);
 
       // Other tools should follow normal rules
@@ -320,7 +320,7 @@ describe('Policy Engine Integration Tests', () => {
       const mcpServerRule = rules.find((r) => r.toolName === 'mcp-server__*');
       expect(mcpServerRule?.priority).toBe(2.1); // MCP allowed server
 
-      const readOnlyToolRule = rules.find((r) => r.toolName === 'glob');
+      const readOnlyToolRule = rules.find((r) => r.toolName === 'glob_files');
       // Priority 50 in default tier → 1.05
       expect(readOnlyToolRule?.priority).toBeCloseTo(1.05, 5);
 
@@ -342,9 +342,9 @@ describe('Policy Engine Integration Tests', () => {
       expect(
         (await engine.check({ name: 'mcp-server__any' }, undefined)).decision,
       ).toBe(PolicyDecision.ALLOW);
-      expect((await engine.check({ name: 'glob' }, undefined)).decision).toBe(
-        PolicyDecision.ALLOW,
-      );
+      expect(
+        (await engine.check({ name: 'glob_files' }, undefined)).decision,
+      ).toBe(PolicyDecision.ALLOW);
     });
 
     it('should handle edge case: MCP server with both trust and exclusion', async () => {
@@ -433,10 +433,10 @@ describe('Policy Engine Integration Tests', () => {
 
       // Should have default rules for write tools
       expect(
-        (await engine.check({ name: 'write_file' }, undefined)).decision,
+        (await engine.check({ name: 'write_to_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ASK_USER);
       expect(
-        (await engine.check({ name: 'replace' }, undefined)).decision,
+        (await engine.check({ name: 'edit_file' }, undefined)).decision,
       ).toBe(PolicyDecision.ASK_USER);
 
       // Unknown tools should use default
@@ -477,7 +477,7 @@ describe('Policy Engine Integration Tests', () => {
       const server1Rule = rules.find((r) => r.toolName === 'server1__*');
       expect(server1Rule?.priority).toBe(2.1); // Allowed servers (user tier)
 
-      const globRule = rules.find((r) => r.toolName === 'glob');
+      const globRule = rules.find((r) => r.toolName === 'glob_files');
       // Priority 50 in default tier → 1.05
       expect(globRule?.priority).toBeCloseTo(1.05, 5); // Auto-accept read-only
 
