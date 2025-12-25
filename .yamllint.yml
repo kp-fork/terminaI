@@ -72,8 +72,8 @@ rules:
     forbid-explicit-octal: false
 
   quoted-strings:
-    quote-type: 'single'
-    required: true
+    quote-type: 'any'
+    required: false
     allow-quoted-quotes: true
 
   trailing-spaces: {}
