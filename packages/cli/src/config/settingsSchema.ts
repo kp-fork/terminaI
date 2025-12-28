@@ -1410,7 +1410,7 @@ const SETTINGS_SCHEMA = {
             label: 'Enable GUI Automation',
             category: 'Tools',
             requiresRestart: true,
-            default: false,
+            default: true,
             description:
               'Enable desktop GUI automation tools (ui.click, ui.type, etc.). Requires AT-SPI on Linux.',
             showInDialog: true,

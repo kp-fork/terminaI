@@ -1,0 +1,68 @@
+name: Weekly Upstream Sync
+
+on:
+  schedule:
+    - cron: '0 15 * * FRI' # Every Friday at 3 PM UTC (9 AM CST)
+  workflow_dispatch: # Manual trigger
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  trigger-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Issue for Jules
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Upstream Sync] Week of ${today}`,
+              body: `## Weekly Upstream Sync Task
+
+            Please analyze the upstream repository (google-gemini/gemini-cli) for new commits since our last sync.
+
+            ### Instructions
+
+            1. **Setup upstream remote** (if not already added):
+               \`\`\`bash
+               git remote add upstream https://github.com/google-gemini/gemini-cli.git || true
+               git fetch upstream
+               \`\`\`
+
+            2. **Generate diff summary**:
+               \`\`\`bash
+               git log --oneline HEAD..upstream/main
+               git diff --stat HEAD..upstream/main
+               \`\`\`
+
+            3. **Classify each commit** using \`docs-terminai/FORK_ZONES.md\`:
+               - ⚪ IRRELEVANT → Skip (telemetry, themes, etc.)
+               - 🟢 CORE → Can merge directly
+               - 🟡 FORK → Needs reimplementation
+
+            4. **Create a summary** in a new branch:
+               \`\`\`bash
+               git checkout -b upstream-sync/${today}
+               \`\`\`
+
+            5. **Document findings** in \`.upstream/patches/${today}/\`:
+               - \`commits.txt\` — List of upstream commits
+               - \`files.txt\` — Files changed
+               - \`classification.md\` — Your classification of each commit
+
+            6. **Push the branch** for review.
+
+            ### Reference
+            - [FORK_ZONES.md](../docs-terminai/FORK_ZONES.md)
+            - [Upstream Maintenance Strategy](../docs-terminai/upstream_maintenance.md)
+            `,
+              labels: ['upstream-sync', 'automated']
+            });
+
+            console.log('Issue created for upstream sync');
