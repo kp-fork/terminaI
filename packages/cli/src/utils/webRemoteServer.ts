@@ -112,7 +112,14 @@ export async function startWebRemoteServer(
   }
 
   const app = await createApp();
+
   const server = app.listen(options.port, options.host);
+
+  await new Promise<void>((resolve, reject) => {
+    server.once('listening', resolve);
+    server.once('error', reject);
+  });
+
   const address = server.address();
   const actualPort =
     typeof address === 'string' || !address ? options.port : address.port;
