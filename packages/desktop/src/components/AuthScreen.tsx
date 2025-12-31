@@ -14,7 +14,11 @@ interface Props {
   bootstrapError?: string | null;
 }
 
-export function AuthScreen({ onAuthenticated, isBootstrapping, bootstrapError }: Props) {
+export function AuthScreen({
+  onAuthenticated,
+  isBootstrapping,
+  bootstrapError,
+}: Props) {
   const agentUrl = useSettingsStore((s) => s.agentUrl);
   const setAgentUrl = useSettingsStore((s) => s.setAgentUrl);
   const agentToken = useSettingsStore((s) => s.agentToken);
@@ -44,63 +48,60 @@ export function AuthScreen({ onAuthenticated, isBootstrapping, bootstrapError }:
   // Show bootstrapping state
   if (isBootstrapping) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-[var(--bg-primary)]">
-        <h1 className="text-4xl font-bold mb-2 text-white">TerminaI</h1>
-        <div className="flex items-center gap-3 text-gray-400">
-          <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col items-center justify-center h-full bg-background text-foreground">
+        <h1 className="text-4xl font-bold mb-2">TerminaI</h1>
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
           <span>Starting agent backend...</span>
         </div>
         {bootstrapError && (
-          <p className="mt-4 text-red-400 text-sm">{bootstrapError}</p>
+          <p className="mt-4 text-destructive text-sm">{bootstrapError}</p>
         )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[var(--bg-primary)]">
-      <h1 className="text-4xl font-bold mb-2 text-white">TerminaI</h1>
-      <p className="text-gray-400 mb-8">Connect to your agent (A2A) backend</p>
+    <div className="flex flex-col items-center justify-center h-full bg-background text-foreground">
+      <h1 className="text-4xl font-bold mb-2">TerminaI</h1>
+      <p className="text-muted-foreground mb-8">
+        Connect to your agent (A2A) backend
+      </p>
 
-      <div
-        style={{
-          width: 520,
-          maxWidth: '90vw',
-          background: 'var(--bg-secondary)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-6)',
-        }}
-      >
-        <label className="block text-sm text-gray-300 mb-2">Agent URL</label>
+      <div className="w-[520px] max-w-[90vw] bg-card border border-border rounded-lg p-6 shadow-sm">
+        <label className="block text-sm text-foreground/70 mb-2">
+          Agent URL
+        </label>
         <input
-          className="input w-full mb-4"
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 mb-4"
           value={agentUrl}
           onChange={(e) => setAgentUrl(e.target.value)}
           placeholder="http://127.0.0.1:41242"
         />
 
-        <label className="block text-sm text-gray-300 mb-2">Agent Token</label>
+        <label className="block text-sm text-foreground/70 mb-2">
+          Agent Token
+        </label>
         <input
-          className="input w-full mb-4"
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 mb-4"
           value={agentToken}
           onChange={(e) => setAgentToken(e.target.value)}
           placeholder="paste token"
           type="password"
         />
 
-        <label className="block text-sm text-gray-300 mb-2">
+        <label className="block text-sm text-foreground/70 mb-2">
           Workspace Path (server-side)
         </label>
         <input
-          className="input w-full mb-5"
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 mb-5"
           value={agentWorkspacePath}
           onChange={(e) => setAgentWorkspacePath(e.target.value)}
           placeholder="/home/you/project"
         />
 
         <button
-          className="btn btn-primary w-full"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 w-full"
           disabled={!canContinue}
           onClick={() => {
             setError(null);
@@ -116,9 +117,9 @@ export function AuthScreen({ onAuthenticated, isBootstrapping, bootstrapError }:
           Continue
         </button>
 
-        {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
+        {error && <p className="mt-4 text-destructive text-sm">{error}</p>}
 
-        <p className="mt-4 text-gray-500 text-xs">
+        <p className="mt-4 text-muted-foreground text-xs">
           Local: start the agent with web-remote enabled and generate a token,
           then paste it here. Remote: use the remote server URL + token.
         </p>

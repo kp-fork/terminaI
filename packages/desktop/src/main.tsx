@@ -11,8 +11,12 @@ import App from './App';
 // eslint-disable-next-line import/no-internal-modules
 import './styles/globals.css';
 
+import { ErrorBoundary } from './components/ErrorBoundary';
+
 createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>,
 );
