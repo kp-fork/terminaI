@@ -43,7 +43,9 @@ export interface JsonRpcResponse {
   };
 }
 
-function extractToolCallInfoFromStatusParts(parts: Array<Record<string, unknown>>): {
+function extractToolCallInfoFromStatusParts(
+  parts: Array<Record<string, unknown>>,
+): {
   callId: string;
   toolName: string;
   args: Record<string, unknown>;
@@ -52,11 +54,16 @@ function extractToolCallInfoFromStatusParts(parts: Array<Record<string, unknown>
 } | null {
   for (const part of parts) {
     if (part?.['kind'] === 'tool-call') {
-      const toolCall = part?.['toolCall'] as Record<string, unknown> | undefined;
+      const toolCall = part?.['toolCall'] as
+        | Record<string, unknown>
+        | undefined;
       const callId = toolCall?.['callId'] as string | undefined;
       const toolName = toolCall?.['toolName'] as string | undefined;
-      const args = (toolCall?.['args'] as Record<string, unknown> | undefined) ?? {};
-      const confirmationToken = toolCall?.['confirmationToken'] as string | undefined;
+      const args =
+        (toolCall?.['args'] as Record<string, unknown> | undefined) ?? {};
+      const confirmationToken = toolCall?.['confirmationToken'] as
+        | string
+        | undefined;
       if (callId && toolName) {
         return { callId, toolName, args, confirmationToken };
       }
@@ -68,7 +75,8 @@ function extractToolCallInfoFromStatusParts(parts: Array<Record<string, unknown>
     if (!data || (kind !== 'data' && !hasData)) continue;
 
     const request = data['request'] as Record<string, unknown> | undefined;
-    const callId = (request?.['callId'] as string | undefined) ??
+    const callId =
+      (request?.['callId'] as string | undefined) ??
       (data['callId'] as string | undefined);
     if (!callId) continue;
 
@@ -78,7 +86,8 @@ function extractToolCallInfoFromStatusParts(parts: Array<Record<string, unknown>
         | string
         | undefined) ??
       'unknown';
-    const args = (request?.['args'] as Record<string, unknown> | undefined) ?? {};
+    const args =
+      (request?.['args'] as Record<string, unknown> | undefined) ?? {};
     const status = data['status'] as string | undefined;
     const confirmationToken = data['confirmationToken'] as string | undefined;
 
@@ -202,10 +211,26 @@ export function handleSseEvent(
       break;
 
     case 'state-change':
-      // Check if input is required or if stream ended
-      dispatch(BridgeActions.streamEnded());
-      if (onComplete) {
-        onComplete();
+      // BM-3 FIX: Only end stream on terminal states, not all state-change events
+      // state-change is advisory; premature ending breaks conversation context
+      {
+        const stateValue =
+          (result.status?.state as string) ??
+          (result as Record<string, unknown>)['state'];
+        const terminalStates = [
+          'completed',
+          'canceled',
+          'failed',
+          'input-required',
+        ];
+
+        if (terminalStates.includes(stateValue)) {
+          dispatch(BridgeActions.streamEnded());
+          if (onComplete) {
+            onComplete();
+          }
+        }
+        // Non-terminal state changes are logged but don't end the stream
       }
       break;
 
@@ -228,8 +253,9 @@ export function handleSseEvent(
 
       {
         const parts =
-          (result.status?.message?.parts as Array<Record<string, unknown>> | undefined) ??
-          [];
+          (result.status?.message?.parts as
+            | Array<Record<string, unknown>>
+            | undefined) ?? [];
 
         const text = extractTextFromParts(parts);
         if (text && onText) {
@@ -295,7 +321,11 @@ export function handleSseEvent(
         dispatch(BridgeActions.streamStarted(result.taskId, result.contextId));
       }
 
-      if (onToolUpdate && result.artifact?.artifactId && result.artifact?.parts) {
+      if (
+        onToolUpdate &&
+        result.artifact?.artifactId &&
+        result.artifact?.parts
+      ) {
         const m = /^tool-(.+)-output$/.exec(result.artifact.artifactId);
         const callId = m?.[1];
         const text = extractTextFromParts(

@@ -5,58 +5,107 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { homedir } from 'node:os';
 import * as dotenv from 'dotenv';
 
+import type { TelemetryTarget } from '@terminai/core';
 import {
   AuthType,
+  Config,
+  type ConfigParameters,
+  FileDiscoveryService,
+  ApprovalMode,
+  loadServerHierarchicalMemory,
+  GEMINI_DIR,
+  DEFAULT_GEMINI_EMBEDDING_MODEL,
+  DEFAULT_GEMINI_MODEL,
   type ExtensionLoader,
   startupProfiler,
-  findEnvFile,
-  ConfigBuilder,
+  PREVIEW_GEMINI_MODEL,
 } from '@terminai/core';
 
 import { logger } from '../utils/logger.js';
 import type { LoadedSettings } from './settings.js';
 import { type AgentSettings, CoderAgentEvent } from '../types.js';
 
-/**
- * Loads configuration using the shared ConfigBuilder for CLI-Desktop parity.
- *
- * This ensures A2A server uses the same:
- * - Model defaults (PREVIEW_GEMINI_MODEL_AUTO / DEFAULT_GEMINI_MODEL_AUTO)
- * - Approval mode resolution (from settings, not just env vars)
- * - Policy engine configuration
- * - Provider configuration (Gemini/OpenAI-compatible/Anthropic)
- * - All other ConfigParameters that CLI uses
- */
 export async function loadConfig(
   loadedSettings: LoadedSettings,
   extensionLoader: ExtensionLoader,
   taskId: string,
   targetDirOverride?: string,
-) {
+): Promise<Config> {
+  const settings = loadedSettings.merged;
   const workspaceDir = targetDirOverride || process.cwd();
   const adcFilePath = process.env['GOOGLE_APPLICATION_CREDENTIALS'];
 
-  // Use ConfigBuilder for parity with CLI (G-1, G-3, G-4, G-8)
-  const builder = new ConfigBuilder(taskId);
-  const config = await builder.build({
-    workspaceDir,
-    overrides: {
-      // A2A-specific overrides
-      extensionLoader,
-      interactive: true, // A2A is always interactive
-      ideMode: false,
-      webRemoteRelayUrl: process.env['WEB_REMOTE_RELAY_URL'],
-    },
-  });
+  const configParams: ConfigParameters = {
+    sessionId: taskId,
+    model: settings.general?.previewFeatures
+      ? PREVIEW_GEMINI_MODEL
+      : DEFAULT_GEMINI_MODEL,
+    embeddingModel: DEFAULT_GEMINI_EMBEDDING_MODEL,
+    sandbox: undefined, // Sandbox might not be relevant for a server-side agent
+    targetDir: workspaceDir, // Or a specific directory the agent operates on
+    debugMode: process.env['DEBUG'] === 'true' || false,
+    question: '', // Not used in server mode directly like CLI
 
+    coreTools: settings.coreTools || undefined,
+    excludeTools: settings.excludeTools || undefined,
+    showMemoryUsage: settings.showMemoryUsage || false,
+    approvalMode:
+      process.env['GEMINI_YOLO_MODE'] === 'true'
+        ? ApprovalMode.YOLO
+        : ApprovalMode.DEFAULT,
+    mcpServers: settings.mcpServers,
+    cwd: workspaceDir,
+    telemetry: {
+      enabled: settings.telemetry?.enabled,
+      target: settings.telemetry?.target as TelemetryTarget,
+      otlpEndpoint:
+        process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] ??
+        settings.telemetry?.otlpEndpoint,
+      logPrompts: settings.telemetry?.logPrompts,
+    },
+    // Git-aware file filtering settings
+    fileFiltering: {
+      respectGitIgnore: settings.fileFiltering?.respectGitIgnore,
+      enableRecursiveFileSearch:
+        settings.fileFiltering?.enableRecursiveFileSearch,
+    },
+    ideMode: false,
+    folderTrust: settings.folderTrust === true,
+    extensionLoader,
+    checkpointing: process.env['CHECKPOINTING']
+      ? process.env['CHECKPOINTING'] === 'true'
+      : settings.checkpointing?.enabled,
+    previewFeatures: settings.general?.previewFeatures,
+    interactive: true,
+    webRemoteRelayUrl: process.env['WEB_REMOTE_RELAY_URL'],
+  };
+
+  const fileService = new FileDiscoveryService(workspaceDir);
+  const { memoryContent, fileCount } = await loadServerHierarchicalMemory(
+    workspaceDir,
+    [], // Align with CLI: empty includeDirectories
+    configParams.debugMode ?? false, // Align with CLI: use debugMode from config
+    fileService,
+    extensionLoader,
+    settings.folderTrust === true,
+    'tree', // Align with CLI: explicit importFormat
+    undefined, // Align with CLI: use core defaults for filtering
+    200, // Align with CLI: explicit maxDirs
+  );
+  configParams.userMemory = memoryContent;
+  configParams.geminiMdFileCount = fileCount;
+  const config = new Config({
+    ...configParams,
+  });
   // Needed to initialize ToolRegistry, and git checkpointing if enabled
   await config.initialize();
   startupProfiler.flush(config);
 
-  // Handle auth based on environment
   if (process.env['USE_CCPA']) {
     logger.info('[Config] Using CCPA Auth:');
     try {
@@ -111,13 +160,39 @@ export function setTargetDir(agentSettings: AgentSettings | undefined): string {
   }
 }
 
-/**
- * Loads environment variables from .env file.
- * G-2 FIX: Removed `override: true` to align with CLI behavior.
- */
 export function loadEnvironment(startDir?: string): void {
   const envFilePath = findEnvFile(startDir || process.cwd());
   if (envFilePath) {
+    // G-2 FIX: Removed override: true
     dotenv.config({ path: envFilePath });
+  }
+}
+
+function findEnvFile(startDir: string): string | null {
+  let currentDir = path.resolve(startDir);
+  while (true) {
+    // prefer gemini-specific .env under GEMINI_DIR
+    const geminiEnvPath = path.join(currentDir, GEMINI_DIR, '.env');
+    if (fs.existsSync(geminiEnvPath)) {
+      return geminiEnvPath;
+    }
+    const envPath = path.join(currentDir, '.env');
+    if (fs.existsSync(envPath)) {
+      return envPath;
+    }
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir || !parentDir) {
+      // check .env under home as fallback, again preferring gemini-specific .env
+      const homeGeminiEnvPath = path.join(process.cwd(), GEMINI_DIR, '.env');
+      if (fs.existsSync(homeGeminiEnvPath)) {
+        return homeGeminiEnvPath;
+      }
+      const homeEnvPath = path.join(homedir(), '.env');
+      if (fs.existsSync(homeEnvPath)) {
+        return homeEnvPath;
+      }
+      return null;
+    }
+    currentDir = parentDir;
   }
 }

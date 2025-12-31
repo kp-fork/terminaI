@@ -13,8 +13,13 @@ import { bridgeReducer } from './reducer';
 interface BridgeStore {
   state: BridgeState;
   cliInstanceId: string | null;
+  // BM-1 FIX: Persistent conversation ID that survives STREAM_ENDED
+  currentConversationId: string | null;
   dispatch: (action: BridgeAction) => void;
   setCliInstanceId: (id: string | null) => void;
+  // BM-1 FIX: Explicit methods for conversation management
+  setCurrentConversationId: (id: string | null) => void;
+  clearConversation: () => void;
 
   // Selectors
   isConnected: () => boolean;
@@ -28,15 +33,35 @@ export const useBridgeStore = create<BridgeStore>()(
     (set, get) => ({
       state: { status: 'disconnected' },
       cliInstanceId: null,
+      // BM-1 FIX: Persistent conversation ID
+      currentConversationId: null,
 
       dispatch: (action: BridgeAction) => {
-        set((store) => ({
-          state: bridgeReducer(store.state, action),
-        }));
+        const oldState = get().state;
+        const newState = bridgeReducer(oldState, action);
+
+        // BM-1 FIX: Capture taskId when stream starts, preserve across stream end
+        if (action.type === 'STREAM_STARTED' && action.taskId) {
+          set({
+            state: newState,
+            currentConversationId: action.taskId,
+          });
+        } else {
+          set({ state: newState });
+        }
       },
 
       setCliInstanceId: (id: string | null) => {
         set({ cliInstanceId: id });
+      },
+
+      // BM-1 FIX: Conversation management
+      setCurrentConversationId: (id: string | null) => {
+        set({ currentConversationId: id });
+      },
+
+      clearConversation: () => {
+        set({ currentConversationId: null });
       },
 
       // Selectors
@@ -62,9 +87,14 @@ export const useBridgeStore = create<BridgeStore>()(
       },
 
       getCurrentTaskId: () => {
-        const { state } = get();
-        if ('taskId' in state) {
-          return state.taskId;
+        const store = get();
+        // BM-1 FIX: Prefer persistent conversationId over transient state.taskId
+        // This ensures conversation context survives STREAM_ENDED
+        if (store.currentConversationId) {
+          return store.currentConversationId;
+        }
+        if ('taskId' in store.state) {
+          return store.state.taskId;
         }
         return null;
       },
