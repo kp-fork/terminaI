@@ -144,11 +144,8 @@ async function handleExecuteCommand(
     const commandToExecute = commandRegistry.get(command);
 
     if (commandToExecute?.requiresWorkspace) {
-      if (!process.env['CODER_AGENT_WORKSPACE_PATH']) {
-        return res.status(400).json({
-          error: `Command "${command}" requires a workspace, but CODER_AGENT_WORKSPACE_PATH is not set.`,
-        });
-      }
+      // Workspace is always available via config.targetDir (defaults to homedir)
+      // so we don't need to strictly enforce the ENV var presence.
     }
 
     if (!commandToExecute) {

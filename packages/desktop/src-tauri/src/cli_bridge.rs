@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
 use rand::Rng;
 use serde_json::Value;
+use std::io::Write; // Added for logging
 
 use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::ShellExt;
@@ -76,16 +77,36 @@ impl CliBridge {
         let app_clone = app.clone();
 
         tauri::async_runtime::spawn(async move {
-            let mut buffer = String::new();
+            // Resolve log path
+            let log_dir = app_clone.path().app_log_dir().unwrap_or_else(|_| {
+                std::path::PathBuf::from("/tmp")
+            });
+            let _ = std::fs::create_dir_all(&log_dir);
+            let log_path = log_dir.join("sidecar.log");
+            
+            // Truncate on start
+            let _ = std::fs::write(&log_path, format!("--- Sidecar Started at {} ---\n", chrono::Local::now()));
 
             while let Some(event) = rx.recv().await {
                 if !*running_clone.lock().unwrap() {
                      break;
                 }
+                
+                // Open file for append (inefficient per line but safe for now)
+                let mut log_file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&log_path)
+                    .ok();
+
                 match event {
                     CommandEvent::Stdout(line_bytes) => {
                          let raw_output = String::from_utf8_lossy(&line_bytes).to_string();
                          print!("[SIDECAR] {}", raw_output); 
+                         
+                         if let Some(ref mut file) = log_file {
+                             let _ = writeln!(file, "[STDOUT] {}", raw_output.trim_end());
+                         }
                          
                          // V2: Try parsing JSON handshake
                          // Looking for {"terminai_status": "ready", ...}
@@ -105,17 +126,8 @@ impl CliBridge {
                              }
                          }
 
-                         // V1 Fallback: Regex/String Match (Legacy CLI)
-                         // "Web Remote: http://127.0.0.1:41242/?token=..."
+                         // V1 Fallback
                          if raw_output.contains("Web Remote") {
-                             // Extract Port if possible, or assume 41242 if we passed 0 and it failed to bind dynamic? 
-                             // Actually if we passed 0 and CLI isn't V2, it might default to 41242 or error.
-                             // Legacy CLI might not handle port=0.
-                             // But we verified CLI supports --web-remote-port.
-                             // If Legacy CLI gets port=0, hopefully it behaves dynamically or binds to something.
-                             // We'll scrape the URL. 
-                             
-                             // Simple scrape for now:
                              if let Some(start) = raw_output.find("http://127.0.0.1:") {
                                  let rest = &raw_output[start..];
                                  if let Some(end) = rest.find(&['/', ' '][..]) {
@@ -133,9 +145,15 @@ impl CliBridge {
                     CommandEvent::Stderr(line_bytes) => {
                         let line = String::from_utf8_lossy(&line_bytes).to_string();
                         eprint!("[SIDECAR ERROR] {}", line);
+                         if let Some(ref mut file) = log_file {
+                             let _ = writeln!(file, "[STDERR] {}", line.trim_end());
+                         }
                     }
                     CommandEvent::Terminated(payload) => {
                         println!("[SIDECAR] Terminated: {:?}", payload);
+                         if let Some(ref mut file) = log_file {
+                             let _ = writeln!(file, "[EXIT] Terminated: {:?}", payload);
+                         }
                         break;
                     }
                     _ => {}

@@ -8,7 +8,7 @@ use cli_bridge::CliBridge;
 use pty_session::PtySession;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};
 
 struct AppState {
     cli: Mutex<Option<CliBridge>>,
@@ -71,16 +71,22 @@ fn spawn_cli_backend(
     state: State<AppState>,
     workspace: String,
 ) -> Result<(), String> {
+    // Stop existing instance if running (Clean Restart)
+    let mut guard = state.cli.lock().unwrap();
+    if let Some(ref existing) = *guard {
+        existing.stop();
+    }
+    
     // Spawn CLI with web-remote enabled
     let bridge = cli_bridge::CliBridge::spawn_web_remote(app, workspace)?;
-    *state.cli.lock().unwrap() = Some(bridge);
+    *guard = Some(bridge);
     Ok(())
 }
 
 #[tauri::command]
-fn send_to_cli(message: String, state: State<AppState>) -> Result<(), String> {
-    let guard = state.cli.lock().unwrap();
-    guard.as_ref().ok_or("CLI not started")?.send(&message)
+fn send_to_cli(_message: String, _state: State<AppState>) -> Result<(), String> {
+    // In web-remote mode, we communicate via HTTP, not stdin
+    Err("CLI stdin not connected in web-remote mode. Use HTTP API instead.".to_string())
 }
 
 #[tauri::command]
@@ -163,6 +169,10 @@ pub fn run() {
             pty_sessions: Mutex::new(HashMap::new()),
         })
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            let _ = app.get_webview_window("main").expect("no main window").set_focus();
+        }))
         .invoke_handler(tauri::generate_handler![
             greet,
             get_current_dir,

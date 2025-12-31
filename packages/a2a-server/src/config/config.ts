@@ -87,11 +87,14 @@ export async function loadConfig(
   const fileService = new FileDiscoveryService(workspaceDir);
   const { memoryContent, fileCount } = await loadServerHierarchicalMemory(
     workspaceDir,
-    [workspaceDir],
-    false,
+    [], // Align with CLI: empty includeDirectories
+    configParams.debugMode ?? false, // Align with CLI: use debugMode from config
     fileService,
     extensionLoader,
     settings.folderTrust === true,
+    'tree', // Align with CLI: explicit importFormat
+    undefined, // Align with CLI: use core defaults for filtering
+    200, // Align with CLI: explicit maxDirs
   );
   configParams.userMemory = memoryContent;
   configParams.geminiMdFileCount = fileCount;

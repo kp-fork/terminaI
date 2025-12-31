@@ -100,6 +100,7 @@ export interface CliArgs {
   outputFormat: string | undefined;
   fakeResponses: string | undefined;
   recordResponses: string | undefined;
+  dumpConfig?: boolean;
 }
 
 function isLoopbackHost(host: string): boolean {
@@ -353,6 +354,12 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
         .option('record-responses', {
           type: 'string',
           description: 'Path to a file to record model responses for testing.',
+          hidden: true,
+        })
+        .option('dump-config', {
+          type: 'boolean',
+          description:
+            'Dump the resolved configuration to stdout as JSON and exit.',
           hidden: true,
         })
         .deprecateOption(

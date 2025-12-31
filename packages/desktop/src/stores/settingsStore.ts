@@ -107,7 +107,7 @@ const syncToCli = async (setting: string, value: string | boolean | number) => {
       metadata: {
         coderAgent: {
           kind: 'agent-settings',
-          workspacePath: agentWorkspacePath || '/tmp',
+          ...(agentWorkspacePath ? { workspacePath: agentWorkspacePath } : {}),
         },
       },
     },
@@ -134,7 +134,7 @@ export const useSettingsStore = create<SettingsState>()(
       setAgentUrl: (agentUrl) => set({ agentUrl }),
       agentToken: '',
       setAgentToken: (agentToken) => set({ agentToken }),
-      agentWorkspacePath: '/tmp',
+      agentWorkspacePath: '',
       setAgentWorkspacePath: (agentWorkspacePath) =>
         set({ agentWorkspacePath }),
 

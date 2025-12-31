@@ -67,4 +67,11 @@ Brief status update:
 
 3. If any failures, report and address
 
-4. Suggest running `/final-review` for integrated verification
+4. Commit your fixes:
+
+   ```bash
+   git add .
+   git commit -m "fix: [description of fixes]"
+   ```
+
+5. Suggest running `/final-review` for integrated verification
