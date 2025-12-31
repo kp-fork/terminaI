@@ -126,9 +126,11 @@ export function bridgeReducer(
       };
 
     case 'STREAM_ENDED':
-      // Allow from streaming, executing_tool, OR awaiting_confirmation
-      // (CLI may send input-required while user hasn't responded yet)
+      // Allow from sending (fast response), streaming, executing_tool, OR awaiting_confirmation
+      // (CLI may send input-required while user hasn't responded yet, or agent may respond
+      // so quickly that no STREAM_STARTED was received before input-required)
       if (
+        state.status !== 'sending' &&
         state.status !== 'streaming' &&
         state.status !== 'executing_tool' &&
         state.status !== 'awaiting_confirmation'

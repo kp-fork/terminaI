@@ -475,6 +475,14 @@ export async function main() {
     const config = await loadCliConfig(settings.merged, sessionId, argv);
     loadConfigHandle?.end();
 
+    if (argv.dumpConfig) {
+      // Use a custom stringifier to avoid circular references if any, though Config should be serializable.
+      // We only care about the properties, not the methods.
+      writeToStdout(JSON.stringify(config, null, 2) + '\n');
+      await runExitCleanup();
+      process.exit(ExitCodes.SUCCESS);
+    }
+
     // Enable GUI automation if configured (defaults to true per schema)
     if (settings.merged.tools?.guiAutomation?.enabled ?? true) {
       DesktopAutomationService.getInstance().setEnabled(true);
@@ -814,6 +822,12 @@ export async function main() {
       registerCleanup(async () => {
         await fireSessionEndHook(hookMessageBus, SessionEndReason.Exit);
       });
+    }
+
+    if (argv.webRemote) {
+      // In web-remote mode, the server is active and keeping the event loop alive.
+      // We do not want to fall through to non-interactive logic which requires input.
+      return;
     }
 
     // If not a TTY, read from stdin

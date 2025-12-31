@@ -88,4 +88,11 @@ When all tasks are done:
 
 3. Report status and any issues found
 
-4. Suggest running `/review` to validate the implementation
+4. Commit your changes:
+
+   ```bash
+   git add .
+   git commit -m "feat: [description of changes]"
+   ```
+
+5. Suggest running `/review` to validate the implementation

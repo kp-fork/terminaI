@@ -118,11 +118,54 @@ git clone https://github.com/Prof-Harita/terminaI.git
 cd terminaI && npm ci && npm run build
 
 # Link the CLI
-npm link --workspace packages/termai
+npm link --workspace packages/cli
 
 # Run
 terminai
 ```
+
+---
+
+## 🛠️ Building from Source
+
+### Prerequisites
+
+- Node.js 20+
+- Rust (latest stable)
+- Platform-specific:
+  - **Linux:** `build-essential`, `libwebkit2gtk-4.1-dev`, `libssl-dev`, `curl`,
+    `wget`
+  - **Windows:** Visual Studio Build Tools
+  - **macOS:** Xcode Command Line Tools
+
+### Development Build
+
+```bash
+# Install dependencies
+npm install
+
+# Run in dev mode (CLI + Desktop)
+npm run tauri dev
+```
+
+### Release Build
+
+```bash
+# Build production installers
+node scripts/build-release.js
+
+# Output: packages/desktop/src-tauri/target/release/bundle/
+```
+
+### Testing Installers
+
+**Linux (.deb):**
+
+```bash
+./local/test-installer.sh packages/desktop/src-tauri/target/release/bundle/deb/terminai_*.deb
+```
+
+**Windows (.msi):** Install on a clean Windows VM and verify launch.
 
 Then just talk to it:
 

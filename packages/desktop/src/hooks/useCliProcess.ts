@@ -166,7 +166,8 @@ export function useCliProcess(options?: { onComplete?: () => void }) {
       setToolStatus('Agent is executing tools...');
       const parts = result.status?.message?.parts ?? [];
       for (const part of parts) {
-        if (part?.kind === 'data' && part.data) {
+        const hasData = part && typeof part === 'object' && 'data' in part && part.data;
+        if ((part?.kind === 'data' || hasData) && part.data) {
           const toolData = part.data;
           const callId =
             toolData?.request?.callId ??

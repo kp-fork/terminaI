@@ -387,6 +387,7 @@ export class CoreToolScheduler {
   private isFinalizingToolCalls = false;
   private isScheduling = false;
   private isCancelling = false;
+
   private requestQueue: Array<{
     request: ToolCallRequestInfo | ToolCallRequestInfo[];
     signal: AbortSignal;
@@ -395,6 +396,7 @@ export class CoreToolScheduler {
   }> = [];
   private toolCallQueue: ToolCall[] = [];
   private completedToolCallsForBatch: CompletedToolCall[] = [];
+  private activeToolPids = new Map<string, number>();
 
   constructor(options: CoreToolSchedulerOptions) {
     this.config = options.config;
@@ -1405,6 +1407,7 @@ export class CoreToolScheduler {
             let promise: Promise<ToolResult>;
             if (invocation instanceof ShellToolInvocation) {
               const setPidCallback = (pid: number) => {
+                this.activeToolPids.set(callId, pid);
                 this.toolCalls = this.toolCalls.map((tc) =>
                   tc.request.callId === callId && tc.status === 'executing'
                     ? { ...tc, pid }

@@ -16,15 +16,86 @@ export interface JsonRpcResponse {
     callId?: string;
     toolName?: string;
     args?: Record<string, unknown>;
-    eventSeq?: number;
     confirmationToken?: string;
+    eventSeq?: number;
     content?: string;
+    status?: {
+      state?: string;
+      message?: {
+        parts?: Array<Record<string, unknown>>;
+      };
+    };
+    metadata?: {
+      coderAgent?: {
+        kind?: string;
+      };
+      [key: string]: unknown;
+    };
+    artifact?: {
+      artifactId?: string;
+      parts?: Array<Record<string, unknown>>;
+    };
     [key: string]: unknown;
   };
   error?: {
     code: number;
     message: string;
   };
+}
+
+function extractToolCallInfoFromStatusParts(parts: Array<Record<string, unknown>>): {
+  callId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+  status?: string;
+  confirmationToken?: string;
+} | null {
+  for (const part of parts) {
+    if (part?.['kind'] === 'tool-call') {
+      const toolCall = part?.['toolCall'] as Record<string, unknown> | undefined;
+      const callId = toolCall?.['callId'] as string | undefined;
+      const toolName = toolCall?.['toolName'] as string | undefined;
+      const args = (toolCall?.['args'] as Record<string, unknown> | undefined) ?? {};
+      const confirmationToken = toolCall?.['confirmationToken'] as string | undefined;
+      if (callId && toolName) {
+        return { callId, toolName, args, confirmationToken };
+      }
+    }
+
+    const kind = part?.['kind'];
+    const data = part?.['data'] as Record<string, unknown> | undefined;
+    const hasData = part && typeof part === 'object' && 'data' in part && data;
+    if (!data || (kind !== 'data' && !hasData)) continue;
+
+    const request = data['request'] as Record<string, unknown> | undefined;
+    const callId = (request?.['callId'] as string | undefined) ??
+      (data['callId'] as string | undefined);
+    if (!callId) continue;
+
+    const toolName =
+      (request?.['name'] as string | undefined) ??
+      ((data['tool'] as Record<string, unknown> | undefined)?.['name'] as
+        | string
+        | undefined) ??
+      'unknown';
+    const args = (request?.['args'] as Record<string, unknown> | undefined) ?? {};
+    const status = data['status'] as string | undefined;
+    const confirmationToken = data['confirmationToken'] as string | undefined;
+
+    return { callId, toolName, args, status, confirmationToken };
+  }
+
+  return null;
+}
+
+function extractTextFromParts(parts: Array<Record<string, unknown>>): string {
+  let out = '';
+  for (const part of parts) {
+    if (part?.['kind'] === 'text' && typeof part?.['text'] === 'string') {
+      out += part['text'] as string;
+    }
+  }
+  return out;
 }
 
 export interface HandleSseEventOptions {
@@ -68,6 +139,10 @@ export function handleSseEvent(
 ): void {
   const { dispatch, getState, onText, onToolUpdate, onComplete } = options;
   const currentState = getState();
+  if (event.error) {
+    dispatch(BridgeActions.error(event.error.message));
+    return;
+  }
   const result = event.result;
   if (!result) return;
 
@@ -139,6 +214,107 @@ export function handleSseEvent(
       dispatch(BridgeActions.streamEnded());
       if (onComplete) {
         onComplete();
+      }
+      break;
+
+    case 'status-update':
+      if (
+        currentState.status === 'sending' &&
+        result.taskId &&
+        result.contextId
+      ) {
+        dispatch(BridgeActions.streamStarted(result.taskId, result.contextId));
+      }
+
+      {
+        const parts =
+          (result.status?.message?.parts as Array<Record<string, unknown>> | undefined) ??
+          [];
+
+        const text = extractTextFromParts(parts);
+        if (text && onText) {
+          onText(text);
+        }
+
+        const coderAgentKind = result.metadata?.coderAgent?.kind;
+        const toolInfo = extractToolCallInfoFromStatusParts(parts);
+
+        if (
+          onToolUpdate &&
+          (parts.some((p) => p?.['kind'] === 'data') ||
+            parts.some((p) => p?.['kind'] === 'tool-call') ||
+            !!toolInfo)
+        ) {
+          onToolUpdate(result);
+        }
+
+        if (
+          toolInfo &&
+          result.taskId &&
+          result.contextId &&
+          (coderAgentKind === 'tool-call-confirmation' ||
+            toolInfo.status === 'awaiting_approval' ||
+            parts.some((p) => p?.['kind'] === 'tool-call') ||
+            result.status?.state === 'waiting-for-user-confirmation')
+        ) {
+          dispatch(
+            BridgeActions.confirmationRequired(
+              result.taskId,
+              result.contextId,
+              toolInfo.callId,
+              toolInfo.toolName,
+              toolInfo.args,
+              toolInfo.confirmationToken,
+            ),
+          );
+        }
+
+        if (
+          toolInfo &&
+          currentState.status === 'executing_tool' &&
+          ['success', 'error', 'cancelled'].includes(toolInfo.status ?? '')
+        ) {
+          dispatch(BridgeActions.toolCompleted());
+        }
+
+        if (result.final && currentState.status !== 'awaiting_confirmation') {
+          dispatch(BridgeActions.streamEnded());
+          if (onComplete) {
+            onComplete();
+          }
+        }
+      }
+      break;
+
+    case 'artifact-update':
+      if (
+        currentState.status === 'sending' &&
+        result.taskId &&
+        result.contextId
+      ) {
+        dispatch(BridgeActions.streamStarted(result.taskId, result.contextId));
+      }
+
+      if (onToolUpdate && result.artifact?.artifactId && result.artifact?.parts) {
+        const m = /^tool-(.+)-output$/.exec(result.artifact.artifactId);
+        const callId = m?.[1];
+        const text = extractTextFromParts(
+          result.artifact.parts as Array<Record<string, unknown>>,
+        );
+        if (callId && text) {
+          onToolUpdate({
+            status: {
+              message: {
+                parts: [
+                  {
+                    kind: 'data',
+                    data: { callId, output: text },
+                  },
+                ],
+              },
+            },
+          });
+        }
       }
       break;
 

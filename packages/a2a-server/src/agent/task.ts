@@ -45,6 +45,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { createHmac, randomBytes } from 'node:crypto';
 import { CoderAgentEvent } from '../types.js';
 import type {
   CoderAgentMessage,
@@ -59,6 +60,42 @@ import type {
 import type { PartUnion, Part as genAiPart } from '@google/genai';
 
 type UnionKeys<T> = T extends T ? keyof T : never;
+
+export function generateConfirmationToken(
+  taskId: string,
+  callId: string,
+  secret: string,
+): string {
+  const payload = JSON.stringify({ taskId, callId, exp: Date.now() + 3600000 }); // 1hr expiry
+  const signature = createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex')
+    .slice(0, 16);
+  return Buffer.from(payload).toString('base64') + '.' + signature;
+}
+
+export function parseConfirmationToken(
+  token: string,
+  secret: string,
+): { taskId: string; callId: string } | null {
+  const [payloadB64, signature] = token.split('.');
+  if (!payloadB64 || !signature) return null;
+
+  const payload = Buffer.from(payloadB64, 'base64').toString();
+  const expectedSig = createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex')
+    .slice(0, 16);
+  if (signature !== expectedSig) return null;
+
+  try {
+    const data = JSON.parse(payload);
+    if (data.exp < Date.now()) return null; // Expired
+    return { taskId: data.taskId, callId: data.callId };
+  } catch (e) {
+    return null;
+  }
+}
 
 export class Task {
   id: string;
@@ -75,6 +112,7 @@ export class Task {
   currentPromptId: string | undefined;
   promptCount = 0;
   autoExecute: boolean;
+  private confirmationSecret: string;
 
   // For tool waiting logic
   private pendingToolCalls: Map<string, string> = new Map(); //toolCallId --> status
@@ -108,6 +146,7 @@ export class Task {
       // intent achieves this.
       async () => 'stop',
     );
+    this.confirmationSecret = randomBytes(32).toString('hex');
   }
 
   static async create(
@@ -505,9 +544,18 @@ export class Task {
       ) as AnyDeclarativeTool;
     }
 
+    const confirmationToken =
+      tc.status === 'awaiting_approval'
+        ? generateConfirmationToken(
+            taskId,
+            tc.request.callId,
+            this.confirmationSecret,
+          )
+        : undefined;
+
     messageParts.push({
       kind: 'data',
-      data: serializableToolCall,
+      data: { ...serializableToolCall, confirmationToken },
     } as Part);
 
     return {
@@ -748,7 +796,34 @@ export class Task {
       return false;
     }
 
-    const callId = part.data['callId'];
+    let callId = part.data['callId'];
+    if (typeof part.data['confirmationToken'] === 'string') {
+      const decoded = parseConfirmationToken(
+        part.data['confirmationToken'],
+        this.confirmationSecret,
+      );
+      if (!decoded) {
+        logger.warn('[Task] Invalid confirmation token received. Ignoring.');
+        // Fail secure: if a token is presented but invalid, reject.
+        return false;
+      }
+      if (decoded.taskId !== this.id) {
+        logger.warn(
+          `[Task] Confirmation token taskId mismatch. Expected ${this.id}, got ${decoded.taskId}`,
+        );
+        return false;
+      }
+      // If valid, we can trust the token's callId.
+      // But for sanity, ensure it matches the payload if present (optional strictness)
+      if (decoded.callId !== callId) {
+        logger.warn(
+          `[Task] Confirmation token callId (${decoded.callId}) mismatch with payload (${callId})`,
+        );
+        // We defer to the token as authoritative
+        callId = decoded.callId;
+      }
+    }
+
     const outcomeString = part.data['outcome'];
     const pin =
       typeof part.data['pin'] === 'string' ? part.data['pin'] : undefined;
@@ -868,6 +943,33 @@ export class Task {
     }
   }
 
+  private _handleToolInputPart(part: Part): boolean {
+    if (
+      part.kind !== 'data' ||
+      !part.data ||
+      typeof part.data['callId'] !== 'string' ||
+      typeof part.data['input'] !== 'string'
+    ) {
+      return false;
+    }
+
+    const callId = part.data['callId'] as string;
+    const input = part.data['input'] as string;
+
+    logger.info(`[Task] Handling tool input for callId: ${callId}`);
+    try {
+      // @ts-ignore - writeToToolInput was added but types are not updating in build
+      this.scheduler.writeToToolInput(callId, input);
+      return true;
+    } catch (error) {
+      logger.error(
+        `[Task] Failed to write tool input for callId ${callId}:`,
+        error,
+      );
+      return false;
+    }
+  }
+
   getAndClearCompletedTools(): CompletedToolCall[] {
     const tools = [...this.completedToolCalls];
     this.completedToolCalls = [];
@@ -953,6 +1055,12 @@ export class Task {
         // If a confirmation was handled, the scheduler will now run the tool (or cancel it).
         // We don't send anything to the LLM for this part.
         // The subsequent tool execution will eventually lead to resolveToolCall.
+        continue;
+      }
+
+      const inputHandled = this._handleToolInputPart(part);
+      if (inputHandled) {
+        // If tool input was handled, we don't send anything to the LLM.
         continue;
       }
 
