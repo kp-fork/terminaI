@@ -166,7 +166,8 @@ export function useCliProcess(options?: { onComplete?: () => void }) {
       setToolStatus('Agent is executing tools...');
       const parts = result.status?.message?.parts ?? [];
       for (const part of parts) {
-        const hasData = part && typeof part === 'object' && 'data' in part && part.data;
+        const hasData =
+          part && typeof part === 'object' && 'data' in part && part.data;
         if ((part?.kind === 'data' || hasData) && part.data) {
           const toolData = part.data;
           const callId =
@@ -339,14 +340,16 @@ export function useCliProcess(options?: { onComplete?: () => void }) {
       };
       setMessages((prev) => [...prev, userMessage]);
 
-      // History
-      const tid = currentTaskId || 'default';
-      useHistoryStore.getState().addSession({
-        id: tid,
-        title: text.length > 30 ? text.slice(0, 30) + '...' : text,
-        lastMessage: text,
-        timestamp: Date.now(),
-      });
+      // History - BM-2 FIX: Only record session after we have a real taskId
+      // Don't use 'default' since it pollutes history with anonymous sessions
+      if (currentTaskId) {
+        useHistoryStore.getState().addSession({
+          id: currentTaskId,
+          title: text.length > 30 ? text.slice(0, 30) + '...' : text,
+          lastMessage: text,
+          timestamp: Date.now(),
+        });
+      }
 
       useExecutionStore.getState().clearEvents();
       startAssistantMessage();
@@ -368,6 +371,8 @@ export function useCliProcess(options?: { onComplete?: () => void }) {
             parts: [{ kind: 'text', text }],
             messageId,
           },
+          // BM-1 FIX: Always include taskId if we have a conversation
+          // currentTaskId now comes from persistent currentConversationId
           ...(currentTaskId ? { taskId: currentTaskId } : {}),
         },
       };
