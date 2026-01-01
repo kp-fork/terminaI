@@ -229,6 +229,7 @@ describe('Configuration Integration Tests', () => {
       const originalArgv = process.argv;
       try {
         process.argv = argv;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const parsedArgs = await parseArguments({} as any);
         expect(parsedArgs.approvalMode).toBe(expected.approvalMode);
         expect(parsedArgs.prompt).toBe(expected.prompt);
@@ -252,6 +253,7 @@ describe('Configuration Integration Tests', () => {
       const originalArgv = process.argv;
       try {
         process.argv = argv;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await expect(parseArguments({} as any)).rejects.toThrow();
       } finally {
         process.argv = originalArgv;

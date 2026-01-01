@@ -26,12 +26,18 @@ export function ToolLogCard({ event }: ToolLogCardProps) {
           <span className="text-xs font-mono font-bold text-[var(--accent)] truncate">
             {event.toolName}
           </span>
-          <div className={`px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider border ${statusColors[event.status]}`}>
+          <div
+            className={`px-1.5 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider border ${statusColors[event.status]}`}
+          >
             {event.status}
           </div>
         </div>
         <span className="text-[10px] text-[var(--text-muted)] whitespace-nowrap">
-          {new Date(event.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          {new Date(event.startedAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          })}
         </span>
       </div>
 

@@ -5,45 +5,56 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { 
-  Clock, 
-  Sparkles, 
-  Link, 
-  Library, 
-  Briefcase, 
-  Terminal, 
-  Settings2, 
-  User 
-} from 'lucide-react'
-import { cn } from '../lib/utils'
-import { Button } from './ui/button'
+import {
+  Clock,
+  Sparkles,
+  Link,
+  Library,
+  Briefcase,
+  Terminal,
+  Settings2,
+  User,
+} from 'lucide-react';
+import { cn } from '../lib/utils';
+import { Button } from './ui/button';
 
-export type ActivityView = 
-  | 'history' 
-  | 'assistant' 
-  | 'connectivity' 
-  | 'library' 
-  | 'workspace' 
-  | 'terminal' 
-  | 'preference' 
-  | 'account'
+export type ActivityView =
+  | 'history'
+  | 'assistant'
+  | 'connectivity'
+  | 'library'
+  | 'workspace'
+  | 'terminal'
+  | 'preference'
+  | 'account';
 
 interface ActivityBarProps {
-  activeView: ActivityView | null
-  onViewChange: (view: ActivityView | null) => void
+  activeView: ActivityView | null;
+  onViewChange: (view: ActivityView | null) => void;
 }
 
 interface ActivityItemProps {
-  icon: React.ElementType
-  label: string
-  isActive: boolean
-  onClick: () => void
-  isBottom?: boolean
+  icon: React.ElementType;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+  isBottom?: boolean;
 }
 
-function ActivityItem({ icon: Icon, label, isActive, onClick, isBottom }: ActivityItemProps) {
+function ActivityItem({
+  icon: Icon,
+  label,
+  isActive,
+  onClick,
+  isBottom,
+}: ActivityItemProps) {
   return (
-    <div className={cn("relative flex justify-center py-3", isBottom && "mt-auto pb-4")}>
+    <div
+      className={cn(
+        'relative flex justify-center py-3',
+        isBottom && 'mt-auto pb-4',
+      )}
+    >
       {isActive && (
         <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-black dark:bg-white rounded-r-full" />
       )}
@@ -52,25 +63,27 @@ function ActivityItem({ icon: Icon, label, isActive, onClick, isBottom }: Activi
         size="icon"
         onClick={onClick}
         className={cn(
-          "h-10 w-10 text-muted-foreground transition-all hover:text-foreground relative group",
-          isActive && "text-black dark:text-white"
+          'h-10 w-10 text-muted-foreground transition-all hover:text-foreground relative group',
+          isActive && 'text-black dark:text-white',
         )}
         title={label}
       >
-        <Icon className={cn("h-6 w-6 stroke-[1.5]", isActive && "stroke-[2]")} />
+        <Icon
+          className={cn('h-6 w-6 stroke-[1.5]', isActive && 'stroke-[2]')}
+        />
       </Button>
     </div>
-  )
+  );
 }
 
 export function ActivityBar({ activeView, onViewChange }: ActivityBarProps) {
   const toggleView = (view: ActivityView) => {
     if (activeView === view) {
-      onViewChange(null)
+      onViewChange(null);
     } else {
-      onViewChange(view)
+      onViewChange(view);
     }
-  }
+  };
 
   return (
     <div className="w-[48px] bg-sidebar-accent/50 border-r border-border flex flex-col h-full flex-shrink-0 z-30">
@@ -116,9 +129,9 @@ export function ActivityBar({ activeView, onViewChange }: ActivityBarProps) {
         isActive={activeView === 'preference'}
         onClick={() => toggleView('preference')}
       />
-      
+
       <div className="flex-1" />
-      
+
       <ActivityItem
         icon={User}
         label="Account"
@@ -127,5 +140,5 @@ export function ActivityBar({ activeView, onViewChange }: ActivityBarProps) {
         isBottom
       />
     </div>
-  )
+  );
 }

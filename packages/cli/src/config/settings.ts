@@ -78,7 +78,7 @@ export function loadSettings(
   return loader.load();
 }
 
-export function loadEnvironment(settings: Settings): void {
+export function loadEnvironment(_settings: Settings): void {
   const envFile = findEnvFile(process.cwd());
   if (envFile && fs.existsSync(envFile)) {
     dotenv.config({ path: envFile });

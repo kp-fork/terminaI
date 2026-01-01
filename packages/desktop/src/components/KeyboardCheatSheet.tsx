@@ -38,7 +38,10 @@ export function KeyboardCheatSheet({ isOpen, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <span role="img" aria-label="keyboard">⌨️</span> Keyboard Shortcuts
+          <span role="img" aria-label="keyboard">
+            ⌨️
+          </span>{' '}
+          Keyboard Shortcuts
         </h2>
         <div className="space-y-2">
           {shortcuts.map(({ keys, action }) => (

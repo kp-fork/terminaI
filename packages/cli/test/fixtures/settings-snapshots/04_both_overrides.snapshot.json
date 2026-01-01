@@ -1,5 +1,3 @@
-[DEBUG] CLI: main() called
-[DEBUG] CLI: main() called
 {
   "allowedMcpServers": [],
   "blockedMcpServers": [],
@@ -243,10 +241,7 @@
   "debugMode": false,
   "question": "",
   "previewMode": false,
-  "allowedTools": [
-    "ls",
-    "cat"
-  ],
+  "allowedTools": ["ls", "cat"],
   "excludeTools": [],
   "userMemory": "",
   "geminiMdFileCount": 0,
@@ -539,9 +534,7 @@
         "exportRedaction": "enterprise"
       },
       "recipeSettings": {
-        "paths": [
-          "/tmp/tmp.19yDjzAZWL/.terminai/recipes"
-        ],
+        "paths": ["/tmp/tmp.19yDjzAZWL/.terminai/recipes"],
         "communityPaths": [],
         "allowCommunity": false,
         "confirmCommunityOnFirstLoad": true,
@@ -799,9 +792,7 @@
     "exportRedaction": "enterprise"
   },
   "recipeSettings": {
-    "paths": [
-      "/tmp/tmp.19yDjzAZWL/.terminai/recipes"
-    ],
+    "paths": ["/tmp/tmp.19yDjzAZWL/.terminai/recipes"],
     "communityPaths": [],
     "allowCommunity": false,
     "confirmCommunityOnFirstLoad": true,

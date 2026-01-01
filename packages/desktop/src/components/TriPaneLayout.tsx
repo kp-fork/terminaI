@@ -30,7 +30,7 @@ export function TriPaneLayout({
     const saved = localStorage.getItem('terminai-left-pane-width');
     return saved ? parseInt(saved, 10) : defaultLeftWidth;
   });
-  
+
   const [rightWidth, setRightWidth] = useState(() => {
     const saved = localStorage.getItem('terminai-right-pane-width');
     return saved ? parseInt(saved, 10) : defaultRightWidth;
@@ -38,10 +38,10 @@ export function TriPaneLayout({
 
   const isResizingLeft = useRef(false);
   const isResizingRight = useRef(false);
-  
+
   const leftMinRef = useRef(leftMinWidth);
   const rightMinRef = useRef(rightMinWidth);
-  
+
   useEffect(() => {
     leftMinRef.current = leftMinWidth;
     rightMinRef.current = rightMinWidth;
@@ -53,7 +53,10 @@ export function TriPaneLayout({
       setLeftWidth(newWidth);
       localStorage.setItem('terminai-left-pane-width', newWidth.toString());
     } else if (isResizingRight.current) {
-      const newWidth = Math.max(rightMinRef.current, Math.min(600, window.innerWidth - e.clientX));
+      const newWidth = Math.max(
+        rightMinRef.current,
+        Math.min(600, window.innerWidth - e.clientX),
+      );
       setRightWidth(newWidth);
       localStorage.setItem('terminai-right-pane-width', newWidth.toString());
     }
@@ -61,7 +64,7 @@ export function TriPaneLayout({
 
   const stopResizing = useCallback(() => {
     if (!isResizingLeft.current && !isResizingRight.current) return;
-    
+
     isResizingLeft.current = false;
     isResizingRight.current = false;
     document.removeEventListener('mousemove', handleMouseMove);
@@ -70,33 +73,45 @@ export function TriPaneLayout({
     document.body.style.userSelect = 'auto';
   }, [handleMouseMove]);
 
-  const startResizingLeft = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isResizingLeft.current = true;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', stopResizing);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  }, [handleMouseMove, stopResizing]);
+  const startResizingLeft = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isResizingLeft.current = true;
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', stopResizing);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    },
+    [handleMouseMove, stopResizing],
+  );
 
-  const startResizingRight = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isResizingRight.current = true;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', stopResizing);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  }, [handleMouseMove, stopResizing]);
+  const startResizingRight = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isResizingRight.current = true;
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', stopResizing);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    },
+    [handleMouseMove, stopResizing],
+  );
 
-  useEffect(() => () => {
+  useEffect(
+    () => () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', stopResizing);
-    }, [handleMouseMove, stopResizing]);
+    },
+    [handleMouseMove, stopResizing],
+  );
 
   return (
-    <div className="flex h-full overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+    <div
+      className="flex h-full overflow-hidden"
+      style={{ background: 'var(--bg-primary)' }}
+    >
       {/* Left Pane */}
-      <div 
+      <div
         style={{ width: `${leftWidth}px`, minWidth: leftMinWidth }}
         className="h-full flex-shrink-0"
       >
@@ -113,9 +128,7 @@ export function TriPaneLayout({
       />
 
       {/* Middle Pane */}
-      <div className="flex-1 h-full min-w-0 flex flex-col">
-        {middlePanel}
-      </div>
+      <div className="flex-1 h-full min-w-0 flex flex-col">{middlePanel}</div>
 
       {/* Right Divider */}
       <div
@@ -127,7 +140,7 @@ export function TriPaneLayout({
       />
 
       {/* Right Pane */}
-      <div 
+      <div
         style={{ width: `${rightWidth}px`, minWidth: rightMinWidth }}
         className="h-full flex-shrink-0"
       >

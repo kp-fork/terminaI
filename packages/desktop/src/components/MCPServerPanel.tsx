@@ -7,7 +7,14 @@
 
 import { useState } from 'react';
 import { useMCPStore } from '../stores/mcpStore';
-import { Shield, Trash2, Settings, Plus, Server, AlertCircle } from 'lucide-react';
+import {
+  Shield,
+  Trash2,
+  Settings,
+  Plus,
+  Server,
+  AlertCircle,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 
@@ -88,7 +95,9 @@ export function MCPServerPanel() {
         <div className="text-center py-8 text-muted-foreground">
           <Server className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No MCP servers configured</p>
-          <p className="text-xs mt-1">Add a server to extend agent capabilities</p>
+          <p className="text-xs mt-1">
+            Add a server to extend agent capabilities
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -97,7 +106,7 @@ export function MCPServerPanel() {
               key={server.id}
               className={cn(
                 'p-3 bg-card border rounded-lg transition-all duration-200',
-                expandedId === server.id && 'ring-1 ring-ring'
+                expandedId === server.id && 'ring-1 ring-ring',
               )}
             >
               <div className="flex items-center justify-between">
@@ -108,7 +117,7 @@ export function MCPServerPanel() {
                       'w-2 h-2 rounded-full flex-shrink-0',
                       server.status === 'connected' && 'bg-green-500',
                       server.status === 'disconnected' && 'bg-gray-500',
-                      server.status === 'error' && 'bg-red-500'
+                      server.status === 'error' && 'bg-red-500',
                     )}
                     title={server.status}
                   />

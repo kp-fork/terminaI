@@ -41,7 +41,7 @@ function step(name, command, cwd = '.') {
       env: { ...process.env, FORCE_COLOR: '1' },
     });
     console.log(`✅ ${name} completed\n`);
-  } catch (e) {
+  } catch (_e) {
     console.error(`❌ ${name} failed`);
     process.exit(1);
   }

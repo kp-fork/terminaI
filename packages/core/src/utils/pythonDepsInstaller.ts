@@ -53,9 +53,9 @@ export function parseMissingModules(stderr: string): string[] {
   // "ModuleNotFoundError: No module named 'pyatspi'"
   // "ImportError: No module named gi.repository"
   const patterns = [
-    /ModuleNotFoundError: No module named ['\"]?([a-zA-Z0-9_]+)/g,
-    /ImportError: No module named ['\"]?([a-zA-Z0-9_]+)/g,
-    /ImportError: cannot import name .* from ['\"]?([a-zA-Z0-9_]+)/g,
+    /ModuleNotFoundError: No module named ['"]?([a-zA-Z0-9_]+)/g,
+    /ImportError: No module named ['"]?([a-zA-Z0-9_]+)/g,
+    /ImportError: cannot import name .* from ['"]?([a-zA-Z0-9_]+)/g,
   ];
 
   for (const pattern of patterns) {

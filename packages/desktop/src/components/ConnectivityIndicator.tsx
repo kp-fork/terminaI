@@ -17,7 +17,7 @@ export const ConnectivityIndicator: React.FC = () => {
   // BM-4 FIX: Use real bridge connection status, not just token presence
   const bridgeConnected = useBridgeStore((s) => s.isConnected());
   const sidecarReady = bootStatus === 'ready';
-  
+
   // True connectivity requires: token exists AND (bridge connected OR sidecar ready)
   const isConnected = hasToken && (bridgeConnected || sidecarReady);
   const isBooting = bootStatus === 'booting';
@@ -26,11 +26,11 @@ export const ConnectivityIndicator: React.FC = () => {
 
   // Restart Handler (Task 4.4 Prep)
   const handleRestart = async () => {
-      // For now, reload window or logic?
-      // window.location.reload(); 
-      // Or call restart_sidecar command if implemented (Phase 4).
-      // For Phase 3, just show error.
-      window.location.reload();
+    // For now, reload window or logic?
+    // window.location.reload();
+    // Or call restart_sidecar command if implemented (Phase 4).
+    // For Phase 3, just show error.
+    window.location.reload();
   };
 
   return (
@@ -49,20 +49,31 @@ export const ConnectivityIndicator: React.FC = () => {
             ? '0 0 6px rgba(234, 179, 8, 0.6)'
             : isConnected
               ? '0 0 6px rgba(34, 197, 94, 0.6)'
-              : '0 0 6px rgba(239, 68, 68, 0.6)'
+              : '0 0 6px rgba(239, 68, 68, 0.6)',
         }}
       />
-      
+
       {/* Text Label */}
       <span className="text-muted-foreground hidden sm:inline">
-        {isBooting ? 'Starting Engine...' : isConnected ? 'Connected' : isError ? 'Engine Failed' : 'Disconnected'}
+        {isBooting
+          ? 'Starting Engine...'
+          : isConnected
+            ? 'Connected'
+            : isError
+              ? 'Engine Failed'
+              : 'Disconnected'}
       </span>
 
       {/* Error Action */}
       {isError && (
-          <Button variant="ghost" size="sm" className="h-6 text-xs text-red-500 px-1 ml-1" onClick={handleRestart}>
-              Restart
-          </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-xs text-red-500 px-1 ml-1"
+          onClick={handleRestart}
+        >
+          Restart
+        </Button>
       )}
 
       {/* Relay Count */}

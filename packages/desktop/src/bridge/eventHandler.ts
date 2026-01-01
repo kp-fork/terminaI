@@ -252,8 +252,7 @@ export function handleSseEvent(
       }
 
       {
-        const parts =
-          (result.status?.message?.parts) ?? [];
+        const parts = result.status?.message?.parts ?? [];
 
         const text = extractTextFromParts(parts);
         if (text && onText) {
@@ -326,9 +325,7 @@ export function handleSseEvent(
       ) {
         const m = /^tool-(.+)-output$/.exec(result.artifact.artifactId);
         const callId = m?.[1];
-        const text = extractTextFromParts(
-          result.artifact.parts,
-        );
+        const text = extractTextFromParts(result.artifact.parts);
         if (callId && text) {
           onToolUpdate({
             status: {

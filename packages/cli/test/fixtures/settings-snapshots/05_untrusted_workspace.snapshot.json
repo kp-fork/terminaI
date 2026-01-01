@@ -1,5 +1,3 @@
-[DEBUG] CLI: main() called
-[DEBUG] CLI: main() called
 {
   "allowedMcpServers": [],
   "blockedMcpServers": [],
@@ -533,9 +531,7 @@
         "exportRedaction": "enterprise"
       },
       "recipeSettings": {
-        "paths": [
-          "/tmp/tmp.LrStayddLu/.terminai/recipes"
-        ],
+        "paths": ["/tmp/tmp.LrStayddLu/.terminai/recipes"],
         "communityPaths": [],
         "allowCommunity": false,
         "confirmCommunityOnFirstLoad": true,
@@ -783,9 +779,7 @@
     "exportRedaction": "enterprise"
   },
   "recipeSettings": {
-    "paths": [
-      "/tmp/tmp.LrStayddLu/.terminai/recipes"
-    ],
+    "paths": ["/tmp/tmp.LrStayddLu/.terminai/recipes"],
     "communityPaths": [],
     "allowCommunity": false,
     "confirmCommunityOnFirstLoad": true,
