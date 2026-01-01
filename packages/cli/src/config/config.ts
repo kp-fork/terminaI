@@ -13,8 +13,8 @@ import { mcpCommand } from '../commands/mcp.js';
 import { extensionsCommand } from '../commands/extensions.js';
 import { hooksCommand } from '../commands/hooks.js';
 import { voiceCommand } from '../commands/voice.js';
-import type {
-  Config,
+import {
+  type Config,
   ConfigBuilder,
   setGeminiMdFilename as setServerGeminiMdFilename,
   getCurrentGeminiMdFilename,
