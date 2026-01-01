@@ -6,7 +6,7 @@
  */
 
 import { BaseDeclarativeTool } from './tools.js';
-import type { ToolResult , Kind } from './tools.js';
+import type { ToolResult, Kind } from './tools.js';
 import { DesktopAutomationService } from '../gui/service/DesktopAutomationService.js';
 import type { UiActionResult } from '../gui/protocol/types.js';
 import { formatUiResult } from './ui-tool-utils.js';

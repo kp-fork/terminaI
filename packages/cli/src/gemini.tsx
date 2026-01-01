@@ -478,7 +478,7 @@ export async function main() {
     if (argv.dumpConfig) {
       const getCircularReplacer = () => {
         const seen = new WeakSet();
-        return (_key: string, value: any) => {
+        return (_key: string, value: unknown) => {
           if (typeof value === 'object' && value !== null) {
             if (seen.has(value)) {
               return;
@@ -594,7 +594,11 @@ export async function main() {
         tokenOverride: argv.webRemoteToken,
         rotateToken: argv.webRemoteRotateToken,
         activeToken: authResult.token,
-        outputFormat: argv.outputFormat as 'text' | 'json' | 'stream-json' | undefined,
+        outputFormat: argv.outputFormat as
+          | 'text'
+          | 'json'
+          | 'stream-json'
+          | undefined,
       });
       webRemoteServer = server;
       registerCleanup(

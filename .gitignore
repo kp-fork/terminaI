@@ -67,3 +67,6 @@ local/
 test_output*.txt
 packages/desktop/src-tauri/bin/
 packages/desktop/src-tauri/resources/
+
+
+.env

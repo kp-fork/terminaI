@@ -31,10 +31,12 @@ export function ConfirmationCard({ confirmation, onRespond }: Props) {
           ⚠️
         </div>
         <div className="flex-1">
-            <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-foreground">Confirmation Required</span>
-                <RiskBadge level={confirmation.riskLevel} />
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm text-foreground">
+              Confirmation Required
+            </span>
+            <RiskBadge level={confirmation.riskLevel} />
+          </div>
         </div>
       </div>
 
@@ -45,17 +47,21 @@ export function ConfirmationCard({ confirmation, onRespond }: Props) {
 
       {/* Command preview */}
       <div className="mb-5">
-        <button 
-            onClick={() => setShowCommand(!showCommand)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium mb-2"
+        <button
+          onClick={() => setShowCommand(!showCommand)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium mb-2"
         >
-            {showCommand ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            {showCommand ? 'Hide command' : 'Show command'}
+          {showCommand ? (
+            <ChevronDown className="h-3 w-3" />
+          ) : (
+            <ChevronRight className="h-3 w-3" />
+          )}
+          {showCommand ? 'Hide command' : 'Show command'}
         </button>
         {showCommand && (
-            <pre className="p-3 bg-muted/50 rounded-md text-xs text-muted-foreground overflow-x-auto font-mono border border-border/50">
+          <pre className="p-3 bg-muted/50 rounded-md text-xs text-muted-foreground overflow-x-auto font-mono border border-border/50">
             {confirmation.command}
-            </pre>
+          </pre>
         )}
       </div>
 
@@ -85,15 +91,19 @@ export function ConfirmationCard({ confirmation, onRespond }: Props) {
           onClick={() => onRespond(true, requiresPin ? pin : undefined)}
           disabled={requiresPin && pin.length !== pinLength}
           className={cn(
-            "flex-1 gap-2",
-            requiresPin && pin.length !== pinLength ? "opacity-50 cursor-not-allowed" : "hover:bg-green-600"
+            'flex-1 gap-2',
+            requiresPin && pin.length !== pinLength
+              ? 'opacity-50 cursor-not-allowed'
+              : 'hover:bg-green-600',
           )}
           variant="default" // Use default variant but override color logic via className if needed, or stick to primary
           style={{ backgroundColor: 'var(--green-600)' }} // Tailwind 'bg-green-600' might not map to primary
         >
           <Check className="h-4 w-4" />
           Yes, proceed
-          <span className="ml-1 text-[10px] opacity-70 bg-black/20 px-1.5 py-0.5 rounded border border-white/10 hidden sm:inline-block">Ctrl+↵</span>
+          <span className="ml-1 text-[10px] opacity-70 bg-black/20 px-1.5 py-0.5 rounded border border-white/10 hidden sm:inline-block">
+            Ctrl+↵
+          </span>
         </Button>
         <Button
           variant="secondary"
@@ -102,7 +112,9 @@ export function ConfirmationCard({ confirmation, onRespond }: Props) {
         >
           <X className="h-4 w-4" />
           Cancel
-          <span className="ml-1 text-[10px] opacity-70 bg-black/5 px-1.5 py-0.5 rounded border border-black/10 hidden sm:inline-block dark:bg-white/10 dark:border-white/10">Esc</span>
+          <span className="ml-1 text-[10px] opacity-70 bg-black/5 px-1.5 py-0.5 rounded border border-black/10 hidden sm:inline-block dark:bg-white/10 dark:border-white/10">
+            Esc
+          </span>
         </Button>
       </div>
     </div>

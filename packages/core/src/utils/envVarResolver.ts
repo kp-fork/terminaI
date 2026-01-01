@@ -74,7 +74,9 @@ function resolveEnvVarsInObjectInternal<T>(
     const newObj = { ...obj } as T;
     for (const key in newObj) {
       if (Object.prototype.hasOwnProperty.call(newObj, key)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (newObj as any)[key] = resolveEnvVarsInObjectInternal(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (newObj as any)[key],
           visited,
           customEnv,

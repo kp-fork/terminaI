@@ -94,6 +94,7 @@ export class ExtensionManager extends ExtensionLoader {
     );
     this.settings = options.settings;
     this.telemetryConfig = new Config({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       telemetry: options.settings.telemetry as any,
       interactive: false,
       sessionId: randomUUID(),

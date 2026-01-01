@@ -24,12 +24,12 @@ export function CommandPalette({ isOpen, onClose, onSelect }: Props) {
     if (!query) return list;
 
     const lower = query.toLowerCase();
-    const weights = { 
-      'Conversation': 10, 
-      'Sessions': 8, 
-      'System': 7,
-      'Security': 5, 
-      'Help': 1 
+    const weights = {
+      Conversation: 10,
+      Sessions: 8,
+      System: 7,
+      Security: 5,
+      Help: 1,
     };
 
     return list
@@ -183,7 +183,13 @@ export function CommandPalette({ isOpen, onClose, onSelect }: Props) {
                   marginBottom: 'var(--space-1)',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                  }}
+                >
                   <span
                     style={{
                       fontFamily: 'monospace',
@@ -199,11 +205,18 @@ export function CommandPalette({ isOpen, onClose, onSelect }: Props) {
                     <kbd
                       style={{
                         padding: '1px 4px',
-                        background: i === selectedIndex ? 'rgba(255,255,255,0.2)' : 'var(--bg-tertiary)',
-                        border: i === selectedIndex ? '1px solid rgba(255,255,255,0.3)' : '1px solid var(--border)',
+                        background:
+                          i === selectedIndex
+                            ? 'rgba(255,255,255,0.2)'
+                            : 'var(--bg-tertiary)',
+                        border:
+                          i === selectedIndex
+                            ? '1px solid rgba(255,255,255,0.3)'
+                            : '1px solid var(--border)',
                         borderRadius: '3px',
                         fontSize: '10px',
-                        color: i === selectedIndex ? 'white' : 'var(--text-muted)',
+                        color:
+                          i === selectedIndex ? 'white' : 'var(--text-muted)',
                         fontFamily: 'monospace',
                       }}
                     >

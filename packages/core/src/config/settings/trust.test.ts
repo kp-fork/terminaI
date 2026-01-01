@@ -54,6 +54,7 @@ describe('LoadedTrustedFolders.isPathTrusted', () => {
 describe('isWorkspaceTrusted', () => {
   it('should return isTrusted: true if folder trust is disabled', () => {
     const settings = { security: { folderTrust: { enabled: false } } };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(isWorkspaceTrusted(settings as any)).toEqual({
       isTrusted: true,
       source: undefined,

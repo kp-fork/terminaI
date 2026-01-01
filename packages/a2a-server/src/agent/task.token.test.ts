@@ -7,6 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { generateConfirmationToken, parseConfirmationToken } from './task.js';
+import { createHmac } from 'node:crypto';
 
 describe('Task Confirmation Token', () => {
   const secret = 'test-secret-123';
@@ -48,10 +49,8 @@ describe('Task Confirmation Token', () => {
 
   it('should reject an expired token', () => {
     // Manually create expired token
-    const crypto = require('node:crypto');
     const payload = JSON.stringify({ taskId, callId, exp: Date.now() - 1000 });
-    const signature = crypto
-      .createHmac('sha256', secret)
+    const signature = createHmac('sha256', secret)
       .update(payload)
       .digest('hex')
       .slice(0, 16);

@@ -21,7 +21,7 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
 
   if (!isOpen) return null;
 
-  const matchesSearch = (text: string) => 
+  const matchesSearch = (text: string) =>
     text.toLowerCase().includes(search.toLowerCase());
 
   return (
@@ -94,7 +94,14 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
         </div>
 
         {/* Account Section */}
-        <Section title="Account" show={matchesSearch('Account') || matchesSearch('email') || matchesSearch('sign out')}>
+        <Section
+          title="Account"
+          show={
+            matchesSearch('Account') ||
+            matchesSearch('email') ||
+            matchesSearch('sign out')
+          }
+        >
           <p
             style={{
               fontSize: 'var(--text-sm)',
@@ -121,9 +128,17 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
         </Section>
 
         {/* Agent Section */}
-        <Section title="Agent" show={matchesSearch('Agent') || matchesSearch('URL') || matchesSearch('Token') || matchesSearch('Workspace')}>
-          <SettingRow 
-            label="Agent URL" 
+        <Section
+          title="Agent"
+          show={
+            matchesSearch('Agent') ||
+            matchesSearch('URL') ||
+            matchesSearch('Token') ||
+            matchesSearch('Workspace')
+          }
+        >
+          <SettingRow
+            label="Agent URL"
             show={matchesSearch('Agent URL')}
             onReset={() => settings.setAgentUrl('http://127.0.0.1:41242')}
           >
@@ -135,8 +150,8 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
               style={{ width: '100%' }}
             />
           </SettingRow>
-          <SettingRow 
-            label="Agent Token" 
+          <SettingRow
+            label="Agent Token"
             show={matchesSearch('Agent Token')}
             onReset={() => settings.setAgentToken('')}
           >
@@ -149,8 +164,8 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
               style={{ width: '100%' }}
             />
           </SettingRow>
-          <SettingRow 
-            label="Workspace Path" 
+          <SettingRow
+            label="Workspace Path"
             show={matchesSearch('Workspace Path')}
             onReset={() => settings.setAgentWorkspacePath('/tmp')}
           >
@@ -165,8 +180,18 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
         </Section>
 
         {/* Security Section */}
-        <Section title="Security" show={matchesSearch('Security') || matchesSearch('Approval') || matchesSearch('Preview')}>
-          <SettingRow label="Approval Mode" show={matchesSearch('Approval Mode')}>
+        <Section
+          title="Security"
+          show={
+            matchesSearch('Security') ||
+            matchesSearch('Approval') ||
+            matchesSearch('Preview')
+          }
+        >
+          <SettingRow
+            label="Approval Mode"
+            show={matchesSearch('Approval Mode')}
+          >
             <select
               value={settings.approvalMode}
               onChange={(e) =>
@@ -191,36 +216,73 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
         </Section>
 
         {/* MCP Servers Section */}
-        <Section title="MCP Servers" show={matchesSearch('MCP') || matchesSearch('model context protocol') || settings.mcpServers.length > 0}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        <Section
+          title="MCP Servers"
+          show={
+            matchesSearch('MCP') ||
+            matchesSearch('model context protocol') ||
+            settings.mcpServers.length > 0
+          }
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-3)',
+            }}
+          >
             {settings.mcpServers.map((server) => (
-              <div 
-                key={server.id} 
-                style={{ 
-                  background: 'var(--bg-tertiary)', 
-                  padding: 'var(--space-3)', 
+              <div
+                key={server.id}
+                style={{
+                  background: 'var(--bg-tertiary)',
+                  padding: 'var(--space-3)',
                   borderRadius: 'var(--radius-md)',
                   border: '1px solid var(--border)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 'var(--space-2)'
+                  gap: 'var(--space-2)',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    <div 
-                      style={{ 
-                        width: '8px', 
-                        height: '8px', 
-                        borderRadius: '50%', 
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
                         background: server.enabled ? '#22c55e' : '#6b7280',
-                        boxShadow: server.enabled ? '0 0 8px rgba(34, 197, 94, 0.4)' : 'none'
-                      }} 
+                        boxShadow: server.enabled
+                          ? '0 0 8px rgba(34, 197, 94, 0.4)'
+                          : 'none',
+                      }}
                     />
-                    <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{server.name}</span>
+                    <span
+                      style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}
+                    >
+                      {server.name}
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    <button 
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)',
+                    }}
+                  >
+                    <button
                       onClick={() => {
                         onClose();
                         sendMessage(`/mcp logs ${server.name}`);
@@ -233,9 +295,12 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
                       type="checkbox"
                       checked={server.enabled}
                       onChange={() => settings.toggleMcpServer(server.id)}
-                      style={{ accentColor: 'var(--accent)', marginLeft: '4px' }}
+                      style={{
+                        accentColor: 'var(--accent)',
+                        marginLeft: '4px',
+                      }}
                     />
-                    <button 
+                    <button
                       onClick={() => settings.removeMcpServer(server.id)}
                       className="text-red-500 hover:text-red-600 text-xs font-semibold ml-2"
                     >
@@ -243,19 +308,26 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
                     </button>
                   </div>
                 </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', overflowX: 'auto' }}>
+                <div
+                  style={{
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--text-muted)',
+                    fontFamily: 'var(--font-mono)',
+                    overflowX: 'auto',
+                  }}
+                >
                   {server.command} {server.args.join(' ')}
                 </div>
               </div>
             ))}
-            
-            <button 
-              className="btn btn-ghost" 
-              style={{ 
-                border: '1px dashed var(--border)', 
-                fontSize: 'var(--text-xs)', 
+
+            <button
+              className="btn btn-ghost"
+              style={{
+                border: '1px dashed var(--border)',
+                fontSize: 'var(--text-xs)',
                 padding: 'var(--space-2)',
-                color: 'var(--text-muted)'
+                color: 'var(--text-muted)',
               }}
               onClick={() => {
                 const name = prompt('Server Name:');
@@ -264,12 +336,12 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
                 if (!command) return;
                 const args = prompt('Args (JSON array, e.g. ["--arg1"]):');
                 try {
-                  settings.addMcpServer({ 
-                    name, 
-                    command, 
-                    args: args ? JSON.parse(args) : [] 
+                  settings.addMcpServer({
+                    name,
+                    command,
+                    args: args ? JSON.parse(args) : [],
                   });
-                } catch (e) {
+                } catch (_e) {
                   alert('Invalid args JSON');
                 }
               }}
@@ -280,15 +352,35 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
         </Section>
 
         {/* Remote Relay Section */}
-        <Section title="Remote Relay" show={matchesSearch('Remote') || matchesSearch('Relay')}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>
-              Enable others to view and interact with this session via web relay.
+        <Section
+          title="Remote Relay"
+          show={matchesSearch('Remote') || matchesSearch('Relay')}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-3)',
+            }}
+          >
+            <p
+              style={{
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-muted)',
+                marginBottom: 'var(--space-2)',
+              }}
+            >
+              Enable others to view and interact with this session via web
+              relay.
             </p>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <button 
+              <button
                 className="btn btn-primary"
-                style={{ flex: 1, fontSize: 'var(--text-xs)', padding: 'var(--space-2)' }}
+                style={{
+                  flex: 1,
+                  fontSize: 'var(--text-xs)',
+                  padding: 'var(--space-2)',
+                }}
                 onClick={() => {
                   onClose();
                   sendMessage('/relay broadcast');
@@ -296,14 +388,14 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
               >
                 Start Broadcast
               </button>
-              <button 
+              <button
                 className="btn btn-ghost"
-                style={{ 
-                  flex: 1, 
-                  fontSize: 'var(--text-xs)', 
+                style={{
+                  flex: 1,
+                  fontSize: 'var(--text-xs)',
                   padding: 'var(--space-2)',
                   color: 'var(--text-muted)',
-                  border: '1px solid var(--border)'
+                  border: '1px solid var(--border)',
                 }}
                 onClick={() => {
                   if (confirm('Disconnect all relay clients?')) {
@@ -319,16 +411,27 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
         </Section>
 
         {/* Notifications Section */}
-        <Section title="Notifications" show={matchesSearch('Notifications') || matchesSearch('Sound')}>
-          <SettingRow label="Enable Notifications" show={matchesSearch('Enable Notifications')}>
+        <Section
+          title="Notifications"
+          show={matchesSearch('Notifications') || matchesSearch('Sound')}
+        >
+          <SettingRow
+            label="Enable Notifications"
+            show={matchesSearch('Enable Notifications')}
+          >
             <input
               type="checkbox"
               className="checkbox"
               checked={settings.enableNotifications}
-              onChange={(e) => settings.setEnableNotifications(e.target.checked)}
+              onChange={(e) =>
+                settings.setEnableNotifications(e.target.checked)
+              }
             />
           </SettingRow>
-          <SettingRow label="Notification Sound" show={matchesSearch('Notification Sound')}>
+          <SettingRow
+            label="Notification Sound"
+            show={matchesSearch('Notification Sound')}
+          >
             <input
               type="checkbox"
               className="checkbox"
@@ -339,7 +442,14 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
         </Section>
 
         {/* Capabilities Section */}
-        <Section title="Capabilities" show={matchesSearch('Capabilities') || matchesSearch('Voice') || matchesSearch('Model')}>
+        <Section
+          title="Capabilities"
+          show={
+            matchesSearch('Capabilities') ||
+            matchesSearch('Voice') ||
+            matchesSearch('Model')
+          }
+        >
           <SettingRow label="Provider" show={matchesSearch('Provider')}>
             <select
               value={settings.provider}
@@ -381,13 +491,28 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
               style={{ width: '120px', accentColor: 'var(--accent)' }}
             />
           </SettingRow>
-          <SettingRow label="PTT Key" show={matchesSearch('PTT') || matchesSearch('Push-to-Talk')}>
-            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Space</span>
+          <SettingRow
+            label="PTT Key"
+            show={matchesSearch('PTT') || matchesSearch('Push-to-Talk')}
+          >
+            <span
+              style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}
+            >
+              Space
+            </span>
           </SettingRow>
         </Section>
 
         {/* Import/Export Settings */}
-        <div style={{ marginTop: 'var(--space-8)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border)', display: 'flex', gap: 'var(--space-2)' }}>
+        <div
+          style={{
+            marginTop: 'var(--space-8)',
+            paddingTop: 'var(--space-4)',
+            borderTop: '1px solid var(--border)',
+            display: 'flex',
+            gap: 'var(--space-2)',
+          }}
+        >
           <button
             className="btn btn-ghost"
             onClick={() => {
@@ -410,6 +535,7 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
               const input = document.createElement('input');
               input.type = 'file';
               input.accept = '.json';
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               input.onchange = (e: any) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -417,13 +543,21 @@ export function SettingsPanel({ isOpen, onClose, sendMessage }: Props) {
                 reader.onload = (e) => {
                   try {
                     const imported = JSON.parse(e.target?.result as string);
-                    Object.keys(imported).forEach(key => {
-                      if (typeof (settings as any)[`set${key.charAt(0).toUpperCase() + key.slice(1)}`] === 'function') {
-                        (settings as any)[`set${key.charAt(0).toUpperCase() + key.slice(1)}`](imported[key]);
+                    Object.keys(imported).forEach((key) => {
+                      if (
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        typeof (settings as any)[
+                          `set${key.charAt(0).toUpperCase() + key.slice(1)}`
+                        ] === 'function'
+                      ) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (settings as any)[
+                          `set${key.charAt(0).toUpperCase() + key.slice(1)}`
+                        ](imported[key]);
                       }
                     });
                     alert('Settings imported successfully!');
-                  } catch (err) {
+                  } catch (_err) {
                     alert('Failed to import settings: Invalid JSON file');
                   }
                 };
@@ -500,10 +634,12 @@ function SettingRow({
         minHeight: '32px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+      >
         <span
-          style={{ 
-            fontSize: 'var(--text-sm)', 
+          style={{
+            fontSize: 'var(--text-sm)',
             color: 'var(--text-primary)',
           }}
         >

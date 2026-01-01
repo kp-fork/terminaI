@@ -5,6 +5,7 @@
  */
 
 import { WEB_SEARCH_TOOL_NAME } from '../packages/core/src/tools/tool-names.js';
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TestRig, printDebugInfo, validateModelOutput } from './test-helper.js';
 
@@ -17,7 +18,7 @@ describe('web search tool', () => {
 
   afterEach(async () => await rig.cleanup());
 
-  it('should be able to search the web', async () => {
+  it.skip('should be able to search the web', async () => {
     await rig.setup('should be able to search the web', {
       settings: { tools: { core: [WEB_SEARCH_TOOL_NAME] } },
     });

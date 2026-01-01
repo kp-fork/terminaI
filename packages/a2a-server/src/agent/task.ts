@@ -92,7 +92,7 @@ export function parseConfirmationToken(
     const data = JSON.parse(payload);
     if (data.exp < Date.now()) return null; // Expired
     return { taskId: data.taskId, callId: data.callId };
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 }
@@ -958,7 +958,7 @@ export class Task {
 
     logger.info(`[Task] Handling tool input for callId: ${callId}`);
     try {
-      // @ts-ignore - writeToToolInput was added but types are not updating in build
+      // @ts-expect-error - writeToToolInput was added but types are not updating in build
       this.scheduler.writeToToolInput(callId, input);
       return true;
     } catch (error) {

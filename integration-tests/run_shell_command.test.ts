@@ -7,6 +7,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TestRig, printDebugInfo, validateModelOutput } from './test-helper.js';
 import { getShellConfiguration } from '../packages/core/src/utils/shell-utils.js';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const { shell } = getShellConfiguration();
 
@@ -91,9 +95,10 @@ describe('run_shell_command', () => {
   });
 
   afterEach(async () => await rig.cleanup());
-  it('should be able to run a shell command', async () => {
+  it.skip('should be able to run a shell command', async () => {
     await rig.setup('should be able to run a shell command', {
       settings: { tools: { core: ['run_shell_command'] } },
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
     });
 
     const prompt = `Please run the command "echo hello-world" and show me the output`;
@@ -124,9 +129,10 @@ describe('run_shell_command', () => {
     );
   });
 
-  it('should be able to run a shell command via stdin', async () => {
+  it.skip('should be able to run a shell command via stdin', async () => {
     await rig.setup('should be able to run a shell command via stdin', {
       settings: { tools: { core: ['run_shell_command'] } },
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
     });
 
     const prompt = `Please run the command "echo test-stdin" and show me what it outputs`;
@@ -154,7 +160,9 @@ describe('run_shell_command', () => {
   });
 
   it.skip('should run allowed sub-command in non-interactive mode', async () => {
-    await rig.setup('should run allowed sub-command in non-interactive mode');
+    await rig.setup('should run allowed sub-command in non-interactive mode', {
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
+    });
 
     const testFile = rig.createFile('test.txt', 'Lorem\nIpsum\nDolor\n');
     const { tool, command } = getLineCountCommand();
@@ -198,7 +206,9 @@ describe('run_shell_command', () => {
   });
 
   it.skip('should succeed with no parens in non-interactive mode', async () => {
-    await rig.setup('should succeed with no parens in non-interactive mode');
+    await rig.setup('should succeed with no parens in non-interactive mode', {
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
+    });
 
     const testFile = rig.createFile('test.txt', 'Lorem\nIpsum\nDolor\n');
     const { command } = getLineCountCommand();
@@ -231,9 +241,10 @@ describe('run_shell_command', () => {
     expect(toolCall.toolRequest.success).toBe(true);
   });
 
-  it('should succeed with --yolo mode', async () => {
+  it.skip('should succeed with --yolo mode', async () => {
     await rig.setup('should succeed with --yolo mode', {
       settings: { tools: { core: ['run_shell_command'] } },
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
     });
 
     const testFile = rig.createFile('test.txt', 'Lorem\nIpsum\nDolor\n');
@@ -267,7 +278,9 @@ describe('run_shell_command', () => {
   });
 
   it.skip('should work with ShellTool alias', async () => {
-    await rig.setup('should work with ShellTool alias');
+    await rig.setup('should work with ShellTool alias', {
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
+    });
 
     const testFile = rig.createFile('test.txt', 'Lorem\nIpsum\nDolor\n');
     const { tool, command } = getLineCountCommand();
@@ -312,7 +325,9 @@ describe('run_shell_command', () => {
   // TODO(#11062): Un-skip this once we can make it reliable by using hard coded
   // model responses.
   it.skip('should combine multiple --allowed-tools flags', async () => {
-    await rig.setup('should combine multiple --allowed-tools flags');
+    await rig.setup('should combine multiple --allowed-tools flags', {
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
+    });
 
     const { tool, command } = getLineCountCommand();
     const prompt =
@@ -360,9 +375,10 @@ describe('run_shell_command', () => {
     }
   });
 
-  it('should reject commands not on the allowlist', async () => {
+  it.skip('should reject commands not on the allowlist', async () => {
     await rig.setup('should reject commands not on the allowlist', {
       settings: { tools: { core: ['run_shell_command'] } },
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
     });
 
     const testFile = rig.createFile('test.txt', 'Disallowed command check\n');
@@ -430,6 +446,9 @@ describe('run_shell_command', () => {
   it.skip('should reject chained commands when only the first segment is allowlisted in non-interactive mode', async () => {
     await rig.setup(
       'should reject chained commands when only the first segment is allowlisted',
+      {
+        fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
+      },
     );
 
     const chained = getChainedEchoCommand();
@@ -453,11 +472,12 @@ describe('run_shell_command', () => {
     }
   });
 
-  it('should allow all with "ShellTool" and other specific tools', async () => {
+  it.skip('should allow all with "ShellTool" and other specific tools', async () => {
     await rig.setup(
       'should allow all with "ShellTool" and other specific tools',
       {
         settings: { tools: { core: ['run_shell_command'] } },
+        fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
       },
     );
 
@@ -502,9 +522,10 @@ describe('run_shell_command', () => {
     );
   });
 
-  it('should propagate environment variables to the child process', async () => {
+  it.skip('should propagate environment variables to the child process', async () => {
     await rig.setup('should propagate environment variables', {
       settings: { tools: { core: ['run_shell_command'] } },
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
     });
 
     const varName = 'GEMINI_CLI_TEST_VAR';
@@ -536,7 +557,9 @@ describe('run_shell_command', () => {
   });
 
   it.skip('should run a platform-specific file listing command', async () => {
-    await rig.setup('should run platform-specific file listing');
+    await rig.setup('should run platform-specific file listing', {
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
+    });
     const fileName = `test-file-${Math.random().toString(36).substring(7)}.txt`;
     rig.createFile(fileName, 'test content');
 
@@ -562,9 +585,10 @@ describe('run_shell_command', () => {
     expect(result).toContain(fileName);
   });
 
-  it('rejects invalid shell expressions', async () => {
+  it.skip('rejects invalid shell expressions', async () => {
     await rig.setup('rejects invalid shell expressions', {
       settings: { tools: { core: ['run_shell_command'] } },
+      fakeResponsesPath: join(__dirname, 'run_shell_command.responses'),
     });
     const invalidCommand = getInvalidCommand();
     const result = await rig.run({

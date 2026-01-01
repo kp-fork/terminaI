@@ -1,6 +1,12 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { build } from 'esbuild';
-import { join } from 'path';
-import { platform, arch } from 'os';
+import { join } from 'node:path';
+import { platform, arch } from 'node:os';
 
 function getTargetTriple() {
   const os = platform();

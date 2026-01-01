@@ -67,10 +67,12 @@ export function SettingRow({
         minHeight: '32px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+      >
         <span
-          style={{ 
-            fontSize: 'var(--text-sm)', 
+          style={{
+            fontSize: 'var(--text-sm)',
             color: 'var(--text-primary)',
           }}
         >

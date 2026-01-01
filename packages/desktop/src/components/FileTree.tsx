@@ -20,13 +20,13 @@ export function FileTree({ rootPath }: FileTreeProps) {
   useEffect(() => {
     if (rootPath) {
       fetchDirectory(rootPath);
-      setExpanded(prev => ({ ...prev, [rootPath]: true }));
+      setExpanded((prev) => ({ ...prev, [rootPath]: true }));
     }
   }, [rootPath, fetchDirectory]);
 
   const toggleExpand = (path: string) => {
     const isExpanded = !!expanded[path];
-    setExpanded(prev => ({ ...prev, [path]: !isExpanded }));
+    setExpanded((prev) => ({ ...prev, [path]: !isExpanded }));
     if (!isExpanded) {
       fetchDirectory(path);
     }
@@ -40,7 +40,7 @@ export function FileTree({ rootPath }: FileTreeProps) {
 
     return (
       <div key={entry.path} className="flex flex-col">
-        <div 
+        <div
           className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-[var(--bg-elevated)] rounded-sm group transition-colors"
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
           onClick={() => entry.is_dir && toggleExpand(entry.path)}
@@ -48,30 +48,36 @@ export function FileTree({ rootPath }: FileTreeProps) {
           <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
             {entry.is_dir ? (isExpanded ? '▼' : '▶') : '•'}
           </span>
-          <span className={`text-sm truncate ${entry.is_dir ? 'font-medium text-[var(--text-secondary)]' : 'text-[var(--text-muted)]'}`}>
+          <span
+            className={`text-sm truncate ${entry.is_dir ? 'font-medium text-[var(--text-secondary)]' : 'text-[var(--text-muted)]'}`}
+          >
             {entry.name}
           </span>
-          {isLoading && <span className="animate-pulse text-[var(--accent)] text-[8px]">...</span>}
+          {isLoading && (
+            <span className="animate-pulse text-[var(--accent)] text-[8px]">
+              ...
+            </span>
+          )}
         </div>
 
         {entry.is_dir && isExpanded && (
           <div className="flex flex-col">
             {error ? (
-              <div 
-                className="text-xs text-red-500 italic py-1" 
+              <div
+                className="text-xs text-red-500 italic py-1"
                 style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
               >
                 Error: {error}
               </div>
             ) : children?.length === 0 ? (
-              <div 
-                className="text-xs text-[var(--text-muted)] italic py-1" 
+              <div
+                className="text-xs text-[var(--text-muted)] italic py-1"
                 style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
               >
                 Empty
               </div>
             ) : (
-              children?.map(child => renderEntry(child, depth + 1))
+              children?.map((child) => renderEntry(child, depth + 1))
             )}
           </div>
         )}
