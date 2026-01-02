@@ -22,36 +22,14 @@ vi.mock('os', async (importOriginal) => {
 
 describe('getUserStartupWarnings', () => {
   let testRootDir: string;
-  let homeDir: string;
 
   beforeEach(async () => {
     testRootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'warnings-test-'));
-    homeDir = path.join(testRootDir, 'home');
-    await fs.mkdir(homeDir, { recursive: true });
-    vi.mocked(os.homedir).mockReturnValue(homeDir);
   });
 
   afterEach(async () => {
     await fs.rm(testRootDir, { recursive: true, force: true });
     vi.clearAllMocks();
-  });
-
-  describe('home directory check', () => {
-    it('should return a warning when running in home directory', async () => {
-      const warnings = await getUserStartupWarnings(homeDir);
-      expect(warnings).toContainEqual(
-        expect.stringContaining('home directory'),
-      );
-    });
-
-    it('should not return a warning when running in a project directory', async () => {
-      const projectDir = path.join(testRootDir, 'project');
-      await fs.mkdir(projectDir);
-      const warnings = await getUserStartupWarnings(projectDir);
-      expect(warnings).not.toContainEqual(
-        expect.stringContaining('home directory'),
-      );
-    });
   });
 
   describe('root directory check', () => {
@@ -63,6 +41,9 @@ describe('getUserStartupWarnings', () => {
       );
       expect(warnings).toContainEqual(
         expect.stringContaining('folder structure will be used'),
+      );
+      expect(warnings).toContainEqual(
+        expect.stringContaining('may impact performance'),
       );
     });
 
@@ -82,7 +63,7 @@ describe('getUserStartupWarnings', () => {
       const warnings = await getUserStartupWarnings(nonExistentPath);
       const expectedWarning =
         'Could not verify the current directory due to a file system error.';
-      expect(warnings).toEqual([expectedWarning, expectedWarning]);
+      expect(warnings).toEqual([expectedWarning]);
     });
   });
 });
