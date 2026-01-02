@@ -16,6 +16,7 @@ import * as pty from '@lydell/node-pty';
 import stripAnsi from 'strip-ansi';
 import * as os from 'node:os';
 import { GEMINI_DIR } from '../packages/core/src/utils/paths.js';
+import { SHELL_TOOL_NAMES } from '../packages/core/src/utils/shell-utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BUNDLE_PATH = join(__dirname, '..', 'bundle/gemini.js');
@@ -317,7 +318,11 @@ export class TestRig {
       },
       security: {
         auth: {
-          selectedType: 'gemini-api-key',
+          selectedType: process.env['GEMINI_API_KEY']
+            ? 'gemini-api-key'
+            : process.env['GOOGLE_CLOUD_PROJECT']
+              ? 'vertex-ai'
+              : 'gemini-api-key',
         },
       },
       ui: {
@@ -657,12 +662,17 @@ export class TestRig {
     // Wait for telemetry to be ready before polling for tool calls
     await this.waitForTelemetryReady();
 
+    // Handle shell tool aliases - if looking for any shell tool, accept any shell tool name
+    const toolNamesToMatch = SHELL_TOOL_NAMES.includes(toolName)
+      ? SHELL_TOOL_NAMES
+      : [toolName];
+
     return poll(
       () => {
         const toolLogs = this.readToolLogs();
         return toolLogs.some(
           (log) =>
-            log.toolRequest.name === toolName &&
+            toolNamesToMatch.includes(log.toolRequest.name) &&
             (matchArgs?.call(this, log.toolRequest.args) ?? true),
         );
       },
