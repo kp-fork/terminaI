@@ -18,7 +18,7 @@ describe('web search tool', () => {
 
   afterEach(async () => await rig.cleanup());
 
-  it.skip('should be able to search the web', async () => {
+  it('should be able to search the web', async () => {
     await rig.setup('should be able to search the web', {
       settings: { tools: { core: [WEB_SEARCH_TOOL_NAME] } },
     });
