@@ -107,8 +107,8 @@ export function ChatView({
 
   const examplePrompts = [
     'List all files in the current directory',
-    'Show my git status',
-    'Install dependencies for this project',
+    'Check disk space usage',
+    'Find large files in this directory',
   ];
 
   const displayMessages =

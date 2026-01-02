@@ -6,7 +6,6 @@
  */
 
 import fs from 'node:fs/promises';
-import * as os from 'node:os';
 import path from 'node:path';
 
 type WarningCheck = {
@@ -15,32 +14,13 @@ type WarningCheck = {
 };
 
 // Individual warning checks
-const homeDirectoryCheck: WarningCheck = {
-  id: 'home-directory',
-  check: async (workspaceRoot: string) => {
-    try {
-      const [workspaceRealPath, homeRealPath] = await Promise.all([
-        fs.realpath(workspaceRoot),
-        fs.realpath(os.homedir()),
-      ]);
-
-      if (workspaceRealPath === homeRealPath) {
-        return 'You are running TerminaI in your home directory. It is recommended to run in a project-specific directory.';
-      }
-      return null;
-    } catch (_err: unknown) {
-      return 'Could not verify the current directory due to a file system error.';
-    }
-  },
-};
-
 const rootDirectoryCheck: WarningCheck = {
   id: 'root-directory',
   check: async (workspaceRoot: string) => {
     try {
       const workspaceRealPath = await fs.realpath(workspaceRoot);
       const errorMessage =
-        'Warning: You are running TerminaI in the root directory. Your entire folder structure will be used for context. It is strongly recommended to run in a project-specific directory.';
+        'Warning: You are running TerminaI in the root directory. Your entire folder structure will be used for context, which may impact performance.';
 
       // Check for Unix root directory
       if (path.dirname(workspaceRealPath) === workspaceRealPath) {
@@ -55,10 +35,7 @@ const rootDirectoryCheck: WarningCheck = {
 };
 
 // All warning checks
-const WARNING_CHECKS: readonly WarningCheck[] = [
-  homeDirectoryCheck,
-  rootDirectoryCheck,
-];
+const WARNING_CHECKS: readonly WarningCheck[] = [rootDirectoryCheck];
 
 export async function getUserStartupWarnings(
   workspaceRoot: string = process.cwd(),
