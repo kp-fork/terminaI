@@ -52,6 +52,7 @@ export const SETTINGS_SCHEMA = {
         category: 'Advanced',
         requiresRestart: false,
         default: true,
+        description: 'Enable collecting anonymous usage data.',
         showInDialog: true,
       },
       target: {
@@ -64,6 +65,7 @@ export const SETTINGS_SCHEMA = {
           { value: 'local', label: 'Local' }, // TelemetryTarget.LOCAL
           { value: 'gcp', label: 'GCP' }, // TelemetryTarget.GCP
         ],
+        description: 'Destination for telemetry data (local or GCP).',
         showInDialog: true,
       },
       otlpEndpoint: {
@@ -72,6 +74,7 @@ export const SETTINGS_SCHEMA = {
         category: 'Advanced',
         requiresRestart: true,
         default: undefined as string | undefined,
+        description: 'Custom OTLP endpoint for telemetry data.',
         showInDialog: true,
       },
       otlpProtocol: {
@@ -84,6 +87,7 @@ export const SETTINGS_SCHEMA = {
           { value: 'http', label: 'HTTP' }, // 'http' matches interface
           { value: 'grpc', label: 'gRPC' },
         ],
+        description: 'Protocol for OTLP telemetry (HTTP/gRPC).',
         showInDialog: true,
       },
       logPrompts: {
@@ -92,6 +96,7 @@ export const SETTINGS_SCHEMA = {
         category: 'Advanced',
         requiresRestart: false,
         default: false,
+        description: 'Include full prompt text in telemetry logs.',
         showInDialog: true,
       },
       outfile: {
@@ -100,6 +105,7 @@ export const SETTINGS_SCHEMA = {
         category: 'Advanced',
         requiresRestart: true,
         default: undefined as string | undefined,
+        description: 'Path to file for local telemetry output.',
         showInDialog: true,
       },
       useCollector: {
@@ -108,6 +114,7 @@ export const SETTINGS_SCHEMA = {
         category: 'Advanced',
         requiresRestart: true,
         default: false,
+        description: 'Use a collector for telemetry data aggregation.',
         showInDialog: true,
       },
     },
@@ -199,7 +206,7 @@ export const SETTINGS_SCHEMA = {
         requiresRestart: false,
         default: false,
         description:
-          'Enable the "Allow for all future sessions" option in tool confirmation dialogs.',
+          'Enable "Allow for all future sessions" in confirmation dialogs.',
         showInDialog: true,
       },
       blockGitExtensions: {
@@ -226,7 +233,7 @@ export const SETTINGS_SCHEMA = {
             category: 'Security',
             requiresRestart: true,
             default: false,
-            description: 'Setting to track whether Folder trust is enabled.',
+            description: 'Enables per-folder trust settings.',
             showInDialog: true,
           },
         },
@@ -298,6 +305,7 @@ export const SETTINGS_SCHEMA = {
         category: 'Advanced',
         requiresRestart: true,
         default: false,
+        description: 'Enable IDE integration mode.',
         showInDialog: true,
       },
       hasSeenNudge: {
@@ -329,7 +337,7 @@ export const SETTINGS_SCHEMA = {
         default: undefined as string | string[] | undefined,
         ref: 'StringOrStringArray',
         description:
-          'The name of the context file or files to load into memory. Accepts either a single string or an array of strings.',
+          'Files to automatically load into context memory. Accepts a string or array.',
         showInDialog: false,
       },
       importFormat: {
@@ -342,6 +350,8 @@ export const SETTINGS_SCHEMA = {
           { value: 'tree', label: 'Tree' },
           { value: 'flat', label: 'Flat' },
         ],
+        description: 'Format for importing context (flat list or tree).',
+        showInDialog: true,
       },
       fileFiltering: {
         type: 'object',
@@ -358,6 +368,8 @@ export const SETTINGS_SCHEMA = {
             category: 'Advanced',
             requiresRestart: false,
             default: false,
+            description: 'Disable fuzzy matching for file searches.',
+            showInDialog: true,
           },
           respectGitIgnore: {
             type: 'boolean',
@@ -365,6 +377,8 @@ export const SETTINGS_SCHEMA = {
             category: 'Advanced',
             requiresRestart: false,
             default: true,
+            description: 'Exclude files listed in .gitignore.',
+            showInDialog: true,
           },
           respectGeminiIgnore: {
             type: 'boolean',
@@ -372,6 +386,8 @@ export const SETTINGS_SCHEMA = {
             category: 'Advanced',
             requiresRestart: false,
             default: true,
+            description: 'Exclude files listed in .geminiignore.',
+            showInDialog: true,
           },
           enableRecursiveFileSearch: {
             type: 'boolean',
@@ -379,6 +395,8 @@ export const SETTINGS_SCHEMA = {
             category: 'Advanced',
             requiresRestart: false,
             default: true,
+            description: 'Search directories recursively for matching files.',
+            showInDialog: true,
           },
         },
       },
@@ -390,6 +408,8 @@ export const SETTINGS_SCHEMA = {
         default: [] as string[],
         items: { type: 'string' },
         mergeStrategy: MergeStrategy.UNION,
+        description: 'Directories to include in context discovery.',
+        showInDialog: true,
       },
       loadMemoryFromIncludeDirectories: {
         type: 'boolean',
@@ -397,6 +417,8 @@ export const SETTINGS_SCHEMA = {
         category: 'Advanced',
         requiresRestart: false,
         default: false,
+        description: 'Load all files from included directories into memory.',
+        showInDialog: true,
       },
       discoveryMaxDirs: {
         type: 'number',
@@ -404,6 +426,8 @@ export const SETTINGS_SCHEMA = {
         category: 'Advanced',
         requiresRestart: false,
         default: 200,
+        description: 'Maximum number of directories to scan.',
+        showInDialog: true,
       },
     },
   },
