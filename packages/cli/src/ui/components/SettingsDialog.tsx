@@ -226,6 +226,7 @@ export function SettingsDialog({
             }
             onOpenAuthWizard?.();
           },
+          description: 'Change the current authentication provider/account.',
         };
       }
 
@@ -235,6 +236,7 @@ export function SettingsDialog({
         label: definition?.label || key,
         value: key,
         type: definition?.type,
+        description: definition?.description,
         toggle: () => {
           if (!TOGGLE_TYPES.has(definition?.type)) {
             return;
@@ -352,6 +354,7 @@ export function SettingsDialog({
         label: 'Change Authentication Provider',
         value: 'action.changeProvider',
         type: 'action', // Custom type
+        description: 'Change the current authentication provider/account.',
         toggle: () => {
           // Check if auth type is enforced (2.1 guardrail)
           const enforcedType = settings.merged.security?.auth?.enforcedType;
@@ -967,7 +970,7 @@ export function SettingsDialog({
                           {isActive ? '●' : ''}
                         </Text>
                       </Box>
-                      <Box minWidth={50}>
+                      <Box minWidth={35}>
                         <Text
                           color={
                             isActive ? theme.status.success : theme.text.primary
@@ -984,6 +987,12 @@ export function SettingsDialog({
                       >
                         {'›'}
                       </Text>
+                      <Box minWidth={3} />
+                      <Box flexGrow={1}>
+                        <Text wrap="truncate" color={theme.text.secondary}>
+                          {item.description}
+                        </Text>
+                      </Box>
                     </Box>
                     <Box height={1} />
                   </React.Fragment>
@@ -1109,7 +1118,7 @@ export function SettingsDialog({
                         {isActive ? '●' : ''}
                       </Text>
                     </Box>
-                    <Box minWidth={50}>
+                    <Box minWidth={35}>
                       <Text
                         color={
                           isActive ? theme.status.success : theme.text.primary
@@ -1125,17 +1134,25 @@ export function SettingsDialog({
                       </Text>
                     </Box>
                     <Box minWidth={3} />
-                    <Text
-                      color={
-                        isActive
-                          ? theme.status.success
-                          : shouldBeGreyedOut
-                            ? theme.text.secondary
-                            : theme.text.primary
-                      }
-                    >
-                      {displayValue}
-                    </Text>
+                    <Box minWidth={25}>
+                      <Text
+                        color={
+                          isActive
+                            ? theme.status.success
+                            : shouldBeGreyedOut
+                              ? theme.text.secondary
+                              : theme.text.primary
+                        }
+                      >
+                        {displayValue}
+                      </Text>
+                    </Box>
+                    <Box minWidth={3} />
+                    <Box flexGrow={1}>
+                      <Text wrap="truncate" color={theme.text.secondary}>
+                        {item.description}
+                      </Text>
+                    </Box>
                   </Box>
                   <Box height={1} />
                 </React.Fragment>
