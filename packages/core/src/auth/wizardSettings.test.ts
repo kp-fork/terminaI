@@ -33,9 +33,13 @@ describe('buildWizardSettingsPatch', () => {
 
     expect(patches).toEqual([
       { path: 'llm.provider', value: 'openai_compatible' },
+      {
+        path: 'security.auth.selectedType',
+        value: AuthType.USE_OPENAI_COMPATIBLE,
+      },
       { path: 'llm.openaiCompatible.baseUrl', value: 'https://example.com/v1' },
       { path: 'llm.openaiCompatible.model', value: 'gpt-4o' },
-      { path: 'llm.openaiCompatible.auth.type', value: 'api-key' },
+      { path: 'llm.openaiCompatible.auth.type', value: 'bearer' },
       { path: 'llm.openaiCompatible.auth.envVarName', value: 'OPENAI_API_KEY' },
     ]);
   });
@@ -53,11 +57,15 @@ describe('buildWizardSettingsPatch', () => {
     expect(patches).toEqual([
       { path: 'llm.provider', value: 'openai_compatible' },
       {
+        path: 'security.auth.selectedType',
+        value: AuthType.USE_OPENAI_COMPATIBLE,
+      },
+      {
         path: 'llm.openaiCompatible.baseUrl',
         value: 'http://localhost:11434/v1',
       },
       { path: 'llm.openaiCompatible.model', value: 'llama3' },
-      { path: 'llm.openaiCompatible.auth.type', value: 'api-key' },
+      { path: 'llm.openaiCompatible.auth.type', value: 'bearer' },
       { path: 'llm.openaiCompatible.auth.envVarName', value: 'MY_OPENAI_KEY' },
     ]);
   });

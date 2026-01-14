@@ -364,16 +364,13 @@ export class LlmAuthManager {
     }
 
     // 3. Auth type consistency rules
-    let selectedAuthType: AuthType | undefined;
-    if (params.provider === 'openai_compatible') {
-      selectedAuthType = AuthType.USE_OPENAI_COMPATIBLE;
-      loadedSettings.setValue(
-        SettingScope.User,
-        'security.auth.selectedType',
-        selectedAuthType,
-      );
-    } else {
-      // Switching to Gemini: clear selectedType if it was OpenAI-compatible
+    const selectedAuthType =
+      params.provider === 'openai_compatible'
+        ? AuthType.USE_OPENAI_COMPATIBLE
+        : undefined;
+
+    // Switching to Gemini: clear selectedType if it was OpenAI-compatible
+    if (params.provider === 'gemini') {
       const currentSelectedType =
         loadedSettings.merged.security?.auth?.selectedType;
       if (currentSelectedType === AuthType.USE_OPENAI_COMPATIBLE) {
@@ -388,15 +385,20 @@ export class LlmAuthManager {
     // 4. Compute ProviderConfig
     let providerConfig: ProviderConfig;
     if (params.provider === 'openai_compatible' && params.openaiCompatible) {
+      const envVarName = (
+        params.openaiCompatible.envVarName || 'OPENAI_API_KEY'
+      )
+        .trim()
+        .replace(/\s+/g, '');
+
       providerConfig = {
         provider: LlmProviderId.OPENAI_COMPATIBLE,
-        baseUrl: params.openaiCompatible.baseUrl,
-        model: params.openaiCompatible.model,
+        baseUrl: params.openaiCompatible.baseUrl.trim().replace(/\/+$/, ''),
+        model: params.openaiCompatible.model.trim(),
         auth: {
-          type: 'api-key' as const,
-          envVarName: params.openaiCompatible.envVarName || 'OPENAI_API_KEY',
-          apiKey:
-            process.env[params.openaiCompatible.envVarName || 'OPENAI_API_KEY'],
+          type: 'bearer' as const,
+          envVarName,
+          apiKey: process.env[envVarName],
         },
       };
     } else {

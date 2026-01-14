@@ -8,20 +8,24 @@
 import { AuthType, applyTerminaiEnvAliases } from '@terminai/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { validateAuthMethod } from './auth.js';
+import { loadSettings } from './settings.js';
 
 vi.mock('./settings.js', () => ({
   loadEnvironment: vi.fn(),
-  loadSettings: vi.fn().mockReturnValue({
-    merged: vi.fn().mockReturnValue({}),
-  }),
+  loadSettings: vi.fn(),
 }));
 
 describe('validateAuthMethod', () => {
+  const mockedLoadSettings = vi.mocked(loadSettings);
+
   beforeEach(() => {
     vi.stubEnv('GEMINI_API_KEY', undefined);
     vi.stubEnv('GOOGLE_CLOUD_PROJECT', undefined);
     vi.stubEnv('GOOGLE_CLOUD_LOCATION', undefined);
     vi.stubEnv('GOOGLE_API_KEY', undefined);
+    vi.stubEnv('OPENAI_API_KEY', undefined);
+
+    mockedLoadSettings.mockReturnValue({ merged: {} } as never);
   });
 
   afterEach(() => {
@@ -106,5 +110,43 @@ describe('validateAuthMethod', () => {
 
     expect(process.env['GEMINI_API_KEY']).toBe('test-terminai-key');
     expect(validateAuthMethod(AuthType.USE_GEMINI)).toBe(null);
+  });
+
+  it('should require llm.provider=openai_compatible for USE_OPENAI_COMPATIBLE', () => {
+    mockedLoadSettings.mockReturnValue({ merged: { llm: {} } } as never);
+    expect(validateAuthMethod(AuthType.USE_OPENAI_COMPATIBLE)).toContain(
+      'llm.provider',
+    );
+  });
+
+  it('should require baseUrl/model for USE_OPENAI_COMPATIBLE', () => {
+    mockedLoadSettings.mockReturnValue({
+      merged: { llm: { provider: 'openai_compatible', openaiCompatible: {} } },
+    } as never);
+    expect(validateAuthMethod(AuthType.USE_OPENAI_COMPATIBLE)).toContain(
+      'llm.openaiCompatible.baseUrl',
+    );
+  });
+
+  it('should require OPENAI_API_KEY when auth.type is bearer', () => {
+    mockedLoadSettings.mockReturnValue({
+      merged: {
+        llm: {
+          provider: 'openai_compatible',
+          openaiCompatible: {
+            baseUrl: 'https://openrouter.ai/api/v1',
+            model: 'openai/gpt-oss-120b:free',
+            auth: { type: 'bearer', envVarName: 'OPENAI_API_KEY' },
+          },
+        },
+      },
+    } as never);
+
+    expect(validateAuthMethod(AuthType.USE_OPENAI_COMPATIBLE)).toContain(
+      'OPENAI_API_KEY',
+    );
+
+    vi.stubEnv('OPENAI_API_KEY', 'sk-test');
+    expect(validateAuthMethod(AuthType.USE_OPENAI_COMPATIBLE)).toBe(null);
   });
 });

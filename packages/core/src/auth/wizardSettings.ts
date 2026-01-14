@@ -6,7 +6,7 @@
  */
 
 import type { ProviderId } from './wizardState.js';
-import type { AuthType } from '../core/contentGenerator.js';
+import { AuthType } from '../core/contentGenerator.js';
 
 export interface WizardSettingsInput {
   provider: ProviderId;
@@ -67,6 +67,10 @@ export function buildWizardSettingsPatch(
     }
 
     patches.push({
+      path: 'security.auth.selectedType',
+      value: AuthType.USE_OPENAI_COMPATIBLE,
+    });
+    patches.push({
       path: 'llm.openaiCompatible.baseUrl',
       value: baseUrl,
     });
@@ -77,7 +81,7 @@ export function buildWizardSettingsPatch(
     // Matches settings schema enum: ["none", "api-key", "bearer"]
     patches.push({
       path: 'llm.openaiCompatible.auth.type',
-      value: 'api-key',
+      value: 'bearer',
     });
     patches.push({
       path: 'llm.openaiCompatible.auth.envVarName',

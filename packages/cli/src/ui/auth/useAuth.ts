@@ -80,10 +80,10 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
       if (!authType) {
         if (process.env['GEMINI_API_KEY']) {
           onAuthError(
-            'Existing API key detected (GEMINI_API_KEY). Select "Gemini API Key" option to use it.',
+            'Existing API key detected (GEMINI_API_KEY). Select "Gemini API Key" option to use it, or run /auth to switch providers.',
           );
         } else {
-          onAuthError('No authentication method selected.');
+          onAuthError('No authentication method selected. Run /auth to set up.');
         }
         return;
       }
