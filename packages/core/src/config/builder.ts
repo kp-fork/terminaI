@@ -125,9 +125,11 @@ export class ConfigBuilder {
       const envVarName =
         authType === 'none'
           ? undefined
-          : normalizeEnvVarName(authSettings?.envVarName) ?? 'OPENAI_API_KEY';
+          : (normalizeEnvVarName(authSettings?.envVarName) ?? 'OPENAI_API_KEY');
       const apiKey =
-        envVarName && process.env[envVarName] ? process.env[envVarName] : undefined;
+        envVarName && process.env[envVarName]
+          ? process.env[envVarName]
+          : undefined;
 
       const headers = normalizeHeaders(settings.llm?.headers);
 
