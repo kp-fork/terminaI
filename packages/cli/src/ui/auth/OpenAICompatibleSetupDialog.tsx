@@ -7,7 +7,7 @@
 
 import { Box, Text } from 'ink';
 import { useMemo, useState } from 'react';
-import { AuthType, buildWizardSettingsPatch } from '@terminai/core';
+import { buildWizardSettingsPatch } from '@terminai/core';
 import type { LoadedSettings } from '../../config/settings.js';
 import { SettingScope } from '../../config/settings.js';
 import { theme } from '../semantic-colors.js';
@@ -16,7 +16,7 @@ import { TextInput } from '../components/shared/TextInput.js';
 import { checkExhaustive } from '../../utils/checks.js';
 import process from 'node:process';
 
-type Step = 'base_url' | 'model' | 'env_var';
+type Step = 'base_url' | 'model' | 'env_var' | 'api_key';
 
 interface Props {
   settings: LoadedSettings;
@@ -73,6 +73,28 @@ export function OpenAICompatibleSetupDialog({
     singleLine: true,
   });
 
+  const apiKeyBuffer = useTextBuffer({
+    initialText: '',
+    initialCursorOffset: 0,
+    viewport: { width: viewportWidth, height: 3 },
+    isValidPath: () => false,
+    inputFilter: (text) => text.replace(/[\r\n]/g, ''),
+    singleLine: true,
+  });
+
+  const targetScope = useMemo(() => {
+    const workspaceSettings = settings.forScope(SettingScope.Workspace).settings;
+    const workspaceOpenai = workspaceSettings.llm?.openaiCompatible;
+    const hasWorkspaceOverride =
+      workspaceSettings.llm?.provider === 'openai_compatible' ||
+      !!workspaceOpenai?.baseUrl ||
+      !!workspaceOpenai?.model ||
+      !!workspaceOpenai?.auth?.type ||
+      !!workspaceOpenai?.auth?.envVarName;
+
+    return hasWorkspaceOverride ? SettingScope.Workspace : SettingScope.User;
+  }, [settings]);
+
   const { title, description, buffer, onSubmit } = useMemo(() => {
     switch (step) {
       case 'base_url':
@@ -124,20 +146,50 @@ export function OpenAICompatibleSetupDialog({
               return;
             }
 
+            setStep('api_key');
+          },
+        };
+      case 'api_key':
+        return {
+          title: 'OpenAI Compatible setup',
+          description:
+            'Optional: paste your API key for this session now (press Enter to skip).',
+          buffer: apiKeyBuffer,
+          onSubmit: () => {
+            onAuthError(null);
+
+            const baseUrl = baseUrlBuffer.text.trim();
+            const model = modelBuffer.text.trim();
+            const envVarName = envVarBuffer.text.trim();
+            const apiKey = apiKeyBuffer.text.trim();
+
+            if (!baseUrl) {
+              onAuthError('Base URL is required.');
+              setStep('base_url');
+              return;
+            }
+            if (!model) {
+              onAuthError('Model is required.');
+              setStep('model');
+              return;
+            }
+            if (!envVarName) {
+              onAuthError('Env var name is required.');
+              setStep('env_var');
+              return;
+            }
+
             const patches = buildWizardSettingsPatch({
               provider: 'openai_compatible',
               openaiCompatible: { baseUrl, model, envVarName },
             });
             for (const patch of patches) {
-              settings.setValue(SettingScope.User, patch.path, patch.value);
+              settings.setValue(targetScope, patch.path, patch.value);
             }
 
-            // Task 25: ensure auth selection is set (used to initialize core Config).
-            settings.setValue(
-              SettingScope.User,
-              'security.auth.selectedType',
-              AuthType.USE_OPENAI_COMPATIBLE,
-            );
+            if (apiKey.length > 0) {
+              process.env[envVarName] = apiKey;
+            }
 
             void onComplete();
           },
@@ -158,12 +210,14 @@ export function OpenAICompatibleSetupDialog({
   }, [
     baseUrlBuffer,
     envVarBuffer,
+    apiKeyBuffer,
     modelBuffer,
     onAuthError,
     settings,
     step,
     onComplete,
     setStep,
+    targetScope,
   ]);
 
   return (
@@ -192,7 +246,7 @@ export function OpenAICompatibleSetupDialog({
         </Box>
       </Box>
 
-      {step === 'env_var' && (
+      {(step === 'env_var' || step === 'api_key') && (
         <Box marginTop={1} flexDirection="column">
           <Text color={theme.text.secondary}>
             Your API key is NOT stored in settings.
@@ -202,6 +256,10 @@ export function OpenAICompatibleSetupDialog({
           </Text>
           <Text color={theme.text.link}>
             {`export ${envVarBuffer.text || 'OPENAI_API_KEY'}='YOUR_KEY'`}
+          </Text>
+          <Text color={theme.text.secondary}>
+            Saving config scope:{' '}
+            {targetScope === SettingScope.Workspace ? 'workspace' : 'user'}
           </Text>
         </Box>
       )}

@@ -25,9 +25,17 @@ export function ProviderWizard({
   onProceedToGeminiAuth,
   onAuthError,
 }: Props) {
+  const targetScope = (() => {
+    const workspaceSettings = settings.forScope(SettingScope.Workspace).settings;
+    const hasWorkspaceOverride =
+      workspaceSettings.llm?.provider !== undefined ||
+      workspaceSettings.llm?.openaiCompatible !== undefined;
+    return hasWorkspaceOverride ? SettingScope.Workspace : SettingScope.User;
+  })();
+
   const applyPatches = (patches: Array<{ path: string; value: unknown }>) => {
     for (const patch of patches) {
-      settings.setValue(SettingScope.User, patch.path, patch.value);
+      settings.setValue(targetScope, patch.path, patch.value);
     }
   };
 
@@ -89,6 +97,11 @@ export function ProviderWizard({
             if (currentAuthType === 'openai-compatible') {
               settings.setValue(
                 SettingScope.User,
+                'security.auth.selectedType',
+                undefined,
+              );
+              settings.setValue(
+                SettingScope.Workspace,
                 'security.auth.selectedType',
                 undefined,
               );

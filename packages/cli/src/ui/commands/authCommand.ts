@@ -16,12 +16,12 @@ import { SettingScope } from '../../config/settings.js';
 
 const authLoginCommand: SlashCommand = {
   name: 'login',
-  description: 'Login or change the auth method',
+  description: 'Configure provider and authentication',
   kind: CommandKind.BUILT_IN,
   autoExecute: true,
   action: (_context, _args): OpenDialogActionReturn => ({
     type: 'dialog',
-    dialog: 'auth',
+    dialog: 'authWizard',
   }),
 };
 

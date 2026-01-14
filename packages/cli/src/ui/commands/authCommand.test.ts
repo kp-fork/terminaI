@@ -52,7 +52,7 @@ describe('authCommand', () => {
 
     expect(result).toEqual({
       type: 'dialog',
-      dialog: 'auth',
+      dialog: 'authWizard',
     });
   });
 
@@ -66,7 +66,7 @@ describe('authCommand', () => {
       const loginCommand = authCommand.subCommands?.[0];
       expect(loginCommand?.name).toBe('login');
       const result = loginCommand!.action!(mockContext, '');
-      expect(result).toEqual({ type: 'dialog', dialog: 'auth' });
+      expect(result).toEqual({ type: 'dialog', dialog: 'authWizard' });
     });
   });
 

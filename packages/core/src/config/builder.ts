@@ -22,6 +22,7 @@ import {
   ApprovalMode,
   LlmProviderId,
   type ProviderConfig,
+  FatalConfigError,
   PREVIEW_GEMINI_MODEL_AUTO,
   DEFAULT_GEMINI_MODEL_AUTO,
 } from '../index.js';
@@ -30,6 +31,35 @@ import {
   resolvePolicyBrainAuthority,
 } from '../policy/config.js';
 import { GEMINI_DIR } from '../index.js';
+
+function normalizeOpenAIBaseUrl(raw: string | undefined): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return undefined;
+
+  const withScheme = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  return withScheme.replace(/\/+$/, '');
+}
+
+function normalizeEnvVarName(raw: string | undefined): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim().replace(/\s+/g, '');
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function normalizeHeaders(raw: unknown): Record<string, string> | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const headers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value === 'string') {
+      headers[key] = value;
+    }
+  }
+  return Object.keys(headers).length > 0 ? headers : undefined;
+}
 
 /**
  * Builds a Config object from settings and environment.
@@ -71,12 +101,46 @@ export class ConfigBuilder {
 
     let providerConfig: ProviderConfig;
     if (provider === LlmProviderId.OPENAI_COMPATIBLE) {
+      const baseUrl = normalizeOpenAIBaseUrl(
+        settings.llm?.openaiCompatible?.baseUrl,
+      );
+      const model = (settings.llm?.openaiCompatible?.model ?? '').trim();
+      if (!baseUrl || model.length === 0) {
+        throw new FatalConfigError(
+          'llm.provider is set to openai_compatible, but llm.openaiCompatible.baseUrl and llm.openaiCompatible.model are required.',
+        );
+      }
+
+      const authSettings = settings.llm?.openaiCompatible?.auth as
+        | { type?: 'none' | 'api-key' | 'bearer'; envVarName?: string }
+        | undefined;
+
+      const authType: 'none' | 'api-key' | 'bearer' =
+        authSettings?.type === 'none' ||
+        authSettings?.type === 'api-key' ||
+        authSettings?.type === 'bearer'
+          ? authSettings.type
+          : 'bearer';
+
+      const envVarName =
+        authType === 'none'
+          ? undefined
+          : normalizeEnvVarName(authSettings?.envVarName) ?? 'OPENAI_API_KEY';
+      const apiKey =
+        envVarName && process.env[envVarName] ? process.env[envVarName] : undefined;
+
+      const headers = normalizeHeaders(settings.llm?.headers);
+
       providerConfig = {
         provider: LlmProviderId.OPENAI_COMPATIBLE,
-        baseUrl: settings.llm?.openaiCompatible?.baseUrl ?? '',
-        model: settings.llm?.openaiCompatible?.model ?? '',
-        auth: settings.llm?.openaiCompatible?.auth as any,
-        headers: settings.llm?.headers,
+        baseUrl,
+        model,
+        auth: {
+          type: authType,
+          envVarName,
+          apiKey,
+        },
+        headers,
       };
     } else if (provider === LlmProviderId.ANTHROPIC) {
       providerConfig = { provider: LlmProviderId.ANTHROPIC };

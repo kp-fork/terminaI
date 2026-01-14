@@ -33,6 +33,7 @@ describe('ProviderWizard', () => {
     const settings = {
       merged: {},
       setValue: vi.fn(),
+      forScope: vi.fn(() => ({ settings: {} })),
     } as unknown as LoadedSettings;
 
     const onSelectOpenAICompatible = vi.fn();
@@ -63,6 +64,7 @@ describe('ProviderWizard', () => {
     const settings = {
       merged: {},
       setValue: vi.fn(),
+      forScope: vi.fn(() => ({ settings: {} })),
     } as unknown as LoadedSettings;
 
     const onSelectOpenAICompatible = vi.fn();

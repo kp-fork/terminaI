@@ -31,16 +31,29 @@ export function settingsToProviderConfig(
 
   if (settings.llm?.provider === 'openai_compatible') {
     const s = settings.llm.openaiCompatible;
-    const openaiModel = options.modelOverride || s?.model;
-    if (s?.baseUrl && openaiModel) {
-      let authType: NonNullable<OpenAICompatibleConfig['auth']>['type'] =
-        'none';
+    if (!s) {
+      throw new FatalConfigError(
+        'llm.provider is set to openai_compatible, but llm.openaiCompatible is missing.',
+      );
+    }
+    const baseUrl = normalizeOpenAIBaseUrl(s?.baseUrl);
+    const openaiModel = (options.modelOverride ?? s?.model ?? '').trim();
+    if (baseUrl && openaiModel.length > 0) {
       // Type the auth object based on the settings schema
       const auth = s.auth as
         | { type?: 'none' | 'api-key' | 'bearer'; envVarName?: string }
         | undefined;
-      if (auth?.type === 'api-key') authType = 'api-key';
+
+      const envVarName = (auth?.envVarName ?? 'OPENAI_API_KEY')
+        .trim()
+        .replace(/\s+/g, '');
+
+      let authType: NonNullable<OpenAICompatibleConfig['auth']>['type'] =
+        'none';
+      if (auth?.type === 'none') authType = 'none';
+      else if (auth?.type === 'api-key') authType = 'api-key';
       else if (auth?.type === 'bearer') authType = 'bearer';
+      else if (envVarName && process.env[envVarName]) authType = 'bearer';
 
       const headers: Record<string, string> = {};
       if (settings.llm.headers) {
@@ -51,12 +64,12 @@ export function settingsToProviderConfig(
 
       providerConfig = {
         provider: LlmProviderId.OPENAI_COMPATIBLE,
-        baseUrl: s.baseUrl,
+        baseUrl,
         model: openaiModel,
         auth: {
           type: authType,
           apiKey: undefined,
-          envVarName: s.auth?.envVarName,
+          envVarName,
         },
         headers,
       };
@@ -64,10 +77,10 @@ export function settingsToProviderConfig(
       // Resolve API Key here if env var name is provided
       if (
         providerConfig.provider === LlmProviderId.OPENAI_COMPATIBLE &&
-        s.auth?.envVarName &&
-        process.env[s.auth.envVarName]
+        envVarName &&
+        process.env[envVarName]
       ) {
-        providerConfig.auth!.apiKey = process.env[s.auth.envVarName];
+        providerConfig.auth!.apiKey = process.env[envVarName];
       }
 
       resolvedModel = openaiModel;
@@ -81,4 +94,21 @@ export function settingsToProviderConfig(
   }
 
   return { providerConfig, resolvedModel };
+}
+
+function normalizeOpenAIBaseUrl(raw: string | undefined): string | undefined {
+  if (typeof raw !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+
+  const withScheme = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  return withScheme.replace(/\/+$/, '');
 }

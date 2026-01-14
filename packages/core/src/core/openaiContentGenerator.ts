@@ -382,7 +382,19 @@ export class OpenAIContentGenerator implements ContentGenerator {
     body: Record<string, unknown>,
     signal?: AbortSignal,
   ): Promise<Response> {
-    const url = `${this.config.baseUrl.replace(/\/$/, '')}${endpoint}`;
+    const baseUrl = this.config.baseUrl.trim();
+    if (baseUrl.length === 0) {
+      throw new Error(
+        'OpenAI-compatible baseUrl is missing. Set llm.openaiCompatible.baseUrl (or run /auth wizard) and try again.',
+      );
+    }
+    if (!/^https?:\/\//i.test(baseUrl)) {
+      throw new Error(
+        `OpenAI-compatible baseUrl must start with http:// or https:// (got "${this.config.baseUrl}").`,
+      );
+    }
+
+    const url = `${baseUrl.replace(/\/+$/, '')}${endpoint}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...this.config.headers,
