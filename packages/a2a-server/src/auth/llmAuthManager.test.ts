@@ -199,7 +199,10 @@ describe('LlmAuthManager', () => {
       const { buildWizardSettingsPatch } = await import('@terminai/core');
       vi.mocked(buildWizardSettingsPatch).mockReturnValue([
         { path: 'test.path', value: 'test-value' },
-        { path: 'security.auth.selectedType', value: AuthType.USE_OPENAI_COMPATIBLE },
+        {
+          path: 'security.auth.selectedType',
+          value: AuthType.USE_OPENAI_COMPATIBLE,
+        },
       ]);
 
       const manager = new LlmAuthManager({

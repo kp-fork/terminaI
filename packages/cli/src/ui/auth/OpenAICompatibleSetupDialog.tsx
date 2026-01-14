@@ -83,7 +83,9 @@ export function OpenAICompatibleSetupDialog({
   });
 
   const targetScope = useMemo(() => {
-    const workspaceSettings = settings.forScope(SettingScope.Workspace).settings;
+    const workspaceSettings = settings.forScope(
+      SettingScope.Workspace,
+    ).settings;
     const workspaceOpenai = workspaceSettings.llm?.openaiCompatible;
     const hasWorkspaceOverride =
       workspaceSettings.llm?.provider === 'openai_compatible' ||

@@ -26,7 +26,9 @@ export function ProviderWizard({
   onAuthError,
 }: Props) {
   const targetScope = (() => {
-    const workspaceSettings = settings.forScope(SettingScope.Workspace).settings;
+    const workspaceSettings = settings.forScope(
+      SettingScope.Workspace,
+    ).settings;
     const hasWorkspaceOverride =
       workspaceSettings.llm?.provider !== undefined ||
       workspaceSettings.llm?.openaiCompatible !== undefined;
