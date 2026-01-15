@@ -57,6 +57,14 @@ describe('wizardState', () => {
       expect(newState.error).toBeNull();
     });
 
+    it('should transition to setup step for openai_chatgpt_oauth provider', () => {
+      const state = createInitialState();
+      const newState = selectProvider(state, 'openai_chatgpt_oauth');
+      expect(newState.provider).toBe('openai_chatgpt_oauth');
+      expect(newState.step).toBe('setup');
+      expect(newState.error).toBeNull();
+    });
+
     it('should clear error when selecting provider', () => {
       const state: WizardState = {
         step: 'provider',
@@ -192,6 +200,16 @@ describe('wizardState', () => {
       expect(getNextStep(state)).toBe('setup');
     });
 
+    it('should return setup for openai_chatgpt_oauth provider at provider step', () => {
+      const state: WizardState = {
+        step: 'provider',
+        provider: 'openai_chatgpt_oauth',
+        authMethod: null,
+        error: null,
+      };
+      expect(getNextStep(state)).toBe('setup');
+    });
+
     it('should return setup for auth_method step with auth method selected', () => {
       const state: WizardState = {
         step: 'auth_method',
@@ -225,6 +243,10 @@ describe('wizardState', () => {
     it('should return false for openai_compatible', () => {
       expect(needsAuthMethodStep('openai_compatible')).toBe(false);
     });
+
+    it('should return false for openai_chatgpt_oauth', () => {
+      expect(needsAuthMethodStep('openai_chatgpt_oauth')).toBe(false);
+    });
   });
 
   describe('getAuthMethodOptions', () => {
@@ -236,6 +258,11 @@ describe('wizardState', () => {
     it('should return correct options for openai_compatible', () => {
       const options = getAuthMethodOptions('openai_compatible');
       expect(options).toEqual(['api_key']);
+    });
+
+    it('should return correct options for openai_chatgpt_oauth', () => {
+      const options = getAuthMethodOptions('openai_chatgpt_oauth');
+      expect(options).toEqual(['oauth']);
     });
 
     it('should return correct options for anthropic', () => {

@@ -83,6 +83,18 @@ describe('settingsStore', () => {
       setOpenAIConfig(config);
       expect(useSettingsStore.getState().openaiConfig).toEqual(config);
     });
+
+    it('should update openaiChatgptOauthConfig', () => {
+      const { setOpenAIChatGptOauthConfig } = useSettingsStore.getState();
+      const config = {
+        model: 'gpt-5.2-codex',
+        baseUrl: 'https://chatgpt.com/backend-api/codex',
+      };
+      setOpenAIChatGptOauthConfig(config);
+      expect(useSettingsStore.getState().openaiChatgptOauthConfig).toEqual(
+        config,
+      );
+    });
   });
 
   describe('Feature Flags', () => {

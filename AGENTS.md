@@ -613,59 +613,53 @@ src/
 
 ## Upstream Maintenance
 
-### Weekly Sync Architecture
+### Three-Agent Sync Pipeline
 
 TerminaI is forked from
 [Gemini CLI](https://github.com/google-gemini/gemini-cli).
 
+**Philosophy:** Quality >> Speed >> Cost
+
 ```
-Saturday 3 AM UTC              Saturday 9 AM CST
-      │                              │
-      ▼                              ▼
-┌───────────────────┐         ┌─────────────┐
-│    JULES (90%)    │         │ HUMAN (10%) │
-│                   │         │             │
-│ 1. Fetch upstream │────────▶│ 1. Read     │
-│ 2. Classify       │   PR    │    notes    │
-│ 3. Cherry-pick    │         │ 2. Spot-    │
-│ 4. Reimplement    │         │    check    │
-│ 5. Test           │         │ 3. Merge    │
-│ 6. Self-review    │         │    (~8 min) │
-└───────────────────┘         └─────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         UPSTREAM SYNC PIPELINE                              │
+│                                                                             │
+│   THURSDAY 3 AM UTC          THURSDAY 4 AM UTC          WEEKEND             │
+│        │                          │                          │              │
+│        ▼                          ▼                          ▼              │
+│   ┌─────────────┐           ┌─────────────┐           ┌─────────────┐      │
+│   │  DRAFTER    │           │  RED-TEAM   │           │   LOCAL     │      │
+│   │  (Remote)   │────PR────▶│  (Remote)   │────PR────▶│  (Local)    │      │
+│   │             │           │             │           │             │      │
+│   │ • Classify  │           │ • Challenge │           │ • Validate  │      │
+│   │ • Architect │           │ • Find gaps │           │ • Perfect   │      │
+│   │ • Task list │           │ • Harden    │           │ • Execute   │      │
+│   └─────────────┘           └─────────────┘           └─────────────┘      │
+│                                                                             │
+│   Output:                   Output:                   Output:              │
+│   WeekOfMMMdd_drafter.md    Section 4 review          EXECUTED             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Zone Classification
 
-| Zone              | Description               | Action               |
-| ----------------- | ------------------------- | -------------------- |
-| 🟢 **CORE**       | Files we haven't modified | Cherry-pick directly |
-| 🟡 **FORK**       | Files we've diverged      | Reimplement intent   |
-| ⚪ **IRRELEVANT** | Google-specific           | Skip                 |
-
-### "Reimplement Intent" Example
-
-Upstream improves error handling:
-
-```diff
-- catch (e) { console.error(e); }
-+ catch (e) { logger.error('Failed', { error: e }); process.exit(1); }
-```
-
-We apply the **same improvement** to our diverged code:
-
-```typescript
-catch (e) { logger.error('TerminaI failed', { error: e }); process.exit(1); }
-```
-
-Same pattern, our branding.
+| Zone              | Description                | Action             |
+| ----------------- | -------------------------- | ------------------ |
+| 🟢 **LEVERAGE**   | Files we can take directly | Cherry-pick        |
+| 🔴 **CANON**      | TerminaI-owned code        | Reimplement intent |
+| 🟡 **QUARANTINE** | Needs human decision       | Analyze & decide   |
+| ⚪ **SKIP**       | Irrelevant                 | Ignore             |
 
 ### Key Files
 
-| File                          | Purpose                   |
-| ----------------------------- | ------------------------- |
-| `docs-terminai/FORK_ZONES.md` | Zone classification rules |
-| `.upstream/absorption-log.md` | Track merged commits      |
-| `.upstream/patches/`          | Weekly sync artifacts     |
+| File                                             | Purpose                   |
+| ------------------------------------------------ | ------------------------- |
+| `docs-terminai/FORK_ZONES.md`                    | Zone classification rules |
+| `docs-terminai/UPSTREAM_SCRUB_RULES.md`          | Deep scrub analysis rules |
+| `docs-terminai/templates/upstream-merge-plan.md` | Merge plan template       |
+| `docs-terminai/upstream-merges/`                 | Weekly merge plans        |
+| `.upstream/absorption-log.md`                    | Track merged commits      |
+| `.agent/workflows/B-sync-review.md`              | Local agent workflow      |
 
 ---
 

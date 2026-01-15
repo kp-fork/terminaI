@@ -35,6 +35,20 @@ describe('getProviderCapabilities', () => {
     });
   });
 
+  it('should return ChatGPT OAuth capabilities', () => {
+    const capabilities = getProviderCapabilities(
+      LlmProviderId.OPENAI_CHATGPT_OAUTH,
+    );
+    expect(capabilities).toEqual({
+      supportsTools: true,
+      supportsStreaming: true,
+      supportsEmbeddings: false,
+      supportsJsonSchema: false,
+      supportsCitations: false,
+      supportsImages: false,
+    });
+  });
+
   it('should return Anthropic capabilities', () => {
     const capabilities = getProviderCapabilities(LlmProviderId.ANTHROPIC);
     expect(capabilities).toEqual({

@@ -11,6 +11,7 @@ import { AuthType, type Config, loadApiKey, debugLogger } from '@terminai/core';
 import { getErrorMessage } from '@terminai/core';
 import { AuthState } from '../types.js';
 import { validateAuthMethod } from '../../config/auth.js';
+import { resolveEffectiveAuthType } from '../../config/effectiveAuthType.js';
 
 export function validateAuthMethodWithSettings(
   authType: AuthType,
@@ -76,8 +77,8 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
         return;
       }
 
-      const authType = settings.merged.security?.auth?.selectedType;
-      if (!authType) {
+      const effectiveAuthType = resolveEffectiveAuthType(settings.merged);
+      if (!effectiveAuthType) {
         if (process.env['GEMINI_API_KEY']) {
           onAuthError(
             'Existing API key detected (GEMINI_API_KEY). Select "Gemini API Key" option to use it, or run /auth to switch providers.',
@@ -90,7 +91,7 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
         return;
       }
 
-      if (authType === AuthType.USE_GEMINI) {
+      if (effectiveAuthType === AuthType.USE_GEMINI) {
         const key = await reloadApiKey(); // Use the unified function
         if (!key) {
           setAuthState(AuthState.AwaitingApiKeyInput);
@@ -98,7 +99,7 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
         }
       }
 
-      const error = validateAuthMethodWithSettings(authType, settings);
+      const error = validateAuthMethodWithSettings(effectiveAuthType, settings);
       if (error) {
         onAuthError(error);
         return;
@@ -117,9 +118,9 @@ export const useAuthCommand = (settings: LoadedSettings, config: Config) => {
       }
 
       try {
-        await config.refreshAuth(authType);
+        await config.refreshAuth(effectiveAuthType);
 
-        debugLogger.log(`Authenticated via "${authType}".`);
+        debugLogger.log(`Authenticated via "${effectiveAuthType}".`);
         setAuthError(null);
         setAuthState(AuthState.Authenticated);
       } catch (e) {

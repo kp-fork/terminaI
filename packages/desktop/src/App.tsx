@@ -79,6 +79,7 @@ function App() {
     'unknown' | 'ok' | 'required' | 'in_progress' | 'error'
   >('unknown');
   const [llmAuthMessage, setLlmAuthMessage] = useState<string | null>(null);
+  const [llmAuthProvider, setLlmAuthProvider] = useState<string | null>(null);
 
   const refreshLlmAuthStatus = useCallback(async () => {
     if (!agentUrl || !agentToken) {
@@ -91,6 +92,7 @@ function App() {
       const status = await client.getStatus();
       setLlmAuthStatus(status.status);
       setLlmAuthMessage(status.message ?? null);
+      setLlmAuthProvider(status.provider ?? null);
     } catch (e) {
       setLlmAuthStatus('error');
       setLlmAuthMessage(
@@ -98,6 +100,7 @@ function App() {
           ? e.message
           : 'Failed to check authentication status',
       );
+      setLlmAuthProvider(null);
     }
   }, [agentToken, agentUrl]);
 
@@ -127,6 +130,9 @@ function App() {
   const [pendingConfirmationPinReady, setPendingConfirmationPinReady] =
     useState(false);
   const openaiConfig = useSettingsStore((s) => s.openaiConfig);
+  const openaiChatgptOauthConfig = useSettingsStore(
+    (s) => s.openaiChatgptOauthConfig,
+  );
 
   const resolvedTheme =
     theme === 'system'
@@ -315,9 +321,13 @@ function App() {
                 const newProvider = e.target.value as
                   | 'gemini'
                   | 'ollama'
-                  | 'openai_compatible';
-                if (newProvider === 'openai_compatible') {
-                  // Open wizard to configure OpenAI-compatible provider properly
+                  | 'openai_compatible'
+                  | 'openai_chatgpt_oauth';
+                if (
+                  newProvider === 'openai_compatible' ||
+                  newProvider === 'openai_chatgpt_oauth'
+                ) {
+                  // Open wizard to configure OpenAI providers properly
                   setIsSwitchProviderOpen(true);
                 } else {
                   setProvider(newProvider);
@@ -327,7 +337,8 @@ function App() {
             >
               <option value="gemini">Gemini</option>
               <option value="ollama">Ollama</option>
-              <option value="openai_compatible">OpenAI</option>
+              <option value="openai_chatgpt_oauth">ChatGPT (OAuth)</option>
+              <option value="openai_compatible">OpenAI Compatible</option>
             </select>
             {/* Context Usage Indicator with Popover */}
             <ContextPopover
@@ -516,6 +527,7 @@ function App() {
           <AuthWizard
             status={llmAuthStatus}
             message={llmAuthMessage}
+            provider={llmAuthProvider}
             onComplete={() => void refreshLlmAuthStatus()}
           />
         )}
@@ -530,6 +542,7 @@ function App() {
             }}
             mode="switch_provider"
             initialOpenAIValues={openaiConfig}
+            initialOpenAIChatGptOauthValues={openaiChatgptOauthConfig}
           />
         )}
       </div>

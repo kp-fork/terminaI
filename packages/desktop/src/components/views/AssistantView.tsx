@@ -59,8 +59,10 @@ export function AssistantView() {
           <div className="flex gap-2 items-center w-full justify-between">
             <div className="text-sm font-medium uppercase tracking-wide px-2 py-1 bg-secondary rounded text-secondary-foreground">
               {settings.provider === 'openai_compatible'
-                ? 'OpenAI'
-                : settings.provider.toUpperCase()}
+                ? 'OpenAI Compatible'
+                : settings.provider === 'openai_chatgpt_oauth'
+                  ? 'ChatGPT (OAuth)'
+                  : settings.provider.toUpperCase()}
             </div>
             <Button
               variant="outline"
@@ -112,6 +114,7 @@ export function AssistantView() {
           onComplete={() => setIsWizardOpen(false)}
           mode="switch_provider"
           initialOpenAIValues={settings.openaiConfig}
+          initialOpenAIChatGptOauthValues={settings.openaiChatgptOauthConfig}
         />
       )}
     </div>

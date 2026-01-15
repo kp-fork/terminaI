@@ -117,6 +117,16 @@ export class LoggingContentGenerator implements ContentGenerator {
       );
     }
 
+    // Case 1c: ChatGPT OAuth (Codex backend).
+    if (providerConfig.provider === LlmProviderId.OPENAI_CHATGPT_OAUTH) {
+      return (
+        this.getServerDetailsFromUrl(providerConfig.baseUrl) ?? {
+          address: 'unknown',
+          port: 0,
+        }
+      );
+    }
+
     const genConfig = this.config.getContentGeneratorConfig();
 
     // Case 2: Using an API key for Vertex AI.

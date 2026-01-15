@@ -13,10 +13,12 @@ import { GeminiOAuthStep } from './auth/GeminiOAuthStep';
 import { GeminiApiKeyStep } from './auth/GeminiApiKeyStep';
 import { GeminiVertexStep } from './auth/GeminiVertexStep';
 import { OpenAICompatibleStep } from './auth/OpenAICompatibleStep';
+import { OpenAIChatGptOAuthStep } from './auth/OpenAIChatGptOAuthStep';
 
 interface Props {
   status: 'unknown' | 'ok' | 'required' | 'in_progress' | 'error';
   message: string | null;
+  provider?: string | null;
   onComplete: () => void;
   mode?: 'auth_required' | 'switch_provider'; // Default: auth_required
   initialOpenAIValues?: {
@@ -24,22 +26,30 @@ interface Props {
     model?: string;
     envVarName?: string;
   };
+  initialOpenAIChatGptOauthValues?: {
+    model?: string;
+    baseUrl?: string;
+  };
 }
 
 type WizardStep =
   | 'select_provider'
   | 'choose_gemini_method'
+  | 'choose_openai_method'
   | 'oauth'
   | 'api_key'
   | 'vertex'
-  | 'openai_config';
+  | 'openai_config'
+  | 'openai_chatgpt_oauth';
 
 export function AuthWizard({
   status,
   message,
+  provider,
   onComplete,
   mode = 'auth_required',
   initialOpenAIValues,
+  initialOpenAIChatGptOauthValues,
 }: Props) {
   const agentUrl = useSettingsStore((s) => s.agentUrl);
   const agentToken = useSettingsStore((s) => s.agentToken);
@@ -53,7 +63,15 @@ export function AuthWizard({
   // If auth_required, default to select_provider to allow switching, or maybe choose_gemini_method if we assume Gemini default?
   // Spec says: "Step 1: provider selection". So let's default to select_provider.
   const [step, setStep] = useState<WizardStep>(() => {
-    if (status === 'in_progress') return 'oauth';
+    if (status === 'in_progress') {
+      if (provider === 'openai_chatgpt_oauth') return 'openai_chatgpt_oauth';
+      return 'oauth';
+    }
+    if (status === 'required') {
+      if (provider === 'openai_chatgpt_oauth') return 'openai_chatgpt_oauth';
+      if (provider === 'openai_compatible') return 'openai_config';
+      if (provider === 'gemini') return 'choose_gemini_method';
+    }
     return 'select_provider';
   });
 
@@ -92,13 +110,21 @@ export function AuthWizard({
               onClick={() => {
                 if (
                   step === 'choose_gemini_method' ||
-                  step === 'openai_config'
+                  step === 'choose_openai_method'
                 ) {
                   setStep('select_provider');
-                } else {
-                  // Back from gemini sub-methods goes to gemini method chooser
-                  setStep('choose_gemini_method');
+                  return;
                 }
+
+                if (
+                  step === 'openai_config' ||
+                  step === 'openai_chatgpt_oauth'
+                ) {
+                  setStep('choose_openai_method');
+                  return;
+                }
+
+                setStep('choose_gemini_method');
               }}
             >
               Back
@@ -149,13 +175,13 @@ export function AuthWizard({
                   className="justify-start h-12"
                   onClick={() => {
                     setLocalError(null);
-                    setStep('openai_config');
+                    setStep('choose_openai_method');
                   }}
                 >
                   <div className="flex flex-col items-start">
-                    <span className="font-semibold">OpenAI Compatible</span>
+                    <span className="font-semibold">OpenAI</span>
                     <span className="text-xs text-muted-foreground">
-                      Connect to LocalAI, vLLM, or other OpenAI-compatible APIs
+                      Use ChatGPT OAuth (Codex backend) or enter an API key
                     </span>
                   </div>
                 </Button>
@@ -203,6 +229,36 @@ export function AuthWizard({
             </div>
           )}
 
+          {step === 'choose_openai_method' && (
+            <div className="space-y-3">
+              <p className="text-muted-foreground">
+                Choose how you want to authenticate OpenAI:
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  variant="outline"
+                  className="justify-start h-12"
+                  onClick={() => {
+                    setLocalError(null);
+                    setStep('openai_chatgpt_oauth');
+                  }}
+                >
+                  ChatGPT Plus/Pro (OAuth)
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start h-12"
+                  onClick={() => {
+                    setLocalError(null);
+                    setStep('openai_config');
+                  }}
+                >
+                  Enter API key (OpenAI-compatible)
+                </Button>
+              </div>
+            </div>
+          )}
+
           {step === 'oauth' && (
             <GeminiOAuthStep
               client={client}
@@ -234,6 +290,16 @@ export function AuthWizard({
               onDone={onComplete}
               onError={setLocalError}
               initialValues={initialOpenAIValues}
+            />
+          )}
+
+          {step === 'openai_chatgpt_oauth' && (
+            <OpenAIChatGptOAuthStep
+              client={client}
+              onDone={onComplete}
+              onCancel={() => setStep('choose_openai_method')}
+              onError={setLocalError}
+              initialValues={initialOpenAIChatGptOauthValues}
             />
           )}
         </div>

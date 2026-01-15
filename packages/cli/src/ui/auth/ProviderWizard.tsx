@@ -15,6 +15,7 @@ import { buildWizardSettingsPatch, type ProviderId } from '@terminai/core';
 interface Props {
   settings: LoadedSettings;
   onSelectOpenAICompatible: () => void;
+  onSelectOpenAIChatGptOauth: () => void;
   onProceedToGeminiAuth: () => void | Promise<void>;
   onAuthError: (error: string | null) => void;
 }
@@ -22,9 +23,22 @@ interface Props {
 export function ProviderWizard({
   settings,
   onSelectOpenAICompatible,
+  onSelectOpenAIChatGptOauth,
   onProceedToGeminiAuth,
   onAuthError,
 }: Props) {
+  const isOpenAiChatGptOauthDisabled = (() => {
+    const raw = process.env['TERMINAI_DISABLE_OPENAI_CHATGPT_OAUTH'];
+    if (raw === undefined) return false;
+    const normalized = raw.trim().toLowerCase();
+    return (
+      normalized === '1' ||
+      normalized === 'true' ||
+      normalized === 'yes' ||
+      normalized === 'on'
+    );
+  })();
+
   const targetScope = (() => {
     const workspaceSettings = settings.forScope(
       SettingScope.Workspace,
@@ -65,6 +79,15 @@ export function ProviderWizard({
               value: 'gemini',
               key: 'gemini',
             },
+            ...(isOpenAiChatGptOauthDisabled
+              ? []
+              : [
+                  {
+                    label: 'ChatGPT Plus/Pro (OAuth)',
+                    value: 'openai_chatgpt_oauth',
+                    key: 'openai_chatgpt_oauth',
+                  } as const,
+                ]),
             {
               label: 'OpenAI Compatible',
               value: 'openai_compatible',
@@ -85,6 +108,11 @@ export function ProviderWizard({
               return;
             }
 
+            if (provider === 'openai_chatgpt_oauth') {
+              onSelectOpenAIChatGptOauth();
+              return;
+            }
+
             if (provider === 'anthropic') {
               onAuthError('Anthropic is not yet supported.');
               return;
@@ -96,7 +124,10 @@ export function ProviderWizard({
             // 2.2 Fix: Clear OpenAI auth type if present to avoid inconsistent state
             const currentAuthType =
               settings.merged.security?.auth?.selectedType;
-            if (currentAuthType === 'openai-compatible') {
+            if (
+              currentAuthType === 'openai-compatible' ||
+              currentAuthType === 'openai-chatgpt-oauth'
+            ) {
               settings.setValue(
                 SettingScope.User,
                 'security.auth.selectedType',

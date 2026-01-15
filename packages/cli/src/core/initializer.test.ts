@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { initializeApp } from './initializer.js';
 import {
+  AuthType,
   IdeClient,
   logIdeConnection,
   logCliConfiguration,
@@ -59,9 +60,12 @@ describe('initializer', () => {
     };
     mockSettings = {
       merged: {
+        llm: {
+          provider: 'gemini',
+        },
         security: {
           auth: {
-            selectedType: 'oauth',
+            selectedType: AuthType.LOGIN_WITH_GOOGLE,
           },
         },
       },
@@ -88,7 +92,10 @@ describe('initializer', () => {
       shouldOpenAuthDialog: false,
       geminiMdFileCount: 5,
     });
-    expect(performInitialAuth).toHaveBeenCalledWith(mockConfig, 'oauth');
+    expect(performInitialAuth).toHaveBeenCalledWith(
+      mockConfig,
+      AuthType.LOGIN_WITH_GOOGLE,
+    );
     expect(validateTheme).toHaveBeenCalledWith(mockSettings);
     expect(logCliConfiguration).toHaveBeenCalled();
     expect(IdeClient.getInstance).not.toHaveBeenCalled();
@@ -144,5 +151,21 @@ describe('initializer', () => {
     );
 
     expect(result.themeError).toBe('Theme not found');
+  });
+
+  it('uses OpenAI ChatGPT OAuth auth type when provider is openai_chatgpt_oauth', async () => {
+    mockSettings.merged.llm = {
+      provider: 'openai_chatgpt_oauth',
+      openaiChatgptOauth: { model: 'gpt-5.2-codex' },
+    };
+    mockSettings.merged.security!.auth!.selectedType =
+      AuthType.LOGIN_WITH_GOOGLE;
+
+    await initializeApp(mockConfig as unknown as Config, mockSettings);
+
+    expect(performInitialAuth).toHaveBeenCalledWith(
+      mockConfig,
+      AuthType.USE_OPENAI_CHATGPT_OAUTH,
+    );
   });
 });

@@ -31,8 +31,14 @@ interface SettingsState {
 
   // Model
   // Model
-  provider: 'gemini' | 'ollama' | 'openai_compatible';
-  setProvider: (provider: 'gemini' | 'ollama' | 'openai_compatible') => void;
+  provider: 'gemini' | 'ollama' | 'openai_compatible' | 'openai_chatgpt_oauth';
+  setProvider: (
+    provider:
+      | 'gemini'
+      | 'ollama'
+      | 'openai_compatible'
+      | 'openai_chatgpt_oauth',
+  ) => void;
   openaiConfig?: {
     baseUrl: string;
     model: string;
@@ -42,6 +48,14 @@ interface SettingsState {
     baseUrl: string;
     model: string;
     envVarName?: string;
+  }) => void;
+  openaiChatgptOauthConfig?: {
+    model: string;
+    baseUrl?: string;
+  };
+  setOpenAIChatGptOauthConfig: (config: {
+    model: string;
+    baseUrl?: string;
   }) => void;
 
   // Voice
@@ -207,6 +221,10 @@ export const useSettingsStore = create<SettingsState>()(
       setOpenAIConfig: (openaiConfig) => {
         set({ openaiConfig });
         syncToCli('openaiConfig', JSON.stringify(openaiConfig));
+      },
+      openaiChatgptOauthConfig: undefined,
+      setOpenAIChatGptOauthConfig: (openaiChatgptOauthConfig) => {
+        set({ openaiChatgptOauthConfig });
       },
 
       // Voice

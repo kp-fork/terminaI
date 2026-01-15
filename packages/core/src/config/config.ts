@@ -16,7 +16,6 @@ import {
   LlmProviderId,
   type ProviderConfig,
   type ProviderCapabilities,
-  type OpenAICompatibleConfig,
   getProviderCapabilities,
 } from '../core/providerTypes.js';
 import {
@@ -842,15 +841,14 @@ export class Config {
       modelConfigServiceConfig ?? DEFAULT_MODEL_CONFIGS,
     );
 
-    // When using OpenAI-compatible provider, route internal services to user's model
+    // When using non-Gemini providers, route internal services to user's model
     // instead of hardcoded Gemini models (which don't exist on OpenRouter, etc.)
-    if (this.providerConfig.provider === LlmProviderId.OPENAI_COMPATIBLE) {
-      const openaiConfig = this.providerConfig as OpenAICompatibleConfig & {
-        provider: LlmProviderId.OPENAI_COMPATIBLE;
-      };
-      // Use internalModel if set, otherwise fall back to main model
+    if (
+      this.providerConfig.provider === LlmProviderId.OPENAI_COMPATIBLE ||
+      this.providerConfig.provider === LlmProviderId.OPENAI_CHATGPT_OAUTH
+    ) {
       const modelForInternalServices =
-        openaiConfig.internalModel || openaiConfig.model;
+        (this.providerConfig.internalModel || this.providerConfig.model) ?? '';
 
       if (modelForInternalServices) {
         // Override internal model aliases to use the user's OpenAI model
@@ -1043,7 +1041,9 @@ export class Config {
     const effectiveAuthType =
       providerConfig.provider === LlmProviderId.OPENAI_COMPATIBLE
         ? AuthType.USE_OPENAI_COMPATIBLE
-        : (authType ?? AuthType.USE_GEMINI);
+        : providerConfig.provider === LlmProviderId.OPENAI_CHATGPT_OAUTH
+          ? AuthType.USE_OPENAI_CHATGPT_OAUTH
+          : (authType ?? AuthType.USE_GEMINI);
 
     // Rebuild the content generator with the new provider
     await this.refreshAuth(effectiveAuthType);

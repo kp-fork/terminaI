@@ -1,18 +1,5 @@
 {
-  "llm": {
-    "provider": "openai_compatible",
-    "openaiCompatible": {
-      "baseUrl": "https://openrouter.ai/api/v1",
-      "model": "openai/gpt-oss-120b:free",
-      "auth": {
-        "type": "bearer",
-        "envVarName": "OPENAI_API_KEY"
-      }
-    }
-  },
   "security": {
-    "auth": {
-      "selectedType": "openai-compatible"
-    }
+    "auth": {}
   }
 }

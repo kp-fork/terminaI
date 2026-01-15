@@ -260,9 +260,7 @@ describe('useQuotaAndFallback', () => {
           // Check that the correct initial message was generated
           expect(mockHistoryManager.addItem).not.toHaveBeenCalled();
           const message = request!.message;
-          expect(message).toContain(
-            'We are currently experiencing high demand.',
-          );
+          expect(message).toContain('Error when talking to provider:');
 
           // Simulate the user choosing to continue with the fallback model
           act(() => {

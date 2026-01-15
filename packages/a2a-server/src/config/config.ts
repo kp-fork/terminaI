@@ -76,6 +76,38 @@ function settingsToProviderConfig(settings: LoadedSettings['merged']): {
         '[Config] llm.provider is openai_compatible but baseUrl/model missing, falling back to Gemini',
       );
     }
+  } else if (settings.llm?.provider === 'openai_chatgpt_oauth') {
+    const s = settings.llm.openaiChatgptOauth;
+    const model = (s?.model ?? '').trim();
+    const baseUrl = (s?.baseUrl ?? 'https://chatgpt.com/backend-api/codex')
+      .trim()
+      .replace(/\/+$/, '');
+
+    if (model.length > 0) {
+      providerConfig = {
+        provider: LlmProviderId.OPENAI_CHATGPT_OAUTH,
+        baseUrl,
+        model,
+        internalModel:
+          typeof s?.internalModel === 'string' && s.internalModel.trim().length
+            ? s.internalModel.trim()
+            : undefined,
+        headers: (() => {
+          const raw = settings.llm?.headers;
+          if (!raw || typeof raw !== 'object') return undefined;
+          const headers: Record<string, string> = {};
+          for (const [k, v] of Object.entries(raw)) {
+            if (typeof v === 'string') headers[k] = v;
+          }
+          return Object.keys(headers).length > 0 ? headers : undefined;
+        })(),
+      };
+      resolvedModel = model;
+    } else {
+      logger.warn(
+        '[Config] llm.provider is openai_chatgpt_oauth but model missing, falling back to Gemini',
+      );
+    }
   } else if (settings.llm?.provider === 'anthropic') {
     providerConfig = { provider: LlmProviderId.ANTHROPIC };
   }
@@ -199,17 +231,25 @@ export async function loadConfig(
     );
   } else {
     // Task 10: Respect settings.security.auth.selectedType
-    const selectedAuthType = settings.security?.auth?.selectedType;
-
-    if (selectedAuthType) {
-      logger.info(`[Config] Using configured auth type: ${selectedAuthType}`);
-      await config.refreshAuth(selectedAuthType);
+    // Provider-first: for non-Google providers, choose the deterministic auth type.
+    const provider = config.getProviderConfig().provider;
+    if (provider === LlmProviderId.OPENAI_COMPATIBLE) {
+      await config.refreshAuth(AuthType.USE_OPENAI_COMPATIBLE);
+    } else if (provider === LlmProviderId.OPENAI_CHATGPT_OAUTH) {
+      await config.refreshAuth(AuthType.USE_OPENAI_CHATGPT_OAUTH);
     } else if (process.env['GEMINI_API_KEY']) {
       logger.info('[Config] Using Gemini API Key (Implicit)');
       await config.refreshAuth(AuthType.USE_GEMINI);
     } else {
-      logger.info('[Config] Using OAuth (LOGIN_WITH_GOOGLE) (Default)');
-      await config.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
+      const selectedAuthType = settings.security?.auth?.selectedType;
+
+      if (selectedAuthType) {
+        logger.info(`[Config] Using configured auth type: ${selectedAuthType}`);
+        await config.refreshAuth(selectedAuthType);
+      } else {
+        logger.info('[Config] Using OAuth (LOGIN_WITH_GOOGLE) (Default)');
+        await config.refreshAuth(AuthType.LOGIN_WITH_GOOGLE);
+      }
     }
   }
 

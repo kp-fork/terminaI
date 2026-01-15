@@ -76,6 +76,7 @@ import {
   type InitializationResult,
 } from './core/initializer.js';
 import { validateAuthMethod } from './config/auth.js';
+import { resolveEffectiveAuthType } from './config/effectiveAuthType.js';
 import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
 import { runZedIntegration } from './zed-integration/zedIntegration.js';
 import { cleanupExpiredSessions } from './utils/sessionCleanup.js';
@@ -408,22 +409,16 @@ export async function main() {
         argv,
       );
 
-      if (
-        settings.merged.security?.auth?.selectedType &&
-        !settings.merged.security?.auth?.useExternal
-      ) {
+      const effectiveAuthType = resolveEffectiveAuthType(settings.merged);
+      if (effectiveAuthType && !settings.merged.security?.auth?.useExternal) {
         // Validate authentication here because the sandbox will interfere with the Oauth2 web redirect.
         try {
-          const err = validateAuthMethod(
-            settings.merged.security.auth.selectedType,
-          );
+          const err = validateAuthMethod(effectiveAuthType);
           if (err) {
             throw new Error(err);
           }
 
-          await partialConfig.refreshAuth(
-            settings.merged.security.auth.selectedType,
-          );
+          await partialConfig.refreshAuth(effectiveAuthType);
         } catch (err) {
           debugLogger.error('Error authenticating:', err);
           await runExitCleanup();
@@ -703,7 +698,7 @@ export async function main() {
     // Handle --list-sessions flag
     if (config.getListSessions()) {
       // Attempt auth for summary generation (gracefully skips if not configured)
-      const authType = settings.merged.security?.auth?.selectedType;
+      const authType = resolveEffectiveAuthType(settings.merged);
       if (authType) {
         try {
           await config.refreshAuth(authType);
