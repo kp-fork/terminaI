@@ -18,6 +18,7 @@ import { AuthDialog } from '../auth/AuthDialog.js';
 import { ApiAuthDialog } from '../auth/ApiAuthDialog.js';
 import { ProviderWizard } from '../auth/ProviderWizard.js';
 import { OpenAICompatibleSetupDialog } from '../auth/OpenAICompatibleSetupDialog.js';
+import { OpenAIChatGptOAuthSetupDialog } from '../auth/OpenAIChatGptOAuthSetupDialog.js';
 import { EditorSettingsDialog } from './EditorSettingsDialog.js';
 import { PrivacyNotice } from '../privacy/PrivacyNotice.js';
 import { ProQuotaDialog } from './ProQuotaDialog.js';
@@ -127,6 +128,11 @@ export const DialogManager = ({
             AuthWizardDialogState.OpenAICompatibleSetup,
           );
         }}
+        onSelectOpenAIChatGptOauth={() => {
+          uiActions.setAuthWizardDialog(
+            AuthWizardDialogState.OpenAIChatGptOauthSetup,
+          );
+        }}
         onProceedToGeminiAuth={async () => {
           // T2.3: Compute new ProviderConfig and reconfigure
           try {
@@ -185,6 +191,45 @@ export const DialogManager = ({
               error instanceof Error ? error.message : String(error);
             uiActions.onAuthError(
               `Failed to configure OpenAI provider: ${message}`,
+            );
+          }
+        }}
+      />
+    );
+  }
+
+  if (
+    uiState.authWizardDialog === AuthWizardDialogState.OpenAIChatGptOauthSetup
+  ) {
+    return (
+      <OpenAIChatGptOAuthSetupDialog
+        settings={settings}
+        terminalWidth={terminalWidth}
+        onAuthError={uiActions.onAuthError}
+        onBack={() => {
+          uiActions.setAuthWizardDialog(AuthWizardDialogState.Provider);
+        }}
+        onComplete={async () => {
+          try {
+            const { settingsToProviderConfig } = await import(
+              '../../config/settingsToProviderConfig.js'
+            );
+            const { AuthType } = await import('@terminai/core');
+            const { providerConfig } = settingsToProviderConfig(
+              settings.merged,
+            );
+            await config.reconfigureProvider(
+              providerConfig,
+              AuthType.USE_OPENAI_CHATGPT_OAUTH,
+            );
+            uiActions.setAuthWizardDialog(null);
+            uiActions.closeSettingsDialog();
+            uiActions.setAuthState(AuthState.Unauthenticated);
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : String(error);
+            uiActions.onAuthError(
+              `Failed to configure ChatGPT OAuth provider: ${message}`,
             );
           }
         }}

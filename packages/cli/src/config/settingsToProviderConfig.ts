@@ -89,6 +89,42 @@ export function settingsToProviderConfig(
         'llm.provider is set to openai_compatible, but llm.openaiCompatible.baseUrl and a model (llm.openaiCompatible.model or --model) are required.',
       );
     }
+  } else if (settings.llm?.provider === 'openai_chatgpt_oauth') {
+    const s = settings.llm.openaiChatgptOauth;
+    if (!s) {
+      throw new FatalConfigError(
+        'llm.provider is set to openai_chatgpt_oauth, but llm.openaiChatgptOauth is missing.',
+      );
+    }
+
+    const baseUrl =
+      normalizeOpenAIBaseUrl(s?.baseUrl) ??
+      'https://chatgpt.com/backend-api/codex';
+    const model = (options.modelOverride ?? s?.model ?? '').trim();
+    if (model.length === 0) {
+      throw new FatalConfigError(
+        'llm.provider is set to openai_chatgpt_oauth, but llm.openaiChatgptOauth.model (or --model) is required.',
+      );
+    }
+
+    const headers: Record<string, string> = {};
+    if (settings.llm.headers) {
+      for (const [k, v] of Object.entries(settings.llm.headers)) {
+        if (typeof v === 'string') headers[k] = v;
+      }
+    }
+
+    const internalModel = (s?.internalModel ?? '').trim();
+
+    providerConfig = {
+      provider: LlmProviderId.OPENAI_CHATGPT_OAUTH,
+      baseUrl,
+      model,
+      internalModel: internalModel.length > 0 ? internalModel : undefined,
+      headers,
+    };
+
+    resolvedModel = model;
   } else if (settings.llm?.provider === 'anthropic') {
     providerConfig = { provider: LlmProviderId.ANTHROPIC };
   }

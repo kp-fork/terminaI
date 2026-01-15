@@ -84,6 +84,14 @@ export * from './auth/providerRegistry.js';
 export * from './auth/wizardSettings.js';
 export * from './auth/geminiAuthStatus.js';
 
+// ChatGPT OAuth (Codex backend)
+export * from './openai_chatgpt/constants.js';
+export * from './openai_chatgpt/types.js';
+export * from './openai_chatgpt/jwt.js';
+export * from './openai_chatgpt/oauthClient.js';
+export * from './openai_chatgpt/credentialStorage.js';
+export * from './openai_chatgpt/imports.js';
+
 // Export utilities
 
 export * from './utils/paths.js';

@@ -7,7 +7,7 @@
 
 import express from 'express';
 import request from 'supertest';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { AuthType } from '@terminai/core';
 import {
   AuthConflictError,
@@ -28,12 +28,20 @@ describe('Auth routes contract (Task 33)', () => {
       cancelGeminiOAuth: vi.fn(),
       useGeminiVertex: vi.fn(),
       clearGeminiAuth: vi.fn(),
+      startOpenAIOAuth: vi.fn(),
+      completeOpenAIOAuth: vi.fn(),
+      cancelOpenAIOAuth: vi.fn(),
+      clearOpenAIAuth: vi.fn(),
       applyProviderSwitch: vi.fn(),
     } as unknown as LlmAuthManager;
 
     app = express();
     app.use(express.json());
     app.use('/auth', createAuthRouter(manager));
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   describe('GET /auth/status', () => {
@@ -121,6 +129,14 @@ describe('Auth routes contract (Task 33)', () => {
         authType: AuthType.USE_OPENAI_COMPATIBLE,
       });
     });
+
+    it('validates ChatGPT OAuth provider requires model', async () => {
+      await request(app)
+        .post('/auth/provider')
+        .send({ provider: 'openai_chatgpt_oauth' })
+        .expect(400);
+      expect(manager.applyProviderSwitch).not.toHaveBeenCalled();
+    });
   });
 
   describe('POST /auth/gemini/api-key', () => {
@@ -185,6 +201,38 @@ describe('Auth routes contract (Task 33)', () => {
       expect(res.body).toEqual({
         authUrl: 'https://accounts.google.com/oauth/authorize?client_id=...',
       });
+    });
+  });
+
+  describe('POST /auth/openai/oauth/start', () => {
+    it('returns authUrl on successful start', async () => {
+      manager.startOpenAIOAuth = vi.fn().mockResolvedValue({
+        authUrl: 'https://auth.openai.com/oauth/authorize?...',
+      });
+
+      const res = await request(app)
+        .post('/auth/openai/oauth/start')
+        .send({})
+        .expect(200);
+
+      expect(res.body).toEqual({
+        authUrl: 'https://auth.openai.com/oauth/authorize?...',
+      });
+    });
+
+    it('returns 403 when ChatGPT OAuth provider is disabled by env var', async () => {
+      vi.stubEnv('TERMINAI_DISABLE_OPENAI_CHATGPT_OAUTH', 'true');
+
+      const res = await request(app)
+        .post('/auth/openai/oauth/start')
+        .send({})
+        .expect(403);
+
+      expect(res.body).toEqual({
+        error:
+          'ChatGPT OAuth provider is disabled by TERMINAI_DISABLE_OPENAI_CHATGPT_OAUTH. Use openai_compatible instead.',
+      });
+      expect(manager.startOpenAIOAuth).not.toHaveBeenCalled();
     });
   });
 

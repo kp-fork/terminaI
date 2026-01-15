@@ -510,6 +510,58 @@ describe('createContentGenerator', () => {
     // createCodeAssistContentGenerator should NOT be called
     expect(createCodeAssistContentGenerator).not.toHaveBeenCalled();
   });
+
+  it('should create ChatGptCodexContentGenerator when provider is OPENAI_CHATGPT_OAUTH', async () => {
+    const chatgptConfig = {
+      getModel: vi.fn().mockReturnValue('gpt-5.2-codex'),
+      getProxy: vi.fn().mockReturnValue(undefined),
+      getDebugMode: vi.fn().mockReturnValue(false),
+      getPreviewFeatures: vi.fn().mockReturnValue(false),
+      getProviderConfig: vi.fn().mockReturnValue({
+        provider: LlmProviderId.OPENAI_CHATGPT_OAUTH,
+        baseUrl: 'https://chatgpt.com/backend-api/codex',
+        model: 'gpt-5.2-codex',
+      }),
+    } as unknown as Config;
+
+    const generator = await createContentGenerator(
+      {
+        authType: AuthType.USE_GEMINI, // Auth type is ignored for ChatGPT OAuth provider
+      },
+      chatgptConfig,
+      'session-1',
+    );
+
+    expect(generator).toBeInstanceOf(LoggingContentGenerator);
+    expect(GoogleGenAI).not.toHaveBeenCalled();
+    expect(createCodeAssistContentGenerator).not.toHaveBeenCalled();
+  });
+
+  it('should throw when ChatGPT OAuth provider is disabled by env var', async () => {
+    vi.stubEnv('TERMINAI_DISABLE_OPENAI_CHATGPT_OAUTH', '1');
+
+    const chatgptConfig = {
+      getModel: vi.fn().mockReturnValue('gpt-5.2-codex'),
+      getProxy: vi.fn().mockReturnValue(undefined),
+      getDebugMode: vi.fn().mockReturnValue(false),
+      getPreviewFeatures: vi.fn().mockReturnValue(false),
+      getProviderConfig: vi.fn().mockReturnValue({
+        provider: LlmProviderId.OPENAI_CHATGPT_OAUTH,
+        baseUrl: 'https://chatgpt.com/backend-api/codex',
+        model: 'gpt-5.2-codex',
+      }),
+    } as unknown as Config;
+
+    await expect(
+      createContentGenerator(
+        {
+          authType: AuthType.USE_GEMINI,
+        },
+        chatgptConfig,
+        'session-1',
+      ),
+    ).rejects.toThrow(/disabled/i);
+  });
 });
 
 describe('createContentGeneratorConfig', () => {

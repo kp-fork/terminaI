@@ -12,6 +12,7 @@ import { validateAuthMethod } from './config/auth.js';
 import { type LoadedSettings } from './config/settings.js';
 import { handleError } from './utils/errors.js';
 import { runExitCleanup } from './utils/cleanup.js';
+import { resolveEffectiveAuthType } from './config/effectiveAuthType.js';
 
 function getAuthTypeFromEnv(): AuthType | undefined {
   if (process.env['GOOGLE_GENAI_USE_GCA'] === 'true') {
@@ -33,7 +34,10 @@ export async function validateNonInteractiveAuth(
   settings: LoadedSettings,
 ) {
   try {
-    const effectiveAuthType = configuredAuthType || getAuthTypeFromEnv();
+    const effectiveAuthType =
+      configuredAuthType ||
+      resolveEffectiveAuthType(settings.merged) ||
+      getAuthTypeFromEnv();
 
     const enforcedType = settings.merged.security?.auth?.enforcedType;
     if (enforcedType && effectiveAuthType !== enforcedType) {

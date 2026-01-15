@@ -75,6 +75,36 @@ export function validateAuthMethod(authMethod: string): string | null {
     return null;
   }
 
+  if (authMethod === AuthType.USE_OPENAI_CHATGPT_OAUTH) {
+    if (mergedSettings.llm?.provider !== 'openai_chatgpt_oauth') {
+      return (
+        'ChatGPT OAuth auth is selected, but llm.provider is not set to "openai_chatgpt_oauth".\n' +
+        'Run /auth wizard to configure your provider and try again.'
+      );
+    }
+
+    const openai = mergedSettings.llm?.openaiChatgptOauth;
+    const baseUrl = openai?.baseUrl?.trim() ?? '';
+    const model = openai?.model?.trim() ?? '';
+    if (model.length === 0) {
+      return (
+        'ChatGPT OAuth provider is selected, but configuration is incomplete.\n' +
+        'Required settings:\n' +
+        '• llm.openaiChatgptOauth.model\n' +
+        'Run /auth wizard to configure these values.'
+      );
+    }
+    if (baseUrl.length > 0 && !/^https?:\/\//i.test(baseUrl)) {
+      return (
+        'ChatGPT OAuth base URL must start with http:// or https://.\n' +
+        `Current value: "${openai?.baseUrl ?? ''}"\n` +
+        'Run /auth wizard to fix it.'
+      );
+    }
+
+    return null;
+  }
+
   if (authMethod === AuthType.USE_GEMINI) {
     if (!process.env['GEMINI_API_KEY']) {
       return (

@@ -19,6 +19,19 @@ const SECRET_PATTERNS = [
   /bearer\s+/i,
 ];
 
+const SECRET_KEY_PATTERNS = [
+  /^authorization$/i,
+  /^x-api-key$/i,
+  /^api[-_]?key$/i,
+  /^access[-_]?token$/i,
+  /^refresh[-_]?token$/i,
+  /^id[-_]?token$/i,
+  /^code[_-]?verifier$/i,
+  /^chatgpt-account-id$/i,
+  /^chatgpt[_-]?account[_-]?id$/i,
+  /^account[_-]?id$/i,
+];
+
 export interface RedactionOptions {
   redactUiTypedText?: boolean;
 }
@@ -29,6 +42,10 @@ function mask(value: string): string {
 
 function shouldRedactString(value: string): boolean {
   return SECRET_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+function shouldRedactKey(key: string): boolean {
+  return SECRET_KEY_PATTERNS.some((pattern) => pattern.test(key));
 }
 
 function redactValue(
@@ -70,6 +87,15 @@ function redactValue(
     for (const [key, nested] of Object.entries(
       value as Record<string, unknown>,
     )) {
+      if (shouldRedactKey(key)) {
+        hints.push({
+          path: path ? `${path}.${key}` : key,
+          strategy: 'mask',
+          reason: 'secret',
+        });
+        redacted[key] = typeof nested === 'string' ? mask(nested) : '***';
+        continue;
+      }
       redacted[key] = redactValue(
         nested,
         path ? `${path}.${key}` : key,

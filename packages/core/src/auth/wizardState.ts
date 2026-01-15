@@ -10,7 +10,11 @@ import { AuthType } from '../core/contentGenerator.js';
 /**
  * Provider identifiers supported by the wizard
  */
-export type ProviderId = 'gemini' | 'openai_compatible' | 'anthropic';
+export type ProviderId =
+  | 'gemini'
+  | 'openai_compatible'
+  | 'openai_chatgpt_oauth'
+  | 'anthropic';
 
 /**
  * Auth methods for Gemini provider
@@ -182,6 +186,8 @@ export function getAuthMethodOptions(provider: ProviderId): AuthMethod[] {
       return ['oauth', 'api_key', 'vertex_ai'];
     case 'openai_compatible':
       return ['api_key'];
+    case 'openai_chatgpt_oauth':
+      return ['oauth'];
     case 'anthropic':
       return ['oauth', 'api_key'];
     default:

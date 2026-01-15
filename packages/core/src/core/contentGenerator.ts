@@ -27,6 +27,8 @@ import { RecordingContentGenerator } from './recordingContentGenerator.js';
 import { getVersion, getEffectiveModel } from '../../index.js';
 import { LlmProviderId } from './providerTypes.js';
 import { OpenAIContentGenerator } from './openaiContentGenerator.js';
+import { ChatGptCodexContentGenerator } from './chatGptCodexContentGenerator.js';
+import { isOpenAIChatGptOauthProviderDisabled } from '../openai_chatgpt/constants.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -56,6 +58,7 @@ export enum AuthType {
   LEGACY_CLOUD_SHELL = 'cloud-shell',
   COMPUTE_ADC = 'compute-default-credentials',
   USE_OPENAI_COMPATIBLE = 'openai-compatible',
+  USE_OPENAI_CHATGPT_OAUTH = 'openai-chatgpt-oauth',
 }
 
 export type ContentGeneratorConfig = {
@@ -157,6 +160,17 @@ export async function createContentGenerator(
     const providerConfig = gcConfig.getProviderConfig();
     if (providerConfig.provider === LlmProviderId.OPENAI_COMPATIBLE) {
       const generator = new OpenAIContentGenerator(providerConfig, gcConfig);
+      return new LoggingContentGenerator(generator, gcConfig);
+    } else if (providerConfig.provider === LlmProviderId.OPENAI_CHATGPT_OAUTH) {
+      if (isOpenAIChatGptOauthProviderDisabled()) {
+        throw new Error(
+          'ChatGPT OAuth provider is disabled by TERMINAI_DISABLE_OPENAI_CHATGPT_OAUTH. Use openai_compatible instead.',
+        );
+      }
+      const generator = new ChatGptCodexContentGenerator(
+        providerConfig,
+        gcConfig,
+      );
       return new LoggingContentGenerator(generator, gcConfig);
     } else if (providerConfig.provider === LlmProviderId.ANTHROPIC) {
       // Placeholder for Anthropic

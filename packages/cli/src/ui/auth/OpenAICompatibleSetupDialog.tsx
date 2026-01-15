@@ -88,7 +88,9 @@ export function OpenAICompatibleSetupDialog({
     ).settings;
     const workspaceOpenai = workspaceSettings.llm?.openaiCompatible;
     const hasWorkspaceOverride =
-      workspaceSettings.llm?.provider === 'openai_compatible' ||
+      workspaceSettings.llm?.provider !== undefined ||
+      workspaceSettings.llm?.openaiCompatible !== undefined ||
+      workspaceSettings.llm?.openaiChatgptOauth !== undefined ||
       !!workspaceOpenai?.baseUrl ||
       !!workspaceOpenai?.model ||
       !!workspaceOpenai?.auth?.type ||

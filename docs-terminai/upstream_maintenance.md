@@ -37,15 +37,53 @@ Saturday 3 AM UTC                                   Saturday 9 AM CST
 
 ---
 
+## Strategic Rationale
+
+TerminaI maintains different relationships with different parts of the codebase:
+
+### What We Own (CANON)
+
+TerminaI is the **source of truth** for:
+
+- **Auth & Provider architecture** — Multi-LLM support (OpenAI, Anthropic,
+  ChatGPT OAuth) is our core differentiation. Upstream is Gemini-only.
+- **Settings schema extensions** — `llm.openaiCompatible.*`,
+  `llm.openaiChatgptOauth.*` don't exist upstream.
+- **Token storage** — `HybridTokenStorage` with keychain fallback is our
+  innovation.
+- **TerminaI-added features** — Voice mode, Evolution Lab, A2A server, Desktop
+  app.
+
+**Implication:** If upstream modifies these files, we **ignore** the change. We
+don't want their auth because it's Gemini-only.
+
+### What We Leverage (CORE)
+
+We **want upstream improvements** in:
+
+- **Core engine** — `shellExecutionService.ts`, `turnLoop.ts`, node-pty handling
+- **Tools** — New tools, bug fixes, security patches
+- **Prompts & Policy** — System prompts, approval ladder
+- **MCP infrastructure** — Client/server implementation (non-auth parts)
+
+**Implication:** If upstream improves tool execution or fixes a security issue,
+we **take** it.
+
+### What We Skip (IRRELEVANT)
+
+Google-internal telemetry, IDE companions we don't use, seasonal themes.
+
+---
+
 ## Zone Classification
 
 Jules classifies every upstream commit into one of three zones:
 
-| Zone              | Description               | Jules' Action                   |
-| ----------------- | ------------------------- | ------------------------------- |
-| 🟢 **CORE**       | Files we haven't modified | Cherry-pick directly            |
-| 🟡 **FORK**       | Files we've diverged      | Reimplement upstream's _intent_ |
-| ⚪ **IRRELEVANT** | Google-specific, seasonal | Skip entirely                   |
+| Zone            | Description               | Jules' Action                 |
+| --------------- | ------------------------- | ----------------------------- |
+| 🟢 **LEVERAGE** | Files we haven't modified | Cherry-pick directly          |
+| 🔴 **CANON**    | Files we own              | Ignore upstream; we are truth |
+| ⚪ **SKIP**     | Google-specific, seasonal | Skip entirely                 |
 
 Full classification rules: [FORK_ZONES.md](./FORK_ZONES.md)
 
@@ -168,10 +206,46 @@ Or: Actions → Weekly Upstream Sync → Run workflow
 
 ---
 
+## Adding New CANON Features
+
+When adding a new TerminaI-owned feature (not from upstream), follow this
+process:
+
+### Checklist
+
+1. [ ] Add all new files to `FORK_ZONES.md` CANON section
+2. [ ] Document the divergence reason
+3. [ ] Update the "Last Reviewed" date
+4. [ ] If the feature is critical, add a CI guard (see
+       `upstream_sync_protection.md`)
+
+### Worked Example: ChatGPT OAuth
+
+ChatGPT OAuth adds these CANON files:
+
+| New File                                            | Why It's CANON                                        |
+| --------------------------------------------------- | ----------------------------------------------------- |
+| `packages/core/src/core/chatgpt-oauth/client.ts`    | New OAuth flow, doesn't exist upstream                |
+| `packages/core/src/core/chatgpt-oauth/storage.ts`   | Extended credentials shape (`idToken`, `lastRefresh`) |
+| `packages/core/src/core/codex-content-generator.ts` | Codex backend specifics, not Gemini                   |
+| `providerTypes.ts` (modified)                       | Added `OPENAI_CHATGPT_OAUTH` enum value               |
+| `contentGenerator.ts` (modified)                    | Added routing for new provider                        |
+| `settings/schema.ts` (modified)                     | Added `llm.openaiChatgptOauth.*` config               |
+
+**Sync Implications:**
+
+- If upstream modifies `providerTypes.ts` → **Ignore** (they're Gemini-only)
+- If upstream modifies `contentGenerator.ts` → **Evaluate** (take non-auth
+  changes, ignore auth)
+- If upstream adds a new tool → **Take** (tools are LEVERAGE zone)
+
+---
+
 ## Changelog
 
-| Date       | Author      | Change                                        |
-| ---------- | ----------- | --------------------------------------------- |
-| 2025-12-27 | Antigravity | Initial document                              |
-| 2025-12-28 | Antigravity | Finalized with Jules integration              |
-| 2025-12-28 | Antigravity | Simplified to 2-stage (Jules 90% / Human 10%) |
+| Date       | Author      | Change                                                                                           |
+| ---------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| 2025-12-27 | Antigravity | Initial document                                                                                 |
+| 2025-12-28 | Antigravity | Finalized with Jules integration                                                                 |
+| 2025-12-28 | Antigravity | Simplified to 2-stage (Jules 90% / Human 10%)                                                    |
+| 2026-01-15 | Antigravity | Added strategic rationale, new zone taxonomy (CANON/LEVERAGE/SKIP), ChatGPT OAuth worked example |

@@ -26,12 +26,17 @@ vi.mock('@terminai/core', async (importOriginal) => {
     beginGeminiOAuthLoopbackFlow: mockBeginFlow,
     saveApiKey: mockSaveApiKey,
     buildWizardSettingsPatch: vi.fn(),
-    LlmProviderId: { OPENAI_COMPATIBLE: 'openai_compatible', GEMINI: 'gemini' },
+    LlmProviderId: {
+      GEMINI: 'gemini',
+      OPENAI_COMPATIBLE: 'openai_compatible',
+      OPENAI_CHATGPT_OAUTH: 'openai_chatgpt_oauth',
+      ANTHROPIC: 'anthropic',
+    },
   };
 });
 
 vi.mock('../config/settings.js', () => ({
-  SettingScope: { User: 1 },
+  SettingScope: { User: 1, Workspace: 2 },
 }));
 
 describe('LlmAuthManager', () => {
@@ -169,12 +174,14 @@ describe('LlmAuthManager', () => {
     let mockLoadedSettings: {
       merged: { security: { auth: Record<string, unknown> } };
       setValue: unknown;
+      forScope: unknown;
     };
 
     beforeEach(() => {
       mockLoadedSettings = {
         merged: { security: { auth: {} } },
         setValue: vi.fn(),
+        forScope: vi.fn(() => ({ settings: {} })),
       };
     });
 
@@ -193,6 +200,36 @@ describe('LlmAuthManager', () => {
         'error',
         expect.stringContaining('enforcedType'),
       );
+    });
+
+    it('blocks ChatGPT OAuth provider when disabled by env var', async () => {
+      process.env['TERMINAI_DISABLE_OPENAI_CHATGPT_OAUTH'] = '1';
+      const { buildWizardSettingsPatch } = await import('@terminai/core');
+
+      const manager = new LlmAuthManager({
+        config: mockConfig,
+        getSelectedAuthType: () => undefined,
+        getLoadedSettings: () =>
+          mockLoadedSettings as unknown as LoadedSettings,
+      });
+
+      const result = await manager.applyProviderSwitch({
+        provider: 'openai_chatgpt_oauth',
+        openaiChatgptOauth: {
+          baseUrl: 'https://chatgpt.com/backend-api/codex',
+          model: 'gpt-5.2-codex',
+        },
+      });
+
+      expect(result).toEqual({
+        error:
+          'ChatGPT OAuth provider is disabled by TERMINAI_DISABLE_OPENAI_CHATGPT_OAUTH. Use openai_compatible instead.',
+        statusCode: 403,
+      });
+      expect(buildWizardSettingsPatch).not.toHaveBeenCalled();
+      expect(mockLoadedSettings.setValue).not.toHaveBeenCalled();
+
+      delete process.env['TERMINAI_DISABLE_OPENAI_CHATGPT_OAUTH'];
     });
 
     it('applies patches and reconfigures provider', async () => {
@@ -242,6 +279,38 @@ describe('LlmAuthManager', () => {
       expect(mockConfig.reconfigureProvider).toHaveBeenCalledWith(
         expect.objectContaining({ provider: 'openai_compatible' }),
         AuthType.USE_OPENAI_COMPATIBLE,
+      );
+    });
+
+    it('writes provider patches to Workspace when workspace overrides exist', async () => {
+      const { buildWizardSettingsPatch } = await import('@terminai/core');
+      vi.mocked(buildWizardSettingsPatch).mockReturnValue([
+        { path: 'llm.provider', value: 'openai_chatgpt_oauth' },
+      ]);
+
+      const manager = new LlmAuthManager({
+        config: mockConfig,
+        getSelectedAuthType: () => undefined,
+        getLoadedSettings: () =>
+          ({
+            ...mockLoadedSettings,
+            forScope: () => ({
+              settings: { llm: { provider: 'gemini' } },
+            }),
+          }) as unknown as LoadedSettings,
+      });
+
+      manager.getStatus = vi.fn().mockResolvedValue({ status: 'ok' });
+
+      await manager.applyProviderSwitch({
+        provider: 'openai_chatgpt_oauth',
+        openaiChatgptOauth: { model: 'gpt-5.2-codex' },
+      });
+
+      expect(mockLoadedSettings.setValue).toHaveBeenCalledWith(
+        2,
+        'llm.provider',
+        'openai_chatgpt_oauth',
       );
     });
   });

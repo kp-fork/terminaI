@@ -11,6 +11,7 @@ import type { LoadedSettings } from '../../config/settings.js';
 import { renderWithProviders } from '../../test-utils/render.js';
 import { AuthProviderWizardFlow } from './AuthProviderWizardFlow.js';
 import { OpenAICompatibleSetupDialog } from './OpenAICompatibleSetupDialog.js';
+import { OpenAIChatGptOAuthSetupDialog } from './OpenAIChatGptOAuthSetupDialog.js';
 import { ProviderWizard } from './ProviderWizard.js';
 
 vi.mock('./ProviderWizard.js', () => ({
@@ -21,14 +22,21 @@ vi.mock('./OpenAICompatibleSetupDialog.js', () => ({
   OpenAICompatibleSetupDialog: vi.fn(() => null),
 }));
 
+vi.mock('./OpenAIChatGptOAuthSetupDialog.js', () => ({
+  OpenAIChatGptOAuthSetupDialog: vi.fn(() => null),
+}));
+
 const mockedProviderWizard = ProviderWizard as unknown as Mock;
 const mockedOpenAICompatibleSetupDialog =
   OpenAICompatibleSetupDialog as unknown as Mock;
+const mockedOpenAIChatGptOAuthSetupDialog =
+  OpenAIChatGptOAuthSetupDialog as unknown as Mock;
 
 function getLatestProviderWizardProps() {
   const call = mockedProviderWizard.mock.calls.at(-1)?.[0] as
     | {
         onSelectOpenAICompatible: () => void;
+        onSelectOpenAIChatGptOauth: () => void;
         onProceedToGeminiAuth: () => void;
       }
     | undefined;
@@ -52,6 +60,20 @@ function getLatestOpenAISetupProps() {
   return call;
 }
 
+function getLatestChatGptSetupProps() {
+  const call = mockedOpenAIChatGptOAuthSetupDialog.mock.calls.at(-1)?.[0] as
+    | {
+        terminalWidth?: number;
+        onBack: () => void;
+        onComplete: () => void;
+      }
+    | undefined;
+  if (!call) {
+    throw new Error('OpenAIChatGptOAuthSetupDialog was not rendered');
+  }
+  return call;
+}
+
 describe('AuthProviderWizardFlow', () => {
   it('renders ProviderWizard first', () => {
     const settings = { merged: {} } as unknown as LoadedSettings;
@@ -65,6 +87,7 @@ describe('AuthProviderWizardFlow', () => {
 
     expect(mockedProviderWizard).toHaveBeenCalledOnce();
     expect(mockedOpenAICompatibleSetupDialog).not.toHaveBeenCalled();
+    expect(mockedOpenAIChatGptOAuthSetupDialog).not.toHaveBeenCalled();
   });
 
   it('switches to OpenAI setup and can go back', () => {
@@ -130,5 +153,29 @@ describe('AuthProviderWizardFlow', () => {
     });
 
     expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it('switches to ChatGPT OAuth setup and can go back', () => {
+    const settings = { merged: {} } as unknown as LoadedSettings;
+    renderWithProviders(
+      <AuthProviderWizardFlow
+        settings={settings}
+        terminalWidth={123}
+        onComplete={() => {}}
+      />,
+    );
+
+    act(() => {
+      getLatestProviderWizardProps().onSelectOpenAIChatGptOauth();
+    });
+
+    const chatgptProps = getLatestChatGptSetupProps();
+    expect(chatgptProps.terminalWidth).toBe(123);
+
+    act(() => {
+      chatgptProps.onBack();
+    });
+
+    expect(mockedProviderWizard.mock.calls.length).toBeGreaterThan(1);
   });
 });

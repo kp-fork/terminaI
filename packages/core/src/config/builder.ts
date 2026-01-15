@@ -31,6 +31,7 @@ import {
   resolvePolicyBrainAuthority,
 } from '../policy/config.js';
 import { GEMINI_DIR } from '../index.js';
+import { DEFAULT_CHATGPT_CODEX_BASE_URL } from '../openai_chatgpt/constants.js';
 
 function normalizeOpenAIBaseUrl(raw: string | undefined): string | undefined {
   if (typeof raw !== 'string') return undefined;
@@ -42,6 +43,10 @@ function normalizeOpenAIBaseUrl(raw: string | undefined): string | undefined {
     : `https://${trimmed}`;
 
   return withScheme.replace(/\/+$/, '');
+}
+
+function normalizeChatGptCodexBaseUrl(raw: string | undefined): string {
+  return normalizeOpenAIBaseUrl(raw) ?? DEFAULT_CHATGPT_CODEX_BASE_URL;
 }
 
 function normalizeEnvVarName(raw: string | undefined): string | undefined {
@@ -148,6 +153,29 @@ export class ConfigBuilder {
           envVarName,
           apiKey,
         },
+        headers,
+      };
+    } else if (provider === LlmProviderId.OPENAI_CHATGPT_OAUTH) {
+      const baseUrl = normalizeChatGptCodexBaseUrl(
+        settings.llm?.openaiChatgptOauth?.baseUrl,
+      );
+      const model = (settings.llm?.openaiChatgptOauth?.model ?? '').trim();
+      if (model.length === 0) {
+        throw new FatalConfigError(
+          'llm.provider is set to openai_chatgpt_oauth, but llm.openaiChatgptOauth.model is required.',
+        );
+      }
+
+      const headers = normalizeHeaders(settings.llm?.headers);
+      const internalModel = (
+        settings.llm?.openaiChatgptOauth?.internalModel ?? ''
+      ).trim();
+
+      providerConfig = {
+        provider: LlmProviderId.OPENAI_CHATGPT_OAUTH,
+        baseUrl,
+        model,
+        internalModel: internalModel.length > 0 ? internalModel : undefined,
         headers,
       };
     } else if (provider === LlmProviderId.ANTHROPIC) {

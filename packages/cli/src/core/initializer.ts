@@ -22,6 +22,7 @@ import {
 import { type LoadedSettings } from '../config/settings.js';
 import { performInitialAuth } from './auth.js';
 import { validateTheme } from './theme.js';
+import { resolveEffectiveAuthType } from '../config/effectiveAuthType.js';
 
 export interface InitializationResult {
   authError: string | null;
@@ -41,16 +42,13 @@ export async function initializeApp(
   config: Config,
   settings: LoadedSettings,
 ): Promise<InitializationResult> {
+  const effectiveAuthType = resolveEffectiveAuthType(settings.merged);
   const authHandle = startupProfiler.start('authenticate');
-  const authError = await performInitialAuth(
-    config,
-    settings.merged.security?.auth?.selectedType,
-  );
+  const authError = await performInitialAuth(config, effectiveAuthType);
   authHandle?.end();
   const themeError = validateTheme(settings);
 
-  const shouldOpenAuthDialog =
-    settings.merged.security?.auth?.selectedType === undefined || !!authError;
+  const shouldOpenAuthDialog = effectiveAuthType === undefined || !!authError;
 
   logCliConfiguration(
     config,

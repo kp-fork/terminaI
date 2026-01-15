@@ -69,6 +69,7 @@ import {
   type SessionEvent,
 } from '@terminai/core';
 import { validateAuthMethod } from '../config/auth.js';
+import { resolveEffectiveAuthType } from '../config/effectiveAuthType.js';
 import process from 'node:process';
 import { useHistory } from './hooks/useHistoryManager.js';
 import { useMemoryMonitor } from './hooks/useMemoryMonitor.js';
@@ -895,6 +896,7 @@ Logging in with Google... Restarting terminaI to continue.
 
   // Check for enforced auth type mismatch
   useEffect(() => {
+    const effectiveAuthType = resolveEffectiveAuthType(settings.merged);
     if (
       settings.merged.security?.auth?.enforcedType &&
       settings.merged.security?.auth.selectedType &&
@@ -905,25 +907,27 @@ Logging in with Google... Restarting terminaI to continue.
         `Authentication is enforced to be ${settings.merged.security?.auth.enforcedType}, but you are currently using ${settings.merged.security?.auth.selectedType}.`,
       );
     } else if (
-      settings.merged.security?.auth?.selectedType &&
+      effectiveAuthType &&
       !settings.merged.security?.auth?.useExternal
     ) {
       // We skip validation for Gemini API key here because it might be stored
       // in the keychain, which we can't check synchronously.
       // The useAuth hook handles validation for this case.
-      if (settings.merged.security.auth.selectedType === AuthType.USE_GEMINI) {
+      if (effectiveAuthType === AuthType.USE_GEMINI) {
         return;
       }
 
-      const error = validateAuthMethod(
-        settings.merged.security.auth.selectedType,
-      );
+      const error = validateAuthMethod(effectiveAuthType);
       if (error) {
         onAuthError(error);
       }
     }
   }, [
+    settings.merged,
     settings.merged.security?.auth?.selectedType,
+    settings.merged.llm?.provider,
+    settings.merged.llm?.openaiCompatible,
+    settings.merged.llm?.openaiChatgptOauth,
     settings.merged.security?.auth?.enforcedType,
     settings.merged.security?.auth?.useExternal,
     onAuthError,

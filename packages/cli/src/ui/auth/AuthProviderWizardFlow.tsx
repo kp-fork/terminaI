@@ -10,9 +10,13 @@ import { useState } from 'react';
 import type { LoadedSettings } from '../../config/settings.js';
 import { theme } from '../semantic-colors.js';
 import { OpenAICompatibleSetupDialog } from './OpenAICompatibleSetupDialog.js';
+import { OpenAIChatGptOAuthSetupDialog } from './OpenAIChatGptOAuthSetupDialog.js';
 import { ProviderWizard } from './ProviderWizard.js';
 
-type Step = 'provider' | 'openai_compatible_setup';
+type Step =
+  | 'provider'
+  | 'openai_compatible_setup'
+  | 'openai_chatgpt_oauth_setup';
 
 interface Props {
   settings: LoadedSettings;
@@ -44,13 +48,31 @@ export function AuthProviderWizardFlow({
             setAuthError(null);
             setStep('openai_compatible_setup');
           }}
+          onSelectOpenAIChatGptOauth={() => {
+            setAuthError(null);
+            setStep('openai_chatgpt_oauth_setup');
+          }}
           onProceedToGeminiAuth={() => {
             setAuthError(null);
             onComplete();
           }}
         />
-      ) : (
+      ) : step === 'openai_compatible_setup' ? (
         <OpenAICompatibleSetupDialog
+          settings={settings}
+          terminalWidth={terminalWidth}
+          onAuthError={setAuthError}
+          onBack={() => {
+            setAuthError(null);
+            setStep('provider');
+          }}
+          onComplete={() => {
+            setAuthError(null);
+            onComplete();
+          }}
+        />
+      ) : (
+        <OpenAIChatGptOAuthSetupDialog
           settings={settings}
           terminalWidth={terminalWidth}
           onAuthError={setAuthError}

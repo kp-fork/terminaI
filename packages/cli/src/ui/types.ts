@@ -34,6 +34,7 @@ export enum AuthState {
 export enum AuthWizardDialogState {
   Provider = 'provider',
   OpenAICompatibleSetup = 'openai_compatible_setup',
+  OpenAIChatGptOauthSetup = 'openai_chatgpt_oauth_setup',
 }
 
 // Only defining the state enum needed by the UI

@@ -77,4 +77,26 @@ describe('buildWizardSettingsPatch', () => {
       }),
     ).toThrow('openaiCompatible config is missing');
   });
+
+  it('should build patches for ChatGPT OAuth provider with defaults', () => {
+    const patches = buildWizardSettingsPatch({
+      provider: 'openai_chatgpt_oauth',
+      openaiChatgptOauth: {
+        model: ' gpt-5.2-codex ',
+      },
+    });
+
+    expect(patches).toEqual([
+      { path: 'llm.provider', value: 'openai_chatgpt_oauth' },
+      {
+        path: 'security.auth.selectedType',
+        value: AuthType.USE_OPENAI_CHATGPT_OAUTH,
+      },
+      {
+        path: 'llm.openaiChatgptOauth.baseUrl',
+        value: 'https://chatgpt.com/backend-api/codex',
+      },
+      { path: 'llm.openaiChatgptOauth.model', value: 'gpt-5.2-codex' },
+    ]);
+  });
 });

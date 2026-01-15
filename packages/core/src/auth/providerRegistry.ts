@@ -81,6 +81,27 @@ export const PROVIDER_REGISTRY: Record<ProviderId, ProviderMetadata> = {
       },
     ],
   },
+  openai_chatgpt_oauth: {
+    id: 'openai_chatgpt_oauth',
+    displayName: 'ChatGPT Plus/Pro (OAuth)',
+    description:
+      'Use your ChatGPT subscription via OpenAI OAuth (Codex backend)',
+    authMethods: [
+      {
+        id: 'oauth',
+        displayName: 'OAuth (loopback or manual paste)',
+        description: 'Authenticate via the official OpenAI OAuth flow.',
+        requiredFields: [
+          { id: 'model', label: 'Model', placeholder: 'gpt-5.2-codex' },
+          {
+            id: 'baseUrl',
+            label: 'Base URL (optional)',
+            placeholder: 'https://chatgpt.com/backend-api/codex',
+          },
+        ],
+      },
+    ],
+  },
   anthropic: {
     id: 'anthropic',
     displayName: 'Anthropic',

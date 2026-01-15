@@ -88,8 +88,10 @@ export function useQuotaAndFallback({
         ];
         message = messageLines.join('\n');
       } else {
+        const errorMsg =
+          error instanceof Error ? error.message : 'Unknown error';
         const messageLines = [
-          `We are currently experiencing high demand.`,
+          `Error when talking to provider: ${errorMsg}`,
           'We apologize and appreciate your patience.',
           '/model to switch models.',
         ];

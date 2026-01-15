@@ -55,6 +55,33 @@ describe('AuthClient', () => {
       expect(result).toEqual(mockResponse);
     });
 
+    it('should switch to ChatGPT OAuth provider', async () => {
+      const mockResponse = { status: 'required', message: 'Needs OAuth' };
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => mockResponse,
+      } as Response);
+
+      const params = {
+        provider: 'openai_chatgpt_oauth' as const,
+        openaiChatgptOauth: {
+          model: 'gpt-5.2-codex',
+          baseUrl: 'https://chatgpt.com/backend-api/codex',
+        },
+      };
+
+      const result = await client.switchProvider(params);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${baseUrl}/auth/provider`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(params),
+        }),
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
     it('should throw on error', async () => {
       vi.mocked(global.fetch).mockResolvedValue({
         ok: false,
@@ -68,5 +95,50 @@ describe('AuthClient', () => {
         client.switchProvider({ provider: 'gemini' }),
       ).rejects.toThrow('Auth request failed (500): Method Not Allowed');
     });
+  });
+
+  it('setApiKey posts to /auth/gemini/api-key', async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: 'ok' }),
+    } as Response);
+
+    await client.setApiKey('test-key');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${baseUrl}/auth/gemini/api-key`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ apiKey: 'test-key' }),
+      }),
+    );
+  });
+
+  it('startOAuth posts to /auth/gemini/oauth/start', async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ authUrl: 'https://example.com/auth' }),
+    } as Response);
+
+    await client.startOAuth();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${baseUrl}/auth/gemini/oauth/start`,
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('startOpenAIOAuth posts to /auth/openai/oauth/start', async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ authUrl: 'https://example.com/auth' }),
+    } as Response);
+
+    await client.startOpenAIOAuth();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${baseUrl}/auth/openai/oauth/start`,
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });

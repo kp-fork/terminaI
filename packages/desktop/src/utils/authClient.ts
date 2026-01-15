@@ -10,6 +10,8 @@ import { buildSignedHeaders } from './agentClient';
 export interface AuthStatus {
   status: 'ok' | 'required' | 'error' | 'in_progress';
   message?: string;
+  provider?: string;
+  authType?: string;
 }
 
 export type ProviderConfig =
@@ -24,13 +26,34 @@ export type ProviderConfig =
       };
     };
 
+export type OpenAIChatGptOauthProviderConfig = {
+  provider: 'openai_chatgpt_oauth';
+  openaiChatgptOauth: {
+    model: string;
+    baseUrl?: string;
+    internalModel?: string;
+  };
+};
+
+export type DesktopProviderConfig =
+  | ProviderConfig
+  | OpenAIChatGptOauthProviderConfig;
+
 export interface AuthClient {
   setApiKey(key: string): Promise<AuthStatus>;
-  switchProvider(config: ProviderConfig): Promise<AuthStatus>;
+  switchProvider(config: DesktopProviderConfig): Promise<AuthStatus>;
   getStatus(): Promise<AuthStatus>;
   startOAuth(): Promise<{ authUrl: string }>;
   cancelOAuth(): Promise<void>;
   useGeminiVertex(projectId?: string, location?: string): Promise<AuthStatus>;
+  startOpenAIOAuth(): Promise<{ authUrl: string }>;
+  completeOpenAIOAuth(input: {
+    redirectUrl?: string;
+    code?: string;
+    state?: string;
+  }): Promise<AuthStatus>;
+  cancelOpenAIOAuth(): Promise<void>;
+  clearOpenAIAuth(): Promise<AuthStatus>;
 }
 
 export function createAuthClient(baseUrl: string, token?: string): AuthClient {
@@ -87,27 +110,45 @@ export function createAuthClient(baseUrl: string, token?: string): AuthClient {
       return request<AuthStatus>('GET', '/auth/status');
     },
 
-    async switchProvider(config: ProviderConfig) {
+    async switchProvider(config: DesktopProviderConfig) {
       return request<AuthStatus>('POST', '/auth/provider', config);
     },
 
     async setApiKey(key: string) {
-      return request<AuthStatus>('POST', '/auth/apikey', { key });
+      return request<AuthStatus>('POST', '/auth/gemini/api-key', {
+        apiKey: key,
+      });
     },
 
     async startOAuth() {
-      return request<{ authUrl: string }>('POST', '/auth/oauth/start');
+      return request<{ authUrl: string }>('POST', '/auth/gemini/oauth/start');
     },
 
     async cancelOAuth() {
-      await request<void>('POST', '/auth/oauth/cancel');
+      await request<void>('POST', '/auth/gemini/oauth/cancel');
     },
 
     async useGeminiVertex(projectId?: string, location?: string) {
-      return request<AuthStatus>('POST', '/auth/vertex', {
+      return request<AuthStatus>('POST', '/auth/gemini/vertex', {
         projectId,
         location,
       });
+    },
+
+    async startOpenAIOAuth() {
+      return request<{ authUrl: string }>('POST', '/auth/openai/oauth/start');
+    },
+
+    async completeOpenAIOAuth(input) {
+      return request<AuthStatus>('POST', '/auth/openai/oauth/complete', input);
+    },
+
+    async cancelOpenAIOAuth() {
+      await request<void>('POST', '/auth/openai/oauth/cancel');
+    },
+
+    async clearOpenAIAuth() {
+      return request<AuthStatus>('POST', '/auth/openai/clear');
     },
   };
 }
