@@ -780,6 +780,7 @@ llm
 └── openaiCompatible
     ├── baseUrl                  # API endpoint URL
     ├── model                    # Model ID (e.g., "gpt-4")
+    ├── internalModel            # Optional cheaper model for internal services
     └── auth
         ├── type                 # "none" | "api-key" | "bearer"
         └── envVarName           # Env var name for API key

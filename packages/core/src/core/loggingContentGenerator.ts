@@ -34,6 +34,7 @@ import { CodeAssistServer } from '../code_assist/server.js';
 import { toContents } from '../code_assist/converter.js';
 import { isStructuredError } from '../utils/quotaErrorDetection.js';
 import { runInDevTraceSpan, type SpanMetadata } from '../telemetry/trace.js';
+import { LlmProviderId } from './providerTypes.js';
 
 interface StructuredError {
   status: number;
@@ -75,6 +76,20 @@ export class LoggingContentGenerator implements ContentGenerator {
     );
   }
 
+  private getServerDetailsFromUrl(value: string): ServerDetails | null {
+    try {
+      const url = new URL(value);
+      const port = url.port
+        ? parseInt(url.port, 10)
+        : url.protocol === 'https:'
+          ? 443
+          : 80;
+      return { address: url.hostname, port };
+    } catch {
+      return null;
+    }
+  }
+
   private _getEndpointUrl(
     req: GenerateContentParameters,
     method: 'generateContent' | 'generateContentStream',
@@ -89,6 +104,17 @@ export class LoggingContentGenerator implements ContentGenerator {
           ? 443
           : 80;
       return { address: url.hostname, port };
+    }
+
+    // Case 1b: OpenAI-compatible provider (OpenAI, OpenRouter, etc.).
+    const providerConfig = this.config.getProviderConfig();
+    if (providerConfig.provider === LlmProviderId.OPENAI_COMPATIBLE) {
+      return (
+        this.getServerDetailsFromUrl(providerConfig.baseUrl) ?? {
+          address: 'unknown',
+          port: 0,
+        }
+      );
     }
 
     const genConfig = this.config.getContentGeneratorConfig();

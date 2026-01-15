@@ -18,6 +18,8 @@ to sysadmins — built on a stable upstream core.
   (Desktop + browser `/ui` use this)
 - **Authentication**: Model access via OAuth or `TERMINAI_API_KEY`; remote
   clients via A2A token + replay signatures
+- **Multi-LLM**: Choose Gemini (default) or an OpenAI-compatible provider
+  depending on your needs (see Multi-LLM architecture)
 - **Safety**: Deterministic approval ladder (A/B/C) with Level C PIN protection
   (`security.approvalPin`)
 - **🔧 Extensible**: MCP (Model Context Protocol) ecosystem support
@@ -34,6 +36,8 @@ to sysadmins — built on a stable upstream core.
 - [Safety Guide](./safety.md) - Safety posture + approval ladder
 - [Configuration](./configuration.md) - Settings file + key options
 - [Troubleshooting](./troubleshooting.md) - Common issues + fixes
+- [Multi-LLM architecture](./multi-llm-support.md) - Provider support and
+  OpenAI-compatible details
 
 ### For contributors
 

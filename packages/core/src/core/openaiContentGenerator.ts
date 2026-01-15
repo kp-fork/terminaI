@@ -45,7 +45,7 @@ interface OpenAIToolCall {
   index?: number;
   function: {
     name?: string; // Can be partial in stream delta
-    arguments?: string; // Can be partial in stream delta
+    arguments?: unknown; // Can be partial in stream delta; typically a JSON string
   };
 }
 
@@ -63,6 +63,10 @@ interface OpenAITool {
 }
 
 export class OpenAIContentGenerator implements ContentGenerator {
+  // Maps sanitized OpenAI tool names back to original Gemini names
+  // e.g., "ui_click" → "ui.click"
+  private toolNameMap: Map<string, string> = new Map();
+
   constructor(
     private readonly config: OpenAICompatibleConfig,
     private readonly globalConfig: Config,
@@ -94,6 +98,35 @@ export class OpenAIContentGenerator implements ContentGenerator {
       }
     }
     return '';
+  }
+
+  private isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private getParametersJsonSchema(fn: unknown): Record<string, unknown> | null {
+    if (!this.isPlainObject(fn)) {
+      return null;
+    }
+    const parametersJsonSchema = fn['parametersJsonSchema'];
+    return this.isPlainObject(parametersJsonSchema)
+      ? parametersJsonSchema
+      : null;
+  }
+
+  private parseToolArguments(value: unknown): Record<string, unknown> | null {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+      const parsed = JSON.parse(trimmed) as unknown;
+      return this.isPlainObject(parsed) ? parsed : {};
+    }
+    return this.isPlainObject(value) ? value : null;
   }
 
   private contentUnionToText(content: ContentUnion | undefined): string {
@@ -219,11 +252,15 @@ export class OpenAIContentGenerator implements ContentGenerator {
     }
 
     const debugMode = this.globalConfig.getDebugMode();
+    const toolNameMap = this.toolNameMap;
+    const parseToolArguments = (value: unknown) =>
+      this.parseToolArguments(value);
 
     return (async function* () {
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      let hasYieldedAnyText = false;
 
       // Buffer for streaming tool calls
       const pendingToolCalls: Record<
@@ -249,23 +286,25 @@ export class OpenAIContentGenerator implements ContentGenerator {
             if (!trimmed || trimmed === 'data: [DONE]') continue;
             if (trimmed.startsWith('data: ')) {
               try {
-                const data = JSON.parse(trimmed.slice(6));
-                const delta = data.choices?.[0]?.delta;
-                const finishReason =
-                  data.choices?.[0]?.finish_reason?.toUpperCase();
+                const data = JSON.parse(trimmed.slice(6)) as OpenAIResponse;
+                const choice = data.choices?.[0];
+                const delta = choice?.delta;
+                const message = choice?.message;
+                const finishReason = choice?.finish_reason?.toUpperCase();
 
                 // 1. Handle Text Content
                 if (delta?.content) {
-                  yield {
-                    candidates: [
-                      {
-                        content: {
-                          role: 'model',
-                          parts: [{ text: delta.content }],
-                        },
+                  const resp = new GenerateContentResponse();
+                  resp.candidates = [
+                    {
+                      content: {
+                        role: 'model',
+                        parts: [{ text: delta.content }],
                       },
-                    ],
-                  } as GenerateContentResponse;
+                    },
+                  ];
+                  hasYieldedAnyText = true;
+                  yield resp;
                 }
 
                 // 2. Accumulate Tool Calls
@@ -278,13 +317,21 @@ export class OpenAIContentGenerator implements ContentGenerator {
                         type: 'function',
                         function: {
                           name: tc.function?.name || '',
-                          arguments: tc.function?.arguments || '',
+                          arguments:
+                            typeof tc.function?.arguments === 'string'
+                              ? tc.function.arguments
+                              : '',
                         },
                       };
                     } else {
+                      if (tc.id && !pendingToolCalls[index].id) {
+                        pendingToolCalls[index].id = tc.id;
+                      }
                       if (tc.function?.arguments) {
-                        pendingToolCalls[index].function.arguments +=
-                          tc.function.arguments;
+                        if (typeof tc.function.arguments === 'string') {
+                          pendingToolCalls[index].function.arguments +=
+                            tc.function.arguments;
+                        }
                       }
                       if (tc.function?.name) {
                         pendingToolCalls[index].function.name +=
@@ -299,6 +346,14 @@ export class OpenAIContentGenerator implements ContentGenerator {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const parts: any[] = [];
 
+                  if (
+                    !hasYieldedAnyText &&
+                    typeof message?.content === 'string'
+                  ) {
+                    parts.push({ text: message.content });
+                  }
+
+                  let hasEmittedToolCall = false;
                   // If we have buffered tool calls, finalize them now
                   const toolIndices = Object.keys(pendingToolCalls)
                     .map(Number)
@@ -306,13 +361,21 @@ export class OpenAIContentGenerator implements ContentGenerator {
                   for (const index of toolIndices) {
                     const tc = pendingToolCalls[index];
                     try {
-                      const args = JSON.parse(tc.function.arguments);
+                      const parsedArgs = parseToolArguments(
+                        tc.function.arguments,
+                      );
+                      const args = parsedArgs ?? {};
+                      // Unsanitize tool name back to original Gemini format
+                      const originalName =
+                        toolNameMap.get(tc.function.name) || tc.function.name;
                       parts.push({
                         functionCall: {
-                          name: tc.function.name,
+                          ...(tc.id ? { id: tc.id } : {}),
+                          name: originalName,
                           args,
                         },
                       });
+                      hasEmittedToolCall = true;
                     } catch (e) {
                       if (debugMode) {
                         console.error(
@@ -323,17 +386,45 @@ export class OpenAIContentGenerator implements ContentGenerator {
                     }
                   }
 
-                  yield {
-                    candidates: [
-                      {
-                        content: {
-                          role: 'model',
-                          parts,
-                        },
-                        finishReason: finishReason as FinishReason,
+                  if (!hasEmittedToolCall && message?.tool_calls) {
+                    for (const tc of message.tool_calls) {
+                      try {
+                        const parsedArgs = parseToolArguments(
+                          tc.function.arguments,
+                        );
+                        const args = parsedArgs ?? {};
+                        parts.push({
+                          functionCall: {
+                            ...(tc.id ? { id: tc.id } : {}),
+                            name:
+                              toolNameMap.get(tc.function.name || '') ||
+                              tc.function.name ||
+                              '',
+                            args,
+                          },
+                        });
+                      } catch (e) {
+                        if (debugMode) {
+                          console.error(
+                            '[OpenAI Provider] Failed to parse message tool arguments:',
+                            e,
+                          );
+                        }
+                      }
+                    }
+                  }
+
+                  const resp = new GenerateContentResponse();
+                  resp.candidates = [
+                    {
+                      content: {
+                        role: 'model',
+                        parts,
                       },
-                    ],
-                  } as GenerateContentResponse;
+                      finishReason: finishReason as FinishReason,
+                    },
+                  ];
+                  yield resp;
                 }
               } catch (e) {
                 if (debugMode) {
@@ -444,20 +535,51 @@ export class OpenAIContentGenerator implements ContentGenerator {
     for (const tool of tools) {
       if (tool.functionDeclarations) {
         for (const fn of tool.functionDeclarations) {
+          const parametersFromJsonSchema = this.getParametersJsonSchema(fn);
           openAITools.push({
             type: 'function',
             function: {
-              name: fn.name || 'unknown_tool',
+              name: this.sanitizeToolName(fn.name || 'unknown_tool'),
               description: fn.description,
-              parameters: fn.parameters
-                ? this.convertSchemaToOpenAI(fn.parameters)
-                : undefined,
+              parameters:
+                parametersFromJsonSchema ??
+                (fn.parameters
+                  ? this.convertSchemaToOpenAI(fn.parameters)
+                  : undefined),
             },
           });
         }
       }
     }
     return openAITools;
+  }
+
+  /**
+   * Sanitizes tool names for OpenAI function calling compatibility.
+   * OpenAI spec only allows: ^[a-zA-Z0-9_-]+$ (no dots, must not start with number)
+   * This converts names like "ui.click" → "ui_click" at the adapter level,
+   * keeping Gemini tool names unchanged in the core codebase.
+   * Records the mapping so we can reverse it when parsing model responses.
+   */
+  private sanitizeToolName(name: string): string {
+    // Replace dots and other invalid characters with underscores
+    let sanitized = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+    // Ensure name doesn't start with a number
+    if (/^[0-9]/.test(sanitized)) {
+      sanitized = '_' + sanitized;
+    }
+    // Record mapping for reverse lookup
+    if (sanitized !== name) {
+      this.toolNameMap.set(sanitized, name);
+    }
+    return sanitized;
+  }
+
+  /**
+   * Reverses tool name sanitization to get original Gemini name.
+   */
+  private unsanitizeToolName(sanitizedName: string): string {
+    return this.toolNameMap.get(sanitizedName) || sanitizedName;
   }
 
   private convertSchemaToOpenAI(schema: Schema): Record<string, unknown> {
@@ -579,9 +701,11 @@ export class OpenAIContentGenerator implements ContentGenerator {
           if (part.functionCall) {
             const name = part.functionCall.name;
             if (name) {
-              const id = `call_${name}_${Date.now()}_${Math.random()
-                .toString(36)
-                .slice(2, 7)}`;
+              const id =
+                part.functionCall.id ||
+                `call_${name}_${Date.now()}_${Math.random()
+                  .toString(36)
+                  .slice(2, 7)}`;
               if (!toolCallIdStack[name]) toolCallIdStack[name] = [];
               toolCallIdStack[name].push(id);
 
@@ -589,7 +713,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
                 id,
                 type: 'function',
                 function: {
-                  name,
+                  name: this.sanitizeToolName(name),
                   arguments: JSON.stringify(part.functionCall.args),
                 },
               });
@@ -635,9 +759,18 @@ export class OpenAIContentGenerator implements ContentGenerator {
     if (message?.tool_calls) {
       for (const toolCall of message.tool_calls) {
         if (toolCall.type === 'function') {
-          let args = {};
           try {
-            args = JSON.parse(toolCall.function.arguments || '{}');
+            const parsedArgs = this.parseToolArguments(
+              toolCall.function.arguments,
+            );
+            const args = parsedArgs ?? {};
+            parts.push({
+              functionCall: {
+                id: toolCall.id,
+                name: this.unsanitizeToolName(toolCall.function.name || ''),
+                args,
+              },
+            });
           } catch (e) {
             if (this.globalConfig.getDebugMode()) {
               console.error(
@@ -645,13 +778,14 @@ export class OpenAIContentGenerator implements ContentGenerator {
                 e,
               );
             }
+            parts.push({
+              functionCall: {
+                id: toolCall.id,
+                name: this.unsanitizeToolName(toolCall.function.name || ''),
+                args: {},
+              },
+            });
           }
-          parts.push({
-            functionCall: {
-              name: toolCall.function.name || '',
-              args,
-            },
-          });
         }
       }
     }

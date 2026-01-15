@@ -14,6 +14,8 @@ export enum LlmProviderId {
 export interface OpenAICompatibleConfig {
   baseUrl: string;
   model: string;
+  /** Optional model for internal services (summarization, compression, etc). Falls back to `model` if not set. */
+  internalModel?: string;
   auth?: {
     type: 'api-key' | 'bearer' | 'none'; // 'api-key' for x-api-key style, 'bearer' for Authorization: Bearer
     apiKey?: string;

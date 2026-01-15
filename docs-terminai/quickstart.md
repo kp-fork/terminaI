@@ -46,6 +46,30 @@ export TERMINAI_API_KEY="YOUR_API_KEY"
 terminai
 ```
 
+### Option 3: OpenAI-compatible provider (OpenAI/OpenRouter/etc.)
+
+1. Configure `~/.terminai/settings.json`:
+
+```json
+{
+  "llm": {
+    "provider": "openai_compatible",
+    "openaiCompatible": {
+      "baseUrl": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini",
+      "auth": { "type": "bearer", "envVarName": "OPENAI_API_KEY" }
+    }
+  }
+}
+```
+
+2. Export your key and run:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+terminai
+```
+
 ## First Commands
 
 ### Interactive Mode

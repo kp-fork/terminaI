@@ -32,6 +32,7 @@ import type { ContentGenerator } from './contentGenerator.js';
 import { LoggingContentGenerator } from './loggingContentGenerator.js';
 import type { Config } from '../config/config.js';
 import { ApiRequestEvent } from '../telemetry/types.js';
+import { LlmProviderId } from './providerTypes.js';
 
 describe('LoggingContentGenerator', () => {
   let wrapped: ContentGenerator;
@@ -48,6 +49,9 @@ describe('LoggingContentGenerator', () => {
     config = {
       getGoogleAIConfig: vi.fn(),
       getVertexAIConfig: vi.fn(),
+      getProviderConfig: vi
+        .fn()
+        .mockReturnValue({ provider: LlmProviderId.GEMINI }),
       getContentGeneratorConfig: vi.fn().mockReturnValue({
         authType: 'API_KEY',
       }),
@@ -101,6 +105,39 @@ describe('LoggingContentGenerator', () => {
       );
       const responseEvent = vi.mocked(logApiResponse).mock.calls[0][1];
       expect(responseEvent.duration_ms).toBe(1000);
+    });
+
+    it('should attribute server details for OpenAI-compatible providers', async () => {
+      vi.mocked(config.getProviderConfig).mockReturnValue({
+        provider: LlmProviderId.OPENAI_COMPATIBLE,
+        baseUrl: 'https://openrouter.ai/api/v1',
+        model: 'gpt-4o-mini',
+      });
+
+      const req = {
+        contents: [{ role: 'user', parts: [{ text: 'hello' }] }],
+        model: 'gpt-4o-mini',
+      };
+      const userPromptId = 'prompt-123';
+      const response: GenerateContentResponse = {
+        candidates: [],
+        usageMetadata: undefined,
+        text: undefined,
+        functionCalls: undefined,
+        executableCode: undefined,
+        codeExecutionResult: undefined,
+        data: undefined,
+      };
+      vi.mocked(wrapped.generateContent).mockResolvedValue(response);
+
+      await loggingContentGenerator.generateContent(req, userPromptId);
+
+      const requestEvent = vi.mocked(logApiRequest).mock.calls[0][1];
+      expect(requestEvent).toBeInstanceOf(ApiRequestEvent);
+      expect(requestEvent.prompt.server).toEqual({
+        address: 'openrouter.ai',
+        port: 443,
+      });
     });
 
     it('should log error on failure', async () => {
@@ -179,6 +216,47 @@ describe('LoggingContentGenerator', () => {
       );
       const responseEvent = vi.mocked(logApiResponse).mock.calls[0][1];
       expect(responseEvent.duration_ms).toBe(1000);
+    });
+
+    it('should attribute server details for OpenAI-compatible streaming calls', async () => {
+      vi.mocked(config.getProviderConfig).mockReturnValue({
+        provider: LlmProviderId.OPENAI_COMPATIBLE,
+        baseUrl: 'http://localhost:1234/v1',
+        model: 'gpt-4o-mini',
+      });
+
+      const req = {
+        contents: [{ role: 'user', parts: [{ text: 'hello' }] }],
+        model: 'gpt-4o-mini',
+      };
+      const userPromptId = 'prompt-123';
+      const response = {
+        candidates: [],
+        usageMetadata: undefined,
+      } as unknown as GenerateContentResponse;
+
+      async function* createAsyncGenerator() {
+        yield response;
+      }
+
+      vi.mocked(wrapped.generateContentStream).mockResolvedValue(
+        createAsyncGenerator(),
+      );
+
+      const stream = await loggingContentGenerator.generateContentStream(
+        req,
+        userPromptId,
+      );
+
+      for await (const _ of stream) {
+        // consume stream
+      }
+
+      const requestEvent = vi.mocked(logApiRequest).mock.calls[0][1];
+      expect(requestEvent.prompt.server).toEqual({
+        address: 'localhost',
+        port: 1234,
+      });
     });
 
     it('should log error on failure', async () => {

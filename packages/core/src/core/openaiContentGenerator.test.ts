@@ -15,6 +15,7 @@ import {
   type GenerateContentParameters,
   type Tool,
   type CountTokensParameters,
+  type FunctionDeclaration,
 } from '@google/genai';
 
 describe('OpenAIContentGenerator', () => {
@@ -182,6 +183,7 @@ describe('OpenAIContentGenerator', () => {
     // Verify response contains functionCall
     expect(response.candidates?.[0]?.content?.parts?.[0]?.functionCall).toEqual(
       {
+        id: 'call_123',
         name: 'get_weather',
         args: { location: 'Boston' },
       },
@@ -210,6 +212,7 @@ describe('OpenAIContentGenerator', () => {
         parts: [
           {
             functionCall: {
+              id: 'call_123',
               name: 'get_weather',
               args: { location: 'Boston' },
             },
@@ -243,13 +246,135 @@ describe('OpenAIContentGenerator', () => {
         body: expect.stringContaining('"role":"tool"'),
       }),
     );
-    // Verify it generated a correlated ID (checking body string for tool_call_id would be good but ID is random.
-    // We check that content is there and structure is valid)
+    // Verify it preserves the tool call ID (avoid name-based heuristics when possible)
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: expect.stringContaining('"tool_call_id":"call_123"'),
+      }),
+    );
     expect(global.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         body: expect.stringContaining('"content":"{\\"temp\\":72}"'),
       }),
+    );
+  });
+
+  it('should send parametersJsonSchema (including required fields) when provided', async () => {
+    const generator = new OpenAIContentGenerator(providerConfig, mockConfig);
+
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              tool_calls: [
+                {
+                  id: 'call_1',
+                  type: 'function',
+                  function: {
+                    name: 'run_terminal_command',
+                    arguments: '{"command":"hostnamectl"}',
+                  },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+      }),
+    } as Response);
+
+    const fn: FunctionDeclaration = {
+      name: 'run_terminal_command',
+      description: 'Run a command',
+      parametersJsonSchema: {
+        type: 'object',
+        properties: {
+          command: { type: 'string' },
+        },
+        required: ['command'],
+      },
+    };
+
+    const tools: Tool[] = [{ functionDeclarations: [fn] }];
+
+    await generator.generateContent(
+      {
+        model: 'gpt-4o',
+        contents: [{ role: 'user', parts: [{ text: 'Which laptop?' }] }],
+        config: { tools },
+      },
+      'id',
+    );
+
+    const fetchArgs = vi.mocked(global.fetch).mock.calls[0]?.[1] as
+      | { body?: string }
+      | undefined;
+    expect(fetchArgs?.body).toContain('"required":["command"]');
+    expect(fetchArgs?.body).toContain('"properties":{"command"');
+  });
+
+  it('should parse tool arguments when returned as an object', async () => {
+    const generator = new OpenAIContentGenerator(providerConfig, mockConfig);
+
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              tool_calls: [
+                {
+                  id: 'call_123',
+                  type: 'function',
+                  function: {
+                    name: 'get_weather',
+                    arguments: { location: 'Boston' },
+                  },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+      }),
+    } as Response);
+
+    const tools: Tool[] = [
+      {
+        functionDeclarations: [
+          {
+            name: 'get_weather',
+            description: 'Get weather',
+            parameters: {
+              type: Type.OBJECT,
+              properties: {
+                location: { type: Type.STRING },
+              },
+            },
+          },
+        ],
+      },
+    ];
+
+    const response = await generator.generateContent(
+      {
+        model: 'gpt-4o',
+        contents: [{ role: 'user', parts: [{ text: 'Weather?' }] }],
+        config: { tools },
+      },
+      'id',
+    );
+
+    expect(response.candidates?.[0]?.content?.parts?.[0]?.functionCall).toEqual(
+      {
+        id: 'call_123',
+        name: 'get_weather',
+        args: { location: 'Boston' },
+      },
     );
   });
 
@@ -478,9 +603,98 @@ describe('OpenAIContentGenerator', () => {
     expect(results.length).toBeGreaterThan(0);
     const lastResult = results[results.length - 1];
     const parts = lastResult.candidates?.[0]?.content?.parts;
+    expect((lastResult.functionCalls?.length || 0) > 0).toBe(true);
     expect(parts?.some((p: { functionCall?: unknown }) => p.functionCall)).toBe(
       true,
     );
+  });
+
+  it('should handle streaming finish chunks with message.content (no deltas)', async () => {
+    const generator = new OpenAIContentGenerator(providerConfig, mockConfig);
+
+    const mockReader = {
+      read: vi
+        .fn()
+        .mockResolvedValueOnce({
+          done: false,
+          value: new TextEncoder().encode(
+            'data: {"choices":[{"message":{"content":"Hello from message"},"finish_reason":"stop"}]}\n\n',
+          ),
+        })
+        .mockResolvedValueOnce({
+          done: false,
+          value: new TextEncoder().encode('data: [DONE]\n\n'),
+        })
+        .mockResolvedValueOnce({ done: true }),
+      releaseLock: vi.fn(),
+    };
+
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      body: { getReader: () => mockReader },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any as Response);
+
+    const request: GenerateContentParameters = {
+      model: 'gpt-4o',
+      contents: [{ role: 'user', parts: [{ text: 'Hi' }] }],
+    };
+
+    const gen = await generator.generateContentStream(request, 'id');
+    const results = [];
+    for await (const res of gen) {
+      results.push(res);
+    }
+
+    expect(results).toHaveLength(1);
+    expect(results[0].candidates?.[0]?.content?.parts?.[0]?.text).toBe(
+      'Hello from message',
+    );
+    expect(results[0].candidates?.[0]?.finishReason).toBe('STOP');
+  });
+
+  it('should handle streaming finish chunks with message.tool_calls (no deltas)', async () => {
+    const generator = new OpenAIContentGenerator(providerConfig, mockConfig);
+
+    const mockReader = {
+      read: vi
+        .fn()
+        .mockResolvedValueOnce({
+          done: false,
+          value: new TextEncoder().encode(
+            'data: {"choices":[{"message":{"tool_calls":[{"id":"call_abc","type":"function","function":{"name":"get_weather","arguments":"{\\"location\\":\\"Boston\\"}"}}]},"finish_reason":"tool_calls"}]}\n\n',
+          ),
+        })
+        .mockResolvedValueOnce({
+          done: false,
+          value: new TextEncoder().encode('data: [DONE]\n\n'),
+        })
+        .mockResolvedValueOnce({ done: true }),
+      releaseLock: vi.fn(),
+    };
+
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      body: { getReader: () => mockReader },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any as Response);
+
+    const request: GenerateContentParameters = {
+      model: 'gpt-4o',
+      contents: [{ role: 'user', parts: [{ text: 'Weather?' }] }],
+    };
+
+    const gen = await generator.generateContentStream(request, 'id');
+    const results = [];
+    for await (const res of gen) {
+      results.push(res);
+    }
+
+    expect(results).toHaveLength(1);
+    expect(results[0].functionCalls?.[0]?.name).toBe('get_weather');
+    expect(
+      results[0].candidates?.[0]?.content?.parts?.[0]?.functionCall?.name,
+    ).toBe('get_weather');
   });
 
   it('should handle malformed/partial SSE chunks gracefully', async () => {
