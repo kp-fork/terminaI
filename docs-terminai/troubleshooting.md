@@ -1,5 +1,23 @@
 # Troubleshooting
 
+## OpenAI-compatible model prints commands instead of executing tools
+
+If you see replies like `Command: ...` or `curl ...` without any tool execution,
+the model is not emitting tool calls.
+
+- Try a model with stronger tool-calling behavior (for example, GPT-4o/GPT-4.1
+  families).
+- If your command failed (permissions, missing binary), re-prompt with “run the
+  command using the tool, don’t print it”.
+
+## OpenAI-compatible: hardware commands fail with “Permission denied”
+
+Some hardware/BIOS queries require root (for example `dmidecode`).
+
+- Prefer non-root sources where possible (for example, `hostnamectl` and
+  `/sys/class/dmi/id/*`).
+- If you do need root, use `sudo ...` and enter your password when prompted.
+
 ## Desktop can’t connect (401 / unauthorized)
 
 - Ensure the **Agent URL** points to the A2A server started by

@@ -492,6 +492,16 @@ export const SETTINGS_SCHEMA = {
             description: 'The model ID (e.g. gpt-4, llama-3).',
             showInDialog: true,
           },
+          internalModel: {
+            type: 'string',
+            label: 'Internal Model ID',
+            category: 'Model',
+            requiresRestart: true,
+            default: undefined as string | undefined,
+            description:
+              'Optional cheaper model for internal services (summaries, compression). Falls back to main model if not set.',
+            showInDialog: true,
+          },
           auth: {
             type: 'object',
             label: 'Authentication',

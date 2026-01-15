@@ -133,10 +133,16 @@ export class ConfigBuilder {
 
       const headers = normalizeHeaders(settings.llm?.headers);
 
+      // Optional: cheaper model for internal services (summaries, compression)
+      const internalModel = (
+        settings.llm?.openaiCompatible?.internalModel ?? ''
+      ).trim();
+
       providerConfig = {
         provider: LlmProviderId.OPENAI_COMPATIBLE,
         baseUrl,
         model,
+        internalModel: internalModel.length > 0 ? internalModel : undefined,
         auth: {
           type: authType,
           envVarName,

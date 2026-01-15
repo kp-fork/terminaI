@@ -16,6 +16,7 @@ import {
   LlmProviderId,
   type ProviderConfig,
   type ProviderCapabilities,
+  type OpenAICompatibleConfig,
   getProviderCapabilities,
 } from '../core/providerTypes.js';
 import {
@@ -840,6 +841,50 @@ export class Config {
     this.modelConfigService = new ModelConfigService(
       modelConfigServiceConfig ?? DEFAULT_MODEL_CONFIGS,
     );
+
+    // When using OpenAI-compatible provider, route internal services to user's model
+    // instead of hardcoded Gemini models (which don't exist on OpenRouter, etc.)
+    if (this.providerConfig.provider === LlmProviderId.OPENAI_COMPATIBLE) {
+      const openaiConfig = this.providerConfig as OpenAICompatibleConfig & {
+        provider: LlmProviderId.OPENAI_COMPATIBLE;
+      };
+      // Use internalModel if set, otherwise fall back to main model
+      const modelForInternalServices =
+        openaiConfig.internalModel || openaiConfig.model;
+
+      if (modelForInternalServices) {
+        // Override internal model aliases to use the user's OpenAI model
+        const internalAliases = [
+          'summarizer-default',
+          'summarizer-shell',
+          'classifier',
+          'prompt-completion',
+          'edit-corrector',
+          'web-search',
+          'web-fetch',
+          'web-fetch-fallback',
+          'loop-detection',
+          'loop-detection-double-check',
+          'llm-edit-fixer',
+          'next-speaker-checker',
+          'chat-compression-default',
+          'chat-compression-2.5-flash',
+          'chat-compression-2.5-flash-lite',
+          'chat-compression-2.5-pro',
+          'chat-compression-3-flash',
+          'chat-compression-3-pro',
+        ];
+
+        for (const alias of internalAliases) {
+          this.modelConfigService.registerRuntimeModelConfig(alias, {
+            modelConfig: {
+              model: modelForInternalServices,
+              generateContentConfig: {},
+            },
+          });
+        }
+      }
+    }
   }
 
   /**

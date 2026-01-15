@@ -2,7 +2,7 @@
 
 > **Status**: Implemented  
 > **Version**: 0.21.0  
-> **Last Updated**: 2025-12-26
+> **Last Updated**: 2026-01-15
 
 ## Overview
 
@@ -56,15 +56,16 @@ flowchart TB
 {
   "llm": {
     "provider": "gemini",
+    "headers": {
+      "X-Custom-Header": "value"
+    },
     "openaiCompatible": {
       "baseUrl": "https://api.openai.com/v1",
       "model": "gpt-4o",
+      "internalModel": "gpt-4o-mini",
       "auth": {
         "type": "bearer",
         "envVarName": "OPENAI_API_KEY"
-      },
-      "headers": {
-        "X-Custom-Header": "value"
       }
     }
   }
@@ -88,11 +89,13 @@ interface OpenAICompatibleConfig extends ProviderConfig {
   provider: LlmProviderId.OPENAI_COMPATIBLE;
   baseUrl: string;
   model: string;
+  internalModel?: string;
   auth?: {
     type: 'bearer' | 'api-key' | 'none';
+    envVarName?: string;
     apiKey?: string;
   };
-  extraHeaders?: Record<string, string>;
+  headers?: Record<string, string>;
 }
 
 interface ProviderCapabilities {
@@ -149,7 +152,9 @@ Handles OpenAI-compatible API interactions:
 
 - Auth modes: `bearer`, `api-key`, `none`
 - Proxy support via `ProxyAgent`
-- Multi-chunk tool call accumulation
+- Multi-chunk streaming tool call accumulation (buffers
+  `tool_calls[].function.arguments`)
+- Parses both `choices[].delta.*` and `choices[].message.*` streaming variants
 - Debug-mode-only error logging
 
 ### 2. Provider Capability Gating
@@ -188,6 +193,11 @@ lowercase JSON Schema types.
 
 Recursive conversion handles nested `properties`, `items`, `required`, `enum`,
 and `nullable`.
+
+**Important:** TerminaI tool definitions may provide JSON Schema via
+`FunctionDeclaration.parametersJsonSchema`. The OpenAI-compatible adapter
+prefers that schema when present so required fields (for example
+`run_terminal_command.command`) are enforced by the model-facing tool schema.
 
 ## Request/Response Translation
 
@@ -235,6 +245,19 @@ sequenceDiagram
 - `pendingToolCalls` buffer accumulates until `finish_reason`
 - Final yield includes assembled `functionCall` parts
 
+## Known behavior differences (models/providers)
+
+OpenAI-compatible “providers” vary in how reliably they use tools.
+
+- Some models may respond with plain text like `Command: ...` instead of
+  emitting a tool call. TerminaI only executes tool calls, not plain-text
+  commands.
+- If a command fails (for example, permission errors), some models stop using
+  tools rather than retrying with a non-root alternative.
+
+If you see this, prefer models with strong tool-calling behavior (for example,
+OpenAI’s GPT-4o/GPT-4.1 families) or switch to Gemini for system-operator tasks.
+
 ## Environment Variables
 
 | Variable            | Purpose                                     |
@@ -250,10 +273,10 @@ Legacy compatibility: Gemini-prefixed environment variables (including
 
 ### Unit Tests
 
-| Test File                        | Coverage                                               |
-| -------------------------------- | ------------------------------------------------------ |
-| `openaiContentGenerator.test.ts` | 15 tests covering generation, streaming, tools, errors |
-| `contentGenerator.test.ts`       | 21 tests including provider selection, OAuth bypass    |
+| Test File                        | Coverage                                              |
+| -------------------------------- | ----------------------------------------------------- |
+| `openaiContentGenerator.test.ts` | Streaming + tool-call parsing variants + schema rules |
+| `contentGenerator.test.ts`       | 21 tests including provider selection, OAuth bypass   |
 
 ### Key Test Cases
 
