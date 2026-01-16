@@ -48,6 +48,20 @@ function createWasmPlugins() {
   return [wasmBinaryPlugin, wasmLoader({ mode: 'embedded' })];
 }
 
+          return {
+            contents,
+            loader: args.path.endsWith('tsx')
+              ? 'tsx'
+              : args.path.endsWith('ts')
+                ? 'ts'
+                : 'js',
+          };
+        }
+      });
+    },
+  };
+}
+
 /**
  * Get binary extension for current platform.
  */
@@ -86,8 +100,11 @@ console.log('📦 Bundling CLI for Tauri sidecar...');
       bundle: true,
       platform: 'node',
       target: 'node20',
-      format: 'esm', // Use ESM to support top-level await in dependencies
+      format: 'esm',
       outfile: bundleOutput,
+      banner: {
+        js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url); globalThis.__filename = require('url').fileURLToPath(import.meta.url); globalThis.__dirname = require('path').dirname(globalThis.__filename);`,
+      },
       plugins: createWasmPlugins(),
       external: [
         'serialport',
