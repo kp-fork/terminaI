@@ -48,7 +48,6 @@ function createWasmPlugins() {
   return [wasmBinaryPlugin, wasmLoader({ mode: 'embedded' })];
 }
 
-
 /**
  * Get binary extension for current platform.
  */
