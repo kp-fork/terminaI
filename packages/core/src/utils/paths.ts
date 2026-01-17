@@ -318,8 +318,12 @@ export function makeRelative(
 export function escapePath(filePath: string): string {
   // Windows: Use double-quoting which works in PowerShell and CMD
   if (os.platform() === 'win32') {
-    // Escape internal double-quotes by doubling them
-    return `"${filePath.replace(/"/g, '""')}"`;
+    // Only quote if it contains special characters
+    if (SHELL_SPECIAL_CHARS.test(filePath)) {
+      // Escape internal double-quotes by doubling them
+      return `"${filePath.replace(/"/g, '""')}"`;
+    }
+    return filePath;
   }
 
   // POSIX: Use backslash escaping

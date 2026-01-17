@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import os from 'node:os';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { act, useState } from 'react';
 import { renderHook } from '../../test-utils/render.js';
@@ -84,11 +85,14 @@ describe('useAtCompletion', () => {
       });
 
       expect(result.current.suggestions.length).toBeGreaterThan(0);
+      const isWindows = os.platform() === 'win32';
       expect(result.current.suggestions.map((s) => s.value)).toEqual([
         'src/',
         'src/components/',
         'file.txt',
-        'src/components/Button\\ with\\ spaces.tsx',
+        isWindows
+          ? '"src/components/Button with spaces.tsx"'
+          : 'src/components/Button\\ with\\ spaces.tsx',
         'src/components/Button.tsx',
         'src/index.js',
       ]);

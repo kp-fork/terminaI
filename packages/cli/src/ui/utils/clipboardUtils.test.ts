@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import os from 'node:os';
 import { describe, it, expect } from 'vitest';
 import {
   clipboardHasImage,
@@ -182,13 +183,18 @@ describe('clipboardUtils', () => {
     });
 
     it('should handle paths with escaped spaces', () => {
+      const isWindows = os.platform() === 'win32';
       // Use Set to model reality: individual paths exist, combined string doesn't
       const validPaths = new Set(['/path/to/my file.txt', '/other/path.txt']);
       const result = parsePastedPaths(
         '/path/to/my\\ file.txt /other/path.txt',
         (p) => validPaths.has(p),
       );
-      expect(result).toBe('@/path/to/my\\ file.txt @/other/path.txt ');
+      expect(result).toBe(
+        isWindows
+          ? '@"/path/to/my file.txt" @/other/path.txt '
+          : '@/path/to/my\\ file.txt @/other/path.txt ',
+      );
     });
 
     it('should unescape paths before validation', () => {
@@ -208,8 +214,11 @@ describe('clipboardUtils', () => {
     });
 
     it('should handle single path with unescaped spaces from copy-paste', () => {
+      const isWindows = os.platform() === 'win32';
       const result = parsePastedPaths('/path/to/my file.txt', () => true);
-      expect(result).toBe('@/path/to/my\\ file.txt ');
+      expect(result).toBe(
+        isWindows ? '@"/path/to/my file.txt" ' : '@/path/to/my\\ file.txt ',
+      );
     });
 
     it('should handle Windows path', () => {
@@ -218,8 +227,13 @@ describe('clipboardUtils', () => {
     });
 
     it('should handle Windows path with unescaped spaces', () => {
+      const isWindows = os.platform() === 'win32';
       const result = parsePastedPaths('C:\\My Documents\\file.txt', () => true);
-      expect(result).toBe('@C:\\My\\ Documents\\file.txt ');
+      expect(result).toBe(
+        isWindows
+          ? '@"C:\\My Documents\\file.txt" '
+          : '@C:\\My\\ Documents\\file.txt ',
+      );
     });
 
     it('should handle multiple Windows paths', () => {
