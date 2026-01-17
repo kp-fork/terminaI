@@ -153,7 +153,7 @@ if (otlpEndpoint && !isLocalEndpoint(otlpEndpoint)) {
 This script automated the setup of an OpenTelemetry collector configured to
 forward data to Google Cloud.
 
-**File Deleted:** [telemetry_gcp.js](../scripts/telemetry_gcp.js)
+**File Deleted:** telemetry_gcp.js
 
 **Updated:** [telemetry.js](../scripts/telemetry.js) — Removed `gcp` target
 handling
