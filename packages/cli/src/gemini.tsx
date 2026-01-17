@@ -17,7 +17,6 @@ import { parseLogFile, type ReplayEvent } from './utils/replay.js';
 import { resolvePath } from './utils/resolvePath.js';
 import { readStdin } from './utils/readStdin.js';
 import { basename } from 'node:path';
-import v8 from 'node:v8';
 import os from 'node:os';
 import dns from 'node:dns';
 import { start_sandbox } from './utils/sandbox.js';
@@ -71,6 +70,8 @@ import {
   getVersion,
   ApprovalMode,
   DesktopAutomationService,
+  importV8,
+  getHeapStatistics,
   type Provenance,
 } from '@terminai/core';
 import {
@@ -145,7 +146,7 @@ export function validateDnsResolutionOrder(
 
 export function getNodeMemoryArgs(isDebugMode: boolean): string[] {
   const totalMemoryMB = os.totalmem() / (1024 * 1024);
-  const heapStats = v8.getHeapStatistics();
+  const heapStats = getHeapStatistics();
   const currentMaxOldSpaceSizeMb = Math.floor(
     heapStats.heap_size_limit / 1024 / 1024,
   );

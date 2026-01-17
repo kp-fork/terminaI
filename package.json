@@ -2,7 +2,8 @@
   "name": "terminai-monorepo",
   "version": "0.26.0",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.0.0",
+    "bun": ">=1.0.0"
   },
   "packageManager": "npm@11.6.2",
   "type": "module",
@@ -19,8 +20,10 @@
   },
   "scripts": {
     "start": "cross-env NODE_ENV=development node scripts/start.js",
+    "start:bun": "cross-env NODE_ENV=development bun scripts/start.js",
     "start:a2a-server": "CODER_AGENT_PORT=41242 GEMINI_WEB_REMOTE_TOKEN=${GEMINI_WEB_REMOTE_TOKEN:-} npm run start --workspace @terminai/a2a-server",
     "debug": "cross-env DEBUG=1 node --inspect-brk scripts/start.js",
+    "debug:bun": "cross-env DEBUG=1 bun --inspect-brk scripts/start.js",
     "auth:npm": "npx google-artifactregistry-auth",
     "auth:docker": "gcloud auth configure-docker us-west1-docker.pkg.dev",
     "auth": "npm run auth:npm && npm run auth:docker",
@@ -38,6 +41,7 @@
     "build:sandbox": "node scripts/build_sandbox.js",
     "bundle": "npm run generate && node esbuild.config.js && node scripts/copy_bundle_assets.js",
     "test": "turbo run test",
+    "test:bun": "bun run test",
     "test:ci": "turbo run test:ci && npm run test:scripts",
     "test:scripts": "vitest run --config ./scripts/tests/vitest.config.ts",
     "lint": "npm run lint:root && npm run lint:workspaces",

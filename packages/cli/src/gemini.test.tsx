@@ -22,7 +22,6 @@ import {
   getNodeMemoryArgs,
 } from './gemini.js';
 import os from 'node:os';
-import v8 from 'node:v8';
 import { type CliArgs } from './config/config.js';
 import { type LoadedSettings } from './config/settings.js';
 import { appEvents, AppEvent } from './utils/events.js';
@@ -30,6 +29,7 @@ import {
   type Config,
   type ResumedSessionData,
   debugLogger,
+  getHeapStatistics,
 } from '@terminai/core';
 import { act } from 'react';
 import { type InitializationResult } from './core/initializer.js';
@@ -71,6 +71,11 @@ vi.mock('@terminai/core', async (importOriginal) => {
     enterAlternateScreen: vi.fn(),
     disableLineWrapping: vi.fn(),
     getVersion: vi.fn(() => Promise.resolve('1.0.0')),
+    getHeapStatistics: vi.fn(() => ({
+      total_heap_size: 8 * 1024 * 1024 * 1024,
+      used_heap_size: 4 * 1024 * 1024 * 1024,
+      heap_size_limit: 8 * 1024 * 1024 * 1024,
+    })),
   };
 });
 
@@ -410,11 +415,9 @@ describe('initializeOutputListenersAndFlush', () => {
 
 describe('getNodeMemoryArgs', () => {
   let osTotalMemSpy: MockInstance;
-  let v8GetHeapStatisticsSpy: MockInstance;
 
   beforeEach(() => {
     osTotalMemSpy = vi.spyOn(os, 'totalmem');
-    v8GetHeapStatisticsSpy = vi.spyOn(v8, 'getHeapStatistics');
     delete process.env['GEMINI_CLI_NO_RELAUNCH'];
   });
 
@@ -427,28 +430,40 @@ describe('getNodeMemoryArgs', () => {
     expect(getNodeMemoryArgs(false)).toEqual([]);
   });
 
-  it('should return empty array if current heap limit is sufficient', () => {
+  it('should return empty array if current heap limit is sufficient', async () => {
+    const { getHeapStatistics } = await import('@terminai/core');
+    const getHeapStatisticsMock = vi.mocked(getHeapStatistics);
     osTotalMemSpy.mockReturnValue(16 * 1024 * 1024 * 1024); // 16GB
-    v8GetHeapStatisticsSpy.mockReturnValue({
+    getHeapStatisticsMock.mockReturnValue({
+      total_heap_size: 8 * 1024 * 1024 * 1024,
+      used_heap_size: 4 * 1024 * 1024 * 1024,
       heap_size_limit: 8 * 1024 * 1024 * 1024, // 8GB
     });
     // Target is 50% of 16GB = 8GB. Current is 8GB. No relaunch needed.
     expect(getNodeMemoryArgs(false)).toEqual([]);
   });
 
-  it('should return memory args if current heap limit is insufficient', () => {
+  it('should return memory args if current heap limit is insufficient', async () => {
+    const { getHeapStatistics } = await import('@terminai/core');
+    const getHeapStatisticsMock = vi.mocked(getHeapStatistics);
     osTotalMemSpy.mockReturnValue(16 * 1024 * 1024 * 1024); // 16GB
-    v8GetHeapStatisticsSpy.mockReturnValue({
+    getHeapStatisticsMock.mockReturnValue({
+      total_heap_size: 4 * 1024 * 1024 * 1024,
+      used_heap_size: 2 * 1024 * 1024 * 1024,
       heap_size_limit: 4 * 1024 * 1024 * 1024, // 4GB
     });
     // Target is 50% of 16GB = 8GB. Current is 4GB. Relaunch needed.
     expect(getNodeMemoryArgs(false)).toEqual(['--max-old-space-size=8192']);
   });
 
-  it('should log debug info when isDebugMode is true', () => {
+  it('should log debug info when isDebugMode is true', async () => {
+    const { getHeapStatistics } = await import('@terminai/core');
+    const getHeapStatisticsMock = vi.mocked(getHeapStatistics);
     const debugSpy = vi.spyOn(debugLogger, 'debug');
     osTotalMemSpy.mockReturnValue(16 * 1024 * 1024 * 1024);
-    v8GetHeapStatisticsSpy.mockReturnValue({
+    getHeapStatisticsMock.mockReturnValue({
+      total_heap_size: 4 * 1024 * 1024 * 1024,
+      used_heap_size: 2 * 1024 * 1024 * 1024,
       heap_size_limit: 4 * 1024 * 1024 * 1024,
     });
     getNodeMemoryArgs(true);

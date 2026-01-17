@@ -94,6 +94,7 @@ export * from './openai_chatgpt/imports.js';
 
 // Export utilities
 
+export * from './utils/runtimeCompat.js';
 export * from './utils/paths.js';
 export * from './utils/deepMerge.js';
 export * from './utils/envVarResolver.js';
