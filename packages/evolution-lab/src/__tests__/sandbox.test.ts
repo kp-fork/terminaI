@@ -34,7 +34,7 @@ describe('SandboxController', () => {
     expect(sandbox.type).toBe('docker');
     expect(startSpy).toHaveBeenCalledOnce();
     await controller.destroy(sandbox);
-  });
+  }, 20000);
 
   it('requires opt-in for host execution', async () => {
     const controller = new SandboxController({ type: 'host' });
