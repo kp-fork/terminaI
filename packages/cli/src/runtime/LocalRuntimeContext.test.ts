@@ -2,8 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { LocalRuntimeContext } from './LocalRuntimeContext.js';
 import * as fs from 'node:fs';
 import * as child_process from 'node:child_process';
-import * as path from 'node:path';
-import * as os from 'node:os';
 
 vi.mock('node:fs');
 vi.mock('node:child_process');

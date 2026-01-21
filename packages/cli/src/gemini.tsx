@@ -408,7 +408,7 @@ export async function main() {
      // If no runtime is found (e.g. no Docker and no python/permission), fail fast.
      // In Phase 1, basic error is enough.
      console.error(`Runtime Error: ${e instanceof Error ? e.message : String(e)}`);
-     process.exit(ExitCodes.ConfigError);
+     process.exit(ExitCodes.FATAL_CONFIG_ERROR);
   }
 
   // hop into sandbox if we are outside and sandboxing is enabled AND we are using container runtime

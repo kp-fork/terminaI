@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { RuntimeContext } from '@terminai/core/computer';
+import type { RuntimeContext } from '@terminai/core';
 import { execSync } from 'node:child_process';
 
 export class ContainerRuntimeContext implements RuntimeContext {

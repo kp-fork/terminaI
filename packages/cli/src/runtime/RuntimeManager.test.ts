@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RuntimeManager } from './RuntimeManager.js';
-import { ContainerRuntimeContext } from './ContainerRuntimeContext.js';
 import { LocalRuntimeContext } from './LocalRuntimeContext.js';
 import * as child_process from 'node:child_process';
 import * as readline from 'node:readline';

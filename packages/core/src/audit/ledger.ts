@@ -41,6 +41,7 @@ export interface AuditLedger {
 export class FileAuditLedger implements AuditLedger {
   private lastHash: string = '';
   private initialized = false;
+  private runtimeContext?: RuntimeContext;
 
   constructor(
     private readonly filePath: string,

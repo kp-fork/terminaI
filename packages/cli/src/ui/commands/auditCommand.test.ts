@@ -39,6 +39,7 @@ describe('auditCommand', () => {
       ]),
       verifyHashChain: vi.fn(),
       export: vi.fn(),
+      setRuntimeContext: vi.fn(),
     };
 
     const ctx = createMockCommandContext({
@@ -65,6 +66,7 @@ describe('auditCommand', () => {
       query: vi.fn(),
       verifyHashChain: vi.fn().mockResolvedValue({ ok: true }),
       export: vi.fn(),
+      setRuntimeContext: vi.fn(),
     };
     const verifyCmd = auditCommand.subCommands?.find(
       (c) => c.name === 'verify',
@@ -92,6 +94,7 @@ describe('auditCommand', () => {
       query: vi.fn(),
       verifyHashChain: vi.fn(),
       export: vi.fn().mockResolvedValue('exported'),
+      setRuntimeContext: vi.fn(),
     };
     const exportCmd = auditCommand.subCommands?.find(
       (c) => c.name === 'export',

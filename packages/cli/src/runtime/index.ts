@@ -8,3 +8,6 @@
 export * from './RuntimeManager.js';
 export * from './ContainerRuntimeContext.js';
 export * from './LocalRuntimeContext.js';
+
+// Windows-specific exports (conditionally available)
+export * as windows from './windows/index.js';

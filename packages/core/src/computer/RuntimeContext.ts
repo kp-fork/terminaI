@@ -15,7 +15,7 @@
  */
 export interface RuntimeContext {
   /** Runtime tier type */
-  readonly type: 'container' | 'local';
+  readonly type: 'container' | 'local' | 'windows-appcontainer' | 'microvm';
 
   /** Whether execution is isolated from host filesystem */
   readonly isIsolated: boolean;

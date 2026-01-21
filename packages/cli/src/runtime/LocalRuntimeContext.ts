@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { RuntimeContext } from '@terminai/core/computer';
+import type { RuntimeContext } from '@terminai/core';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';

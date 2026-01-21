@@ -6,14 +6,20 @@
  */
 
 import { execSync } from 'node:child_process';
-import * as fs from 'node:fs';
+
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { createInterface } from 'node:readline';
 import process from 'node:process';
-import { RuntimeContext } from '@terminai/core/computer';
-import { ContainerRuntimeContext } from './ContainerRuntimeContext.js';
+import type { RuntimeContext } from '@terminai/core';
 import { LocalRuntimeContext } from './LocalRuntimeContext.js';
+import { MicroVMRuntimeContext } from '@terminai/microvm';
+
+// Conditionally import Windows-specific module
+// WindowsBrokerContext import moved to method to avoid Top-Level Await
+let WindowsBrokerContextClass:
+  | typeof import('./windows/WindowsBrokerContext.js').WindowsBrokerContext
+  | null = null;
 
 export class RuntimeManager {
   private readonly cliVersion: string;
@@ -25,21 +31,47 @@ export class RuntimeManager {
 
   /**
    * Returns the best available runtime for this system.
-   * Priority: Container > Micro-VM (future) > Managed Local
+   * Priority:
+   *   1. Container (Docker/Podman) - Cross-platform
+   *   2. Windows AppContainer - Windows only, trusted by Defender
+   *   3. Managed Local - Fallback with explicit user consent
    */
   async getContext(): Promise<RuntimeContext> {
     if (this.cachedContext) {
       return this.cachedContext;
     }
 
-    // Tier 1: Container (Docker/Podman)
+    // Tier 1 (Priority): Micro-VM (Linux only)
+    if (await this.isMicroVMAvailable()) {
+      console.log('[RuntimeManager] Using Sovereign Micro-VM (Phase 1.5)');
+      const context = new MicroVMRuntimeContext();
+      await context.initialize();
+      this.cachedContext = context;
+      return context;
+    }
+
+    // Tier 2: Container (Docker/Podman) - Preferred for all platforms
     if (await this.isContainerRuntimeAvailable()) {
       // return new ContainerRuntimeContext(this.cliVersion);
       throw new Error('ContainerRuntimeContext not implemented');
     }
 
-    // Tier 2: Managed Local (Fallback)
-    // We check for direct host access permission here or later in LocalRuntimeContext
+    // Tier 1.5 (Windows only): AppContainer Broker
+    // Uses process isolation trusted by Windows Defender
+    // Tier 1.5 (Windows only): AppContainer Broker
+    // Uses process isolation trusted by Windows Defender
+    if ((await this.isWindowsBrokerAvailable()) && WindowsBrokerContextClass) {
+      console.log('[RuntimeManager] Using Windows AppContainer sandbox');
+      const context = new WindowsBrokerContextClass({
+        cliVersion: this.cliVersion,
+        workspacePath: path.join(os.homedir(), '.terminai', 'workspace'),
+      });
+      await context.initialize();
+      this.cachedContext = context;
+      return context;
+    }
+
+    // Tier 2: Managed Local (Fallback) - Requires explicit consent
     if (await this.isSystemPythonAvailable()) {
       const pythonPath = this.findPythonExecutable();
       if (pythonPath) {
@@ -53,6 +85,7 @@ export class RuntimeManager {
           this.cliVersion,
         );
         await localContext.initialize();
+        this.cachedContext = localContext;
         return localContext;
       }
     }
@@ -60,6 +93,46 @@ export class RuntimeManager {
     throw new Error(
       'No suitable runtime found. Install Docker or Python 3.10+.',
     );
+  }
+
+  /**
+   * Task 32: Check if Micro-VM is available
+   */
+  private async isMicroVMAvailable(): Promise<boolean> {
+    return MicroVMRuntimeContext.isAvailable();
+  }
+
+  /**
+   * Task 46: Check if Windows AppContainer Broker is available.
+   * This is only true on Windows with the native module built.
+   */
+  private async isWindowsBrokerAvailable(): Promise<boolean> {
+    // Only available on Windows
+    if (process.platform !== 'win32') {
+      return false;
+    }
+
+    try {
+      if (!WindowsBrokerContextClass) {
+        const mod = await import('./windows/WindowsBrokerContext.js');
+        WindowsBrokerContextClass = mod.WindowsBrokerContext;
+      }
+    } catch {
+      // Module missing
+      console.log('[RuntimeManager] Windows AppContainer module not found');
+      return false;
+    }
+
+    // Check if WindowsBrokerContext reports it's available
+    if (
+      !WindowsBrokerContextClass ||
+      !(await WindowsBrokerContextClass.isAvailable())
+    ) {
+      console.log('[RuntimeManager] Windows AppContainer not available');
+      return false;
+    }
+
+    return true;
   }
 
   /**

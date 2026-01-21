@@ -6,7 +6,7 @@
  */
 
 import { PersistentShell } from './PersistentShell.js';
-import { RuntimeContext } from './RuntimeContext.js';
+import type { RuntimeContext } from './RuntimeContext.js';
 import { debugLogger } from '../index.js';
 import * as fs from 'node:fs';
 

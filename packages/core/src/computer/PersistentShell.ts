@@ -90,7 +90,7 @@ export class PersistentShell {
           // RuntimeContext provides pre-configured Python with T-APTS
           command = this.options.pythonPath;
           args = ['-i', '-u']; // Interactive, unbuffered
-          debugLogger.info(`Using provided Python: ${command}`);
+          debugLogger.log(`Using provided Python: ${command}`);
           // Skip venv creation - caller guarantees T-APTS availability
           // We still inherit the process.env unless explicitly overridden
         } else {

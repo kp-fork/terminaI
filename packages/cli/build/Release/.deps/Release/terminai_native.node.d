@@ -1,0 +1,1 @@
+cmd_Release/terminai_native.node := ln -f "Release/obj.target/terminai_native.node" "Release/terminai_native.node" 2>/dev/null || (rm -rf "Release/terminai_native.node" && cp -af "Release/obj.target/terminai_native.node" "Release/terminai_native.node")
