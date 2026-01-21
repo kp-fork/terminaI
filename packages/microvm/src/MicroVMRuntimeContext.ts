@@ -2,9 +2,7 @@ import type {
   RuntimeContext,
   ExecutionOptions,
   ExecutionResult,
-}   ExecutionResult,
-  RuntimeProcess,
-}   ExecutionResult,
+  ExecutionResult,
   RuntimeProcess,
 } from '@terminai/core';
 import { FirecrackerDriver } from './FirecrackerDriver.js';
@@ -15,6 +13,11 @@ import * as fs from 'fs';
 
 export class MicroVMRuntimeContext implements RuntimeContext {
   static async isAvailable(): Promise<boolean> {
+    // Phase 1.5: MicroVM is not yet ready for production execution.
+    // Explicitly return false to prevent selection until execute/spawn are implemented.
+    return false;
+
+    /*
     if (process.platform === 'linux') {
       // Check for KVM
       if (!fs.existsSync('/dev/kvm')) return false;
@@ -41,6 +44,7 @@ export class MicroVMRuntimeContext implements RuntimeContext {
       return fs.existsSync(helperPath);
     }
     return false;
+    */
   }
 
   readonly type = 'microvm';

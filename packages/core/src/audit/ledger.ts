@@ -33,7 +33,6 @@ export interface AuditLedger {
   append(event: AuditEvent): Promise<void>;
   query(opts: AuditQueryOptions): Promise<AuditEvent[]>;
   verifyHashChain(): Promise<{ ok: boolean; error?: string }>;
-  verifyHashChain(): Promise<{ ok: boolean; error?: string }>;
   export(opts: AuditExportOptions): Promise<string>;
   setRuntimeContext(context: RuntimeContext): void;
 }
