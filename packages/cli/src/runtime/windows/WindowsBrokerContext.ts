@@ -18,9 +18,6 @@
  *
  * Architecture:
  * - "The Hands" (this context): Admin privileges, no network, executes commands
- * - "The Brain" (child process): AppContainer, has network, talks to LLM
- *
- * - "The Brain" (child process): AppContainer, has network, talks to LLM
  *
  * @see docs-terminai/architecture-sovereign-runtime.md Appendix M
  */
@@ -28,7 +25,12 @@
 import * as path from 'node:path';
 import * as os from 'node:os';
 import * as fs from 'node:fs/promises';
-import type { RuntimeContext } from '@terminai/core';
+import type {
+  RuntimeContext,
+  ExecutionOptions,
+  ExecutionResult,
+  RuntimeProcess,
+} from '@terminai/core';
 import { BrokerServer } from './BrokerServer.js';
 import {
   type BrokerRequest,
@@ -37,7 +39,6 @@ import {
   createErrorResponse,
   type ExecuteResult,
 } from './BrokerSchema.js';
-import type { ExecutionOptions } from '@terminai/core';
 
 // Native module loaded lazily
 let native: typeof import('./native.js') | null = null;
@@ -118,9 +119,6 @@ export class WindowsBrokerContext implements RuntimeContext {
     return this._pythonPath ?? 'python';
   }
 
-  /**
-   * Check if the native module is available.
-   */
   /**
    * Check if the native module is available.
    */
@@ -209,20 +207,6 @@ export class WindowsBrokerContext implements RuntimeContext {
     }
   }
 
-      default:
-        return `Unknown error: ${error}`;
-    }
-  }
-
-  async execute(
-    command: string,
-    options?: ExecutionOptions,
-  ): Promise<ExecuteResult> {
-    throw new Error(
-      'WindowsBrokerContext host-side execution not implemented. Logic should run inside the AppContainer.',
-    );
-  }
-
   /**
    * Handle incoming IPC requests from the Brain process.
    */
@@ -272,9 +256,6 @@ export class WindowsBrokerContext implements RuntimeContext {
     }
   }
 
-  /**
-   * Handle 'execute' request.
-   */
   /**
    * Handle 'execute' request.
    * HARDENED: Only allows specific commands and disables shell execution.

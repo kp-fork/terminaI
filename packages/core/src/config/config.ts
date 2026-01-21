@@ -574,9 +574,7 @@ export class Config {
   private readonly replToolConfig: ReplToolConfig;
   private readonly checkerRunner: CheckerRunner;
   private readonly checkerRegistry: CheckerRegistry;
-  private readonly checkerRegistry: CheckerRegistry;
   private readonly contextBuilder: ContextBuilder;
-  private runtimeContext?: RuntimeContext;
   private runtimeContext?: RuntimeContext;
 
   constructor(params: ConfigParameters) {
@@ -820,15 +818,7 @@ export class Config {
     );
     this.auditSettings = params.audit ?? {};
     this.guiAutomationSettings = params.guiAutomation ?? {};
-  }
 
-  setRuntimeContext(context: RuntimeContext): void {
-    this.runtimeContext = context;
-  }
-
-  getRuntimeContext(): RuntimeContext | undefined {
-    return this.runtimeContext;
-  }
     this.providerConfig = params.providerConfig ?? {
       provider: LlmProviderId.GEMINI,
     };
@@ -935,6 +925,14 @@ export class Config {
         }
       }
     }
+  }
+
+  setRuntimeContext(context: RuntimeContext): void {
+    this.runtimeContext = context;
+  }
+
+  getRuntimeContext(): RuntimeContext | undefined {
+    return this.runtimeContext;
   }
 
   /**
