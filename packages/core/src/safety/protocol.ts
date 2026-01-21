@@ -58,6 +58,13 @@ export interface SafetyCheckInput {
     history?: {
       turns: ConversationTurn[];
     };
+
+    /**
+     * Information about the execution runtime.
+     */
+    runtime?: {
+      isIsolated: boolean;
+    };
   };
 
   /**

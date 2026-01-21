@@ -50,6 +50,10 @@ export interface AuditEventBase {
   redactions?: AuditRedactionHint[];
   prevHash?: string;
   hash?: string;
+  runtime?: {
+    type: string;
+    isIsolated: boolean;
+  };
 }
 
 export interface AuditToolContext {

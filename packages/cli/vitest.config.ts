@@ -48,6 +48,7 @@ export default defineConfig({
     },
     alias: {
       react: path.resolve(__dirname, '../../node_modules/react'),
+      '@terminai/core': path.resolve(__dirname, '../core/src'),
     },
     setupFiles: ['./test-setup.ts'],
     coverage: {

@@ -139,6 +139,10 @@ import type {
   Provenance,
   SecurityProfile,
 } from '../safety/approval-ladder/types.js';
+import { CheckerRunner } from '../safety/checker-runner.js';
+import { CheckerRegistry } from '../safety/registry.js';
+import { ContextBuilder } from '../safety/context-builder.js';
+import type { RuntimeContext } from '../computer/RuntimeContext.js';
 import {
   DEFAULT_BRAIN_AUTHORITY,
   type BrainAuthority,
@@ -568,6 +572,9 @@ export class Config {
   private providerConfig: ProviderConfig;
   private readonly logsRetentionDays: number;
   private readonly replToolConfig: ReplToolConfig;
+  private readonly checkerRunner: CheckerRunner;
+  private readonly checkerRegistry: CheckerRegistry;
+  private readonly contextBuilder: ContextBuilder;
 
   constructor(params: ConfigParameters) {
     this.sessionId = params.sessionId;
@@ -727,7 +734,25 @@ export class Config {
     this.enablePromptCompletion = params.enablePromptCompletion ?? false;
     this.fileExclusions = new FileExclusions(this);
     this.eventEmitter = params.eventEmitter;
-    this.policyEngine = new PolicyEngine(params.policyEngineConfig);
+
+    // Safety Architecture Wiring
+    this.contextBuilder = new ContextBuilder(this);
+    // Checkers path is currently not used for built-ins, but required. Point to a safe dummy or local dir.
+    this.checkerRegistry = new CheckerRegistry(
+      path.join(this.targetDir, '.terminai', 'checkers'),
+    );
+    this.checkerRunner = new CheckerRunner(
+      this.contextBuilder,
+      this.checkerRegistry,
+      {
+        checkersPath: path.join(this.targetDir, '.terminai', 'checkers'),
+      },
+    );
+
+    this.policyEngine = new PolicyEngine(
+      params.policyEngineConfig,
+      this.checkerRunner,
+    );
     this.messageBus = new MessageBus(this.policyEngine, this.debugMode);
     this.outputSettings = {
       format: params.output?.format ?? OutputFormat.TEXT,
@@ -1458,6 +1483,16 @@ export class Config {
 
   getAuditLedger(): AuditLedger {
     return this.auditLedger;
+  }
+
+  /**
+   * Inject the runtime context into the safety system.
+   * This is called by the CLI once the runtime environment is determined.
+   */
+  setRuntimeContext(context: RuntimeContext): void {
+    this.contextBuilder.setRuntimeContext(context);
+    this.auditLedger.setRuntimeContext(context);
+    // Also log it for audit if needed, or if policy engine needs direct access
   }
 
   getAuditSettings(): AuditSettings {

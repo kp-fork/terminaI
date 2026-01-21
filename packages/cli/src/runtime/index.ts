@@ -5,6 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export * from './PersistentShell.js';
-export * from './ComputerSessionManager.js';
-export * from './RuntimeContext.js';
+export * from './RuntimeManager.js';
+export * from './ContainerRuntimeContext.js';
+export * from './LocalRuntimeContext.js';

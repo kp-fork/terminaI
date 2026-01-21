@@ -100,6 +100,8 @@ import {
   relaunchAppInChildProcess,
   relaunchOnExitCode,
 } from './utils/relaunch.js';
+import { RuntimeManager } from './runtime/index.js';
+import { computerSessionManager, type RuntimeContext } from '@terminai/core';
 import { loadSandboxConfig } from './config/sandboxConfig.js';
 import { deleteSession, listSessions } from './utils/sessions.js';
 import { ExtensionManager } from './config/extension-manager.js';
@@ -392,11 +394,25 @@ export async function main() {
     }
   }
 
-  // NOTE: Provider wizard preflight removed per R0 ("no startup wizard").
   // Users should invoke provider switching explicitly via /auth wizard or Settings.
 
-  // hop into sandbox if we are outside and sandboxing is enabled
-  if (!process.env['SANDBOX']) {
+  // Sovereign Runtime: Determine execution environment
+  // We do this before sandbox logic because the runtime choice dictates if we use the sandbox.
+  const version = await getVersion();
+  const runtimeManager = new RuntimeManager(version);
+  let runtimeContext: RuntimeContext;
+  try {
+     runtimeContext = await runtimeManager.getContext();
+     computerSessionManager.setRuntimeContext(runtimeContext);
+  } catch (e) {
+     // If no runtime is found (e.g. no Docker and no python/permission), fail fast.
+     // In Phase 1, basic error is enough.
+     console.error(`Runtime Error: ${e instanceof Error ? e.message : String(e)}`);
+     process.exit(ExitCodes.ConfigError);
+  }
+
+  // hop into sandbox if we are outside and sandboxing is enabled AND we are using container runtime
+  if (!process.env['SANDBOX'] && runtimeContext.type === 'container') {
     const memoryArgs = settings.merged.advanced?.autoConfigureMemory
       ? getNodeMemoryArgs(isDebugMode)
       : [];
@@ -479,6 +495,9 @@ export async function main() {
     const loadConfigHandle = startupProfiler.start('load_cli_config');
     const config = await loadCliConfig(settings.merged, sessionId, argv);
     loadConfigHandle?.end();
+
+    // Inject the runtime context into the config for safety checks
+    config.setRuntimeContext(runtimeContext);
 
     if (argv.dumpConfig) {
       const getCircularReplacer = () => {

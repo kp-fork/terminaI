@@ -18,6 +18,13 @@ export interface PersistentShellOptions {
   language: 'python' | 'shell' | 'node';
   cwd: string;
   env?: Record<string, string>;
+  /**
+   * Optional: Absolute path to Python executable.
+   * When provided, PersistentShell will use this Python directly,
+   * skipping internal venv creation. Caller must guarantee that
+   * terminai_apts is importable from this Python.
+   */
+  pythonPath?: string;
   onOutput: (data: string) => void;
   onExit: (code: number | null, signal: number | null) => void;
 }
@@ -79,40 +86,49 @@ export class PersistentShell {
 
     switch (language) {
       case 'python':
-        // Phase 1.3: Auto-Create Virtual Environment for Python
-        this.tempVenvPath = fs.mkdtempSync(
-          path.join(os.tmpdir(), 'terminai-repl-'),
-        );
-        try {
-          // Create venv
-          execSync(`python3 -m venv "${this.tempVenvPath}"`, {
-            stdio: 'ignore',
-          });
-
-          const pythonBin =
-            os.platform() === 'win32'
-              ? path.join(this.tempVenvPath, 'Scripts', 'python.exe')
-              : path.join(this.tempVenvPath, 'bin', 'python3');
-
-          command = pythonBin;
+        if (this.options.pythonPath) {
+          // RuntimeContext provides pre-configured Python with T-APTS
+          command = this.options.pythonPath;
           args = ['-i', '-u']; // Interactive, unbuffered
-
-          // Prepend venv bin to PATH to ensure subprocesses use it
-          const binDir =
-            os.platform() === 'win32'
-              ? path.join(this.tempVenvPath, 'Scripts')
-              : path.join(this.tempVenvPath, 'bin');
-          spawnEnv['PATH'] =
-            `${binDir}${path.delimiter}${spawnEnv['PATH'] || ''}`;
-          // Unset PYTHONHOME if set, to ensure venv isolation
-          delete spawnEnv['PYTHONHOME'];
-        } catch (error) {
-          debugLogger.error(
-            `Failed to create venv for Python session: ${error}`,
+          debugLogger.info(`Using provided Python: ${command}`);
+          // Skip venv creation - caller guarantees T-APTS availability
+          // We still inherit the process.env unless explicitly overridden
+        } else {
+          // Phase 1.3: Auto-Create Virtual Environment for Python
+          this.tempVenvPath = fs.mkdtempSync(
+            path.join(os.tmpdir(), 'terminai-repl-'),
           );
-          // Fallback to system python if venv creation fails (though ideally we should fail)
-          command = 'python3';
-          args = ['-i', '-u'];
+          try {
+            // Create venv
+            execSync(`python3 -m venv "${this.tempVenvPath}"`, {
+              stdio: 'ignore',
+            });
+
+            const pythonBin =
+              os.platform() === 'win32'
+                ? path.join(this.tempVenvPath, 'Scripts', 'python.exe')
+                : path.join(this.tempVenvPath, 'bin', 'python3');
+
+            command = pythonBin;
+            args = ['-i', '-u']; // Interactive, unbuffered
+
+            // Prepend venv bin to PATH to ensure subprocesses use it
+            const binDir =
+              os.platform() === 'win32'
+                ? path.join(this.tempVenvPath, 'Scripts')
+                : path.join(this.tempVenvPath, 'bin');
+            spawnEnv['PATH'] =
+              `${binDir}${path.delimiter}${spawnEnv['PATH'] || ''}`;
+            // Unset PYTHONHOME if set, to ensure venv isolation
+            delete spawnEnv['PYTHONHOME'];
+          } catch (error) {
+            debugLogger.error(
+              `Failed to create venv for Python session: ${error}`,
+            );
+            // Fallback to system python if venv creation fails
+            command = 'python3';
+            args = ['-i', '-u'];
+          }
         }
         break;
 

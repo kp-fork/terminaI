@@ -6,6 +6,7 @@
  */
 
 import { PersistentShell } from './PersistentShell.js';
+import { RuntimeContext } from './RuntimeContext.js';
 import { debugLogger } from '../index.js';
 import * as fs from 'node:fs';
 
@@ -43,6 +44,11 @@ export class ComputerSessionManager implements ComputerSessionManagerInterface {
   private sessions = new Map<string, ReplSession>();
   private readonly defaultTimeout = 30000;
   private readonly settleTime = 500; // ms to wait for silence
+  private runtimeContext?: RuntimeContext;
+
+  setRuntimeContext(context: RuntimeContext): void {
+    this.runtimeContext = context;
+  }
 
   hasSession(name: string): boolean {
     return this.sessions.has(name);
@@ -71,6 +77,7 @@ export class ComputerSessionManager implements ComputerSessionManagerInterface {
       language,
       cwd,
       env,
+      pythonPath: this.runtimeContext?.pythonPath,
       onOutput: (data) => {
         const activeSession = sessionRef.current ?? this.sessions.get(name);
         if (activeSession) {

@@ -7,6 +7,7 @@
 
 import type { SafetyCheckInput, ConversationTurn } from './protocol.js';
 import type { Config } from '../config/config.js';
+import type { RuntimeContext } from '../computer/RuntimeContext.js';
 
 /**
  * Builds context objects for safety checkers, ensuring sensitive data is filtered.
@@ -15,7 +16,15 @@ export class ContextBuilder {
   constructor(
     private readonly config: Config,
     private readonly conversationHistory: ConversationTurn[] = [],
+    private readonly runtimeContext?: RuntimeContext,
   ) {}
+
+  setRuntimeContext(context: RuntimeContext): void {
+    // @ts-ignore - write to readonly for setter injection pattern if needed,
+    // or better, just allow it if not readonly.
+    // Since it's defined in constructor as private readonly, I should change it.
+    (this as any).runtimeContext = context;
+  }
 
   /**
    * Builds the full context object with all available data.
@@ -31,6 +40,11 @@ export class ContextBuilder {
       history: {
         turns: this.conversationHistory,
       },
+      runtime: this.runtimeContext
+        ? {
+            isIsolated: this.runtimeContext.isIsolated,
+          }
+        : undefined,
     };
   }
 

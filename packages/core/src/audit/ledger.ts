@@ -11,6 +11,7 @@ import { computeHash, verifyHashChain } from './hashChain.js';
 import { redactEvent, type RedactionOptions } from './redaction.js';
 import type { AuditEvent } from './schema.js';
 import { applyExportRedaction, type AuditExportRedaction } from './export.js';
+import type { RuntimeContext } from '../computer/RuntimeContext.js';
 
 export interface AuditWriteOptions {
   redactWriteTime: boolean;
@@ -32,7 +33,9 @@ export interface AuditLedger {
   append(event: AuditEvent): Promise<void>;
   query(opts: AuditQueryOptions): Promise<AuditEvent[]>;
   verifyHashChain(): Promise<{ ok: boolean; error?: string }>;
+  verifyHashChain(): Promise<{ ok: boolean; error?: string }>;
   export(opts: AuditExportOptions): Promise<string>;
+  setRuntimeContext(context: RuntimeContext): void;
 }
 
 export class FileAuditLedger implements AuditLedger {
@@ -69,6 +72,12 @@ export class FileAuditLedger implements AuditLedger {
       ...redacted,
       version: 1,
       timestamp: new Date().toISOString(),
+      runtime: this.runtimeContext
+        ? {
+            type: this.runtimeContext.type,
+            isIsolated: this.runtimeContext.isIsolated,
+          }
+        : undefined,
     };
     const { hash, prevHash } = computeHash(finalized, this.lastHash);
     const toWrite: AuditEvent = { ...finalized, hash, prevHash };
@@ -139,5 +148,9 @@ export class FileAuditLedger implements AuditLedger {
       return JSON.stringify(redacted, null, 2);
     }
     return redacted.map((event) => JSON.stringify(event)).join('\n');
+  }
+
+  setRuntimeContext(context: RuntimeContext): void {
+    this.runtimeContext = context;
   }
 }
