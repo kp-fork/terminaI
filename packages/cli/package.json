@@ -14,7 +14,9 @@
     "gemini": "dist/index.js"
   },
   "scripts": {
+    "prebuild": "npm run build:tapts",
     "build": "node ../../scripts/build_package.js",
+    "build:tapts": "cd ../../packages/sandbox-image/python && python3 -m build --wheel --outdir ../../../packages/cli/dist/",
     "start": "node dist/index.js",
     "debug": "node --inspect-brk dist/index.js",
     "lint": "eslint . --ext .ts,.tsx",
@@ -24,7 +26,8 @@
     "typecheck": "tsc --noEmit"
   },
   "files": [
-    "dist"
+    "dist",
+    "dist/*.whl"
   ],
   "config": {
     "sandboxImageUri": "ghcr.io/prof-harita/terminai/sandbox:0.27.0"

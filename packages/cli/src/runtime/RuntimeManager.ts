@@ -50,10 +50,21 @@ export class RuntimeManager {
       return context;
     }
 
-    // Tier 2: Container (Docker/Podman) - Preferred for all platforms
+    // Tier 1.5: Container (Docker/Podman) - Deferred to Phase 3
+    // Note: Container support is deferred in favor of Micro-VM (better isolation, faster boot)
+    // See architecture-sovereign-runtime.md for rationale
     if (await this.isContainerRuntimeAvailable()) {
-      // return new ContainerRuntimeContext(this.cliVersion);
-      throw new Error('ContainerRuntimeContext not implemented');
+      console.log('[RuntimeManager] ℹ️  Docker/Podman detected');
+      console.log(
+        '[RuntimeManager] Container runtime support deferred to Phase 3',
+      );
+      console.log(
+        '[RuntimeManager] Using Micro-VM (Linux/macOS) or AppContainer (Windows) for better isolation',
+      );
+      console.log(
+        '[RuntimeManager] Track container support: https://github.com/terminaI/terminaI/issues/TBD',
+      );
+      // Fall through to next tier
     }
 
     // Tier 1.5 (Windows only): AppContainer Broker
@@ -137,54 +148,84 @@ export class RuntimeManager {
 
   /**
    * Task 5: Implement container detection logic
-   * Checks for docker or podman
+   * Checks for docker or podman DAEMON availability (not just binary)
    */
   private async isContainerRuntimeAvailable(): Promise<boolean> {
+    // Check Docker daemon (not just binary)
     try {
-      execSync('docker --version', { stdio: 'ignore' });
+      execSync('docker info', { stdio: 'ignore', timeout: 2000 });
       return true;
     } catch {
-      try {
-        execSync('podman --version', { stdio: 'ignore' });
-        return true;
-      } catch {
-        return false;
-      }
+      // Docker daemon not running or not installed
     }
+
+    // Check Podman daemon
+    try {
+      execSync('podman info', { stdio: 'ignore', timeout: 2000 });
+      return true;
+    } catch {
+      // Podman not available
+    }
+
+    return false;
   }
 
   /**
    * Task 6: Implement Python discovery logic
-   * Checks for python3 or python availability
+   * Checks for python3 or python availability with VERSION VALIDATION (>= 3.10)
    */
   private async isSystemPythonAvailable(): Promise<boolean> {
-    try {
-      // Check for python3 first (standard on Linux/macOS)
-      execSync('python3 --version', { stdio: 'ignore' });
-      return true;
-    } catch {
-      try {
-        // Fallback to python (Windows or some Linux distros)
-        execSync('python --version', { stdio: 'ignore' });
-        return true;
-      } catch {
-        return false;
-      }
-    }
+    return this.findPythonExecutable() !== null;
   }
 
   /**
-   * Helper to find the actual executable path
+   * Helper to find the actual executable path with version validation
    */
   private findPythonExecutable(): string | null {
-    try {
-      const result = execSync('which python3 || which python', {
-        encoding: 'utf-8',
-      }).trim();
-      return result || null;
-    } catch {
-      return null;
+    const candidates = [
+      // User override
+      process.env['TERMINAI_PYTHON_PATH'],
+      // Standard Unix
+      'python3',
+      'python',
+      '/usr/bin/python3',
+      '/usr/local/bin/python3',
+      // Windows
+      'C:\\Python312\\python.exe',
+      'C:\\Python311\\python.exe',
+      'C:\\Python310\\python.exe',
+      // pyenv
+      path.join(os.homedir(), '.pyenv', 'shims', 'python3'),
+    ];
+
+    for (const cmd of candidates) {
+      if (!cmd) continue;
+
+      try {
+        // Check if executable exists and get version
+        const version = execSync(`${cmd} --version`, {
+          encoding: 'utf-8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        });
+
+        // Parse version (e.g., "Python 3.11.5")
+        const match = version.match(/Python (\d+)\.(\d+)/);
+        if (match) {
+          const major = parseInt(match[1]);
+          const minor = parseInt(match[2]);
+
+          // Require Python 3.10+
+          if (major === 3 && minor >= 10) {
+            return cmd;
+          }
+        }
+      } catch {
+        // Command not found or execution failed, try next
+        continue;
+      }
     }
+
+    return null;
   }
   /**
    * Task 13: Direct Host Access UI

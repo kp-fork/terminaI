@@ -185,7 +185,11 @@ flowchart LR
 
 ## 3. Architecture Overview
 
-### 3.1 Three-Tiered Execution Strategy
+### 3.1 Multi-Tiered Execution Strategy
+
+> **Architecture Evolution Note**: The tier priority order has evolved based on
+> Phase 1.5 Micro-VM implementation and Windows AppContainer development. See
+> Section 6 for Micro-VM details and Appendix M for Windows architecture.
 
 ```mermaid
 flowchart TB
@@ -193,14 +197,27 @@ flowchart TB
         Entry[CLI Entry / ComputerSessionManager]
         SM[RuntimeManager]
 
-        subgraph "Tier Selection"
-            T1{"Tier 1\n(Docker)"}
+        subgraph "Tier Selection (Platform-Specific)"
+            T1{"Tier 1\n(Micro-VM)"}
+            T1W{"Tier 1.5\n(Windows AppContainer)"}
+            T1C{"Tier 1 (Legacy)\n(Container - Phase 3)"}
             T2{"Tier 2\n(Managed Local)"}
-            T3{"Tier 3\n(Embedded)\n[Future]"}
         end
 
-        subgraph "Tier 1: Sovereign Sandbox"
-            Docker[Docker Image]
+        subgraph "Tier 1: Micro-VM (Linux/macOS)"
+            MicroVM[Firecracker / vfkit]
+            TAPTSVM[T-APTS Pre-installed]
+            CCVM[Contract Checks]
+        end
+
+        subgraph "Tier 1.5: Windows AppContainer"
+            AppC[AppContainer Profile]
+            Broker[Broker IPC]
+            TAPTSAC[T-APTS in Workspace]
+        end
+
+        subgraph "Tier 1 (Optional): Container"
+            Docker[Docker/Podman Image]
             TAPTS1[T-APTS Pre-installed]
             CC[Contract Checks]
         end
@@ -210,19 +227,23 @@ flowchart TB
             TAPTS2[T-APTS Bundled Wheel]
             Python[System Python]
         end
-
-        subgraph "Tier 3: Embedded Runtime"
-            Bundled[Bundled Python Binary]
-            TAPTS3[T-APTS Embedded]
-        end
     end
 
     Entry --> SM
     SM --> T1
+    SM --> T1W
+    SM --> T1C
     SM --> T2
-    SM --> T3
 
-    T1 -->|Available| Docker
+    T1 -->|Linux/macOS| MicroVM
+    MicroVM --> TAPTSVM
+    MicroVM --> CCVM
+
+    T1W -->|Windows| AppC
+    AppC --> Broker
+    Broker --> TAPTSAC
+
+    T1C -->|Deferred Phase 3| Docker
     Docker --> TAPTS1
     Docker --> CC
 
@@ -230,21 +251,27 @@ flowchart TB
     Python --> Venv
     Venv --> TAPTS2
 
-    T3 -->|Future| Bundled
-    Bundled --> TAPTS3
-
     style T1 fill:#9f9,stroke:#333
+    style T1W fill:#9cf,stroke:#333
+    style T1C fill:#ddd,stroke:#333,stroke-dasharray: 5 5
     style T2 fill:#ff9,stroke:#333
-    style T3 fill:#ddd,stroke:#333,stroke-dasharray: 5 5
 ```
 
-### 3.2 Tier Summary
+### 3.2 Tier Summary (Current Implementation)
 
-| Tier  | Name              | Technology                   | When Used                   | T-APTS Source                    |
-| ----- | ----------------- | ---------------------------- | --------------------------- | -------------------------------- |
-| **1** | Sovereign Sandbox | Docker/Podman Container      | Docker available            | Pre-installed in image           |
-| **2** | Managed Host Shim | System Python + Managed Venv | No Docker, Python available | Bundled wheel in CLI npm package |
-| **3** | Embedded Runtime  | PyOxidizer/Bundled Python    | No Python installed         | Embedded in binary               |
+| Tier    | Name                      | Technology                   | When Used                        | T-APTS Source                    | Status       |
+| ------- | ------------------------- | ---------------------------- | -------------------------------- | -------------------------------- | ------------ |
+| **1**   | Micro-VM                  | Firecracker / vfkit          | Linux/macOS (preferred)          | Pre-installed in guest           | ✅ Phase 1.5 |
+| **1.5** | Windows AppContainer      | AppContainer + Broker        | Windows (preferred)              | Bundled in workspace             | ✅ Phase 2   |
+| **1†**  | Container (Optional)      | Docker/Podman Container      | User prefers Docker              | Pre-installed in image           | 🔄 Phase 3   |
+| **2**   | Managed Host Shim         | System Python + Managed Venv | Fallback (explicit user consent) | Bundled wheel in CLI npm package | ✅ Phase 1   |
+| **3**   | Embedded Runtime (Future) | PyOxidizer/Bundled Python    | No Python installed              | Embedded in binary               | 📅 Future    |
+
+**† Container (Docker/Podman)**: Originally designed as Tier 1, now deferred to
+Phase 3 as an **optional isolation tier** for users who explicitly prefer Docker
+over Micro-VM. Micro-VM provides better isolation with lower overhead and no
+Docker dependency. See Section 4 for legacy documentation and rationale for
+deferral.
 
 ### 3.3 Data Flow (Complete)
 
@@ -311,16 +338,31 @@ flowchart TB
 
 ---
 
-## 4. Tier 1: Sovereign Sandbox (Container)
+## 4. Tier 1 (Legacy): Sovereign Sandbox (Container)
+
+> **Status**: Deferred to Phase 3 (Optional Enhancement)  
+> **Superseded By**: Micro-VM (Section 6) and Windows AppContainer (Appendix M)
 
 ### 4.1 Overview
 
-The **gold standard** execution environment. Provides:
+> [!NOTE] This section documents the **original** Tier 1 design using
+> Docker/Podman containers. During architecture evolution, Micro-VM emerged as a
+> superior isolation mechanism with lower overhead and no external dependency on
+> Docker daemon. **Container support is now planned as an optional Tier 1
+> variant for Phase 3**, targeting users who explicitly prefer Docker-based
+> execution.
+
+The container-based execution environment provides:
 
 - Complete isolation from host system
 - Reproducible, immutable environment
 - Pre-installed T-APTS with contract guarantees
 - CI-tested before every release
+
+**Why Deferred**: Micro-VM (Firecracker on Linux, vfkit on macOS) boots faster
+(<200ms), uses less memory (~50MB vs ~200MB), and doesn't require Docker Desktop
+installation. Windows AppContainer provides native trusted sandboxing without
+containers.
 
 ### 4.2 Current State (Already Implemented)
 

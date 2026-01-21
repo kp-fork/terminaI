@@ -185,6 +185,17 @@ export class BrokerServer extends EventEmitter {
       });
 
       // Step 3: Listen on Named Pipe
+      // TODO (Task 40): Apply ACL to restrict access to AppContainer SID only
+      // Current limitation: Node.js net.createServer() doesn't support SECURITY_ATTRIBUTES
+      // Required implementation:
+      //   1. Native module to create pipe with custom DACL
+      //   2. Use Windows CreateNamedPipe() with SECURITY_ATTRIBUTES
+      //   3. Grant access only to S-1-15-2-1 (AppContainer SID)
+      //
+      // Alternative: Use named-pipe-wrapper library or implement in native.ts
+      // For now: Pipe is accessible by any process (security gap on Windows)
+      //
+      // See: https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea
       this.server.listen(this.pipePath, () => {
         this.isRunning = true;
         console.log(`[BrokerServer] Listening on ${this.pipePath}`);

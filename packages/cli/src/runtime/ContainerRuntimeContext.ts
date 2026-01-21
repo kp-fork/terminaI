@@ -8,6 +8,23 @@
 import type { RuntimeContext } from '@terminai/core';
 import { execSync } from 'node:child_process';
 
+/**
+ * ContainerRuntimeContext - Docker/Podman Container Runtime (Phase 3)
+ *
+ * @deprecated Container support is deferred to Phase 3.
+ *
+ * Rationale:
+ * - Micro-VM provides better isolation with faster boot times
+ * - Windows users require AppContainer (not Linux containers) for System Operator tasks
+ * - "Widest audience, least pain" principle prioritizes Micro-VM auto-installation
+ *
+ * This class exists as a stub for future implementation.
+ * It is NOT currently wired into RuntimeManager.
+ *
+ * @see architecture-sovereign-runtime.md Section 6 (Micro-VM Priority)
+ * @see packages/microvm/src/MicroVMRuntimeContext.ts (Preferred isolation)
+ * @see packages/cli/src/runtime/windows/WindowsBrokerContext.ts (Windows isolation)
+ */
 export class ContainerRuntimeContext implements RuntimeContext {
   readonly type = 'container';
   readonly isIsolated = true;

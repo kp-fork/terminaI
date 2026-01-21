@@ -89,9 +89,13 @@ export class LocalRuntimeContext implements RuntimeContext {
         stdio: 'ignore',
       });
       // Install T-APTS
-      execSync(`"${pythonExecutable}" -m pip install "${aptsPath}"`, {
-        stdio: 'ignore',
-      });
+      // Task 9: Use --no-index --no-deps for security (no PyPI fallback, stdlib-only)
+      execSync(
+        `"${pythonExecutable}" -m pip install "${aptsPath}" --no-index --no-deps`,
+        {
+          stdio: 'ignore',
+        },
+      );
     } catch (e) {
       throw new Error(`Failed to install T-APTS from ${aptsPath}: ${e}`);
     }

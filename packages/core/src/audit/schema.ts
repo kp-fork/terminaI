@@ -52,6 +52,7 @@ export interface AuditEventBase {
   hash?: string;
   runtime?: {
     type: string;
+    tier?: number; // 1=microvm/container, 1.5=appcontainer, 2=local
     isIsolated: boolean;
   };
 }

@@ -76,6 +76,7 @@ export class FileAuditLedger implements AuditLedger {
       runtime: this.runtimeContext
         ? {
             type: this.runtimeContext.type,
+            tier: this.getTierNumber(this.runtimeContext.type),
             isIsolated: this.runtimeContext.isIsolated,
           }
         : undefined,
@@ -149,6 +150,23 @@ export class FileAuditLedger implements AuditLedger {
       return JSON.stringify(redacted, null, 2);
     }
     return redacted.map((event) => JSON.stringify(event)).join('\n');
+  }
+
+  /**
+   * Task 15: Map runtime type to tier number for audit forensics
+   */
+  private getTierNumber(type: string): number {
+    switch (type) {
+      case 'microvm':
+      case 'container':
+        return 1;
+      case 'windows-appcontainer':
+        return 1.5;
+      case 'local':
+        return 2;
+      default:
+        return 0; // Unknown
+    }
   }
 
   setRuntimeContext(context: RuntimeContext): void {
