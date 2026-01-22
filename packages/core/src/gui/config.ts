@@ -17,7 +17,7 @@ export interface GuiAutomationConfig {
   maxActionsPerMinute: number;
 }
 
-const DEFAULT_GUI_AUTOMATION_CONFIG: GuiAutomationConfig = {
+export const DEFAULT_GUI_AUTOMATION_CONFIG: GuiAutomationConfig = {
   minReviewLevel: 'B',
   clickMinReviewLevel: 'B',
   typeMinReviewLevel: 'B',

@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// This file uses 'as any' for deliberate type coercion from Dynamic settings to static ConfigParameters
-
 import { platform, homedir } from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
@@ -32,6 +29,13 @@ import {
 } from '../policy/config.js';
 import { GEMINI_DIR } from '../index.js';
 import { DEFAULT_CHATGPT_CODEX_BASE_URL } from '../openai_chatgpt/constants.js';
+import { ConfigSchema } from './configSchema.js';
+import { isBrainAuthority } from './brainAuthority.js';
+import { OutputFormat } from '../output/types.js';
+import type {
+  AuditExportFormat,
+  AuditExportRedaction,
+} from '../audit/export.js';
 
 function normalizeOpenAIBaseUrl(raw: string | undefined): string | undefined {
   if (typeof raw !== 'string') return undefined;
@@ -64,6 +68,51 @@ function normalizeHeaders(raw: unknown): Record<string, string> | undefined {
     }
   }
   return Object.keys(headers).length > 0 ? headers : undefined;
+}
+
+function normalizeAuditExportFormat(
+  raw: unknown,
+): AuditExportFormat | undefined {
+  return raw === 'json' || raw === 'jsonl' ? raw : undefined;
+}
+
+function normalizeAuditExportRedaction(
+  raw: unknown,
+): AuditExportRedaction | undefined {
+  return raw === 'enterprise' || raw === 'debug' ? raw : undefined;
+}
+
+function normalizeOutputFormat(raw: unknown): OutputFormat | undefined {
+  if (
+    raw === OutputFormat.TEXT ||
+    raw === OutputFormat.JSON ||
+    raw === OutputFormat.STREAM_JSON
+  ) {
+    return raw;
+  }
+  return undefined;
+}
+
+function normalizeReplSandboxTier(raw: unknown): 'tier1' | 'tier2' | undefined {
+  return raw === 'tier1' || raw === 'tier2' ? raw : undefined;
+}
+
+function normalizeStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const filtered = value.filter(
+    (item): item is string => typeof item === 'string',
+  );
+  return filtered.length > 0 ? filtered : [];
+}
+
+function getLegacyStringArraySetting(
+  settings: unknown,
+  key: 'allowedMcpServers' | 'blockedMcpServers',
+): string[] | undefined {
+  if (!settings || typeof settings !== 'object') return undefined;
+  const record = settings as Record<string, unknown>;
+  if (!(key in record)) return undefined;
+  return normalizeStringArray(record[key]);
 }
 
 /**
@@ -184,6 +233,19 @@ export class ConfigBuilder {
       providerConfig = { provider: LlmProviderId.GEMINI };
     }
 
+    const legacyAllowedMcpServers = getLegacyStringArraySetting(
+      settings,
+      'allowedMcpServers',
+    );
+    const legacyBlockedMcpServers = getLegacyStringArraySetting(
+      settings,
+      'blockedMcpServers',
+    );
+    const guiAutomationSettings = settings.tools?.guiAutomation;
+    const guiAutomation = guiAutomationSettings
+      ? (({ enabled: _enabled, ...rest }) => rest)(guiAutomationSettings)
+      : undefined;
+
     const configParams: ConfigParameters = {
       sessionId: this.sessionId,
       targetDir: options.workspaceDir ?? process.cwd(),
@@ -194,14 +256,20 @@ export class ConfigBuilder {
       policyEngineConfig,
       model: resolvedModel,
       brain: {
-        authority: settings.brain?.authority as any,
+        authority: isBrainAuthority(settings.brain?.authority)
+          ? settings.brain?.authority
+          : undefined,
         policyAuthority: policyBrainAuthority,
       },
       audit: {
         redactUiTypedText: settings.audit?.redactUiTypedText,
         retentionDays: settings.audit?.retentionDays,
-        exportFormat: settings.audit?.export?.format as any,
-        exportRedaction: settings.audit?.export?.redaction as any,
+        exportFormat: normalizeAuditExportFormat(
+          settings.audit?.export?.format,
+        ),
+        exportRedaction: normalizeAuditExportRedaction(
+          settings.audit?.export?.redaction,
+        ),
       },
       recipes: {
         paths: settings.recipes?.paths,
@@ -212,7 +280,7 @@ export class ConfigBuilder {
         trustedCommunityRecipes: settings.recipes?.trustedCommunityRecipes,
       },
       showMemoryUsage: settings.ui?.showMemoryUsage || false,
-      accessibility: settings.ui?.accessibility as any,
+      accessibility: settings.ui?.accessibility,
       usageStatisticsEnabled: settings.privacy?.usageStatisticsEnabled ?? true,
       checkpointing: settings.general?.checkpointing?.enabled,
       proxy:
@@ -220,25 +288,17 @@ export class ConfigBuilder {
         process.env['https_proxy'] ||
         process.env['HTTP_PROXY'] ||
         process.env['http_proxy'],
-      bugCommand: settings.advanced?.bugCommand as any,
+      bugCommand: settings.advanced?.bugCommand,
       maxSessionTurns: settings.model?.maxSessionTurns ?? -1,
       enableExtensionReloading: settings.experimental?.extensionReloading,
       experimentalJitContext: settings.experimental?.jitContext,
       noBrowser: !!process.env['NO_BROWSER'],
-      // Map summarizeToolOutput boolean to ConfigParameters expected structure if needed,
-      // or just pass it if it's compatible. ConfigParameters has it as Record<string, SummarizeToolOutputSettings>.
-      // For now, if it's true, we might want to enable it for all tools?
-      // But the Config class might just want a global override.
-      // Let's check Config.ts again.
-      // Actually, let's just use 'as any' for now to unblock build while we figure out the exact mapping.
-      summarizeToolOutput: settings.model?.summarizeToolOutput as any,
+      summarizeToolOutput: settings.model?.summarizeToolOutput,
       compressionThreshold: settings.model?.compressionThreshold,
       folderTrust: settings.security?.folderTrust?.enabled,
       mcpServers: settings.mcpServers,
-      allowedMcpServers:
-        (settings as any).mcp?.allowed ?? (settings as any).allowedMcpServers,
-      blockedMcpServers:
-        (settings as any).mcp?.excluded ?? (settings as any).blockedMcpServers,
+      allowedMcpServers: settings.mcp?.allowed ?? legacyAllowedMcpServers,
+      blockedMcpServers: settings.mcp?.excluded ?? legacyBlockedMcpServers,
       useRipgrep: settings.tools?.useRipgrep,
       enableInteractiveShell:
         settings.tools?.shell?.enableInteractiveShell ?? true,
@@ -248,30 +308,32 @@ export class ConfigBuilder {
       truncateToolOutputLines: settings.tools?.truncateToolOutputLines,
       enableToolOutputTruncation: settings.tools?.enableToolOutputTruncation,
       repl: {
-        sandboxTier: settings.tools?.repl?.sandboxTier as any,
+        sandboxTier: normalizeReplSandboxTier(
+          settings.tools?.repl?.sandboxTier,
+        ),
         timeoutSeconds: settings.tools?.repl?.timeoutSeconds,
         dockerImage: settings.tools?.repl?.dockerImage,
       },
-      guiAutomation: settings.tools?.guiAutomation as any,
+      guiAutomation,
       useSmartEdit: settings.useSmartEdit,
       useWriteTodos: settings.useWriteTodos,
       output: {
-        format: settings.output?.format as any,
+        format: normalizeOutputFormat(settings.output?.format),
       },
       providerConfig,
-      codebaseInvestigatorSettings: settings.experimental
-        ?.codebaseInvestigatorSettings as any,
-      introspectionAgentSettings: settings.experimental
-        ?.introspectionAgentSettings as any,
+      codebaseInvestigatorSettings:
+        settings.experimental?.codebaseInvestigatorSettings,
+      introspectionAgentSettings:
+        settings.experimental?.introspectionAgentSettings,
       retryFetchErrors: settings.general?.retryFetchErrors ?? false,
       enableHooks: settings.tools?.enableHooks ?? false,
       excludeTools: settings.tools?.exclude,
-      hooks: settings.hooks as any,
+      hooks: settings.hooks,
       // Apply overrides
       ...(options.overrides || {}),
     };
 
-    return new Config(configParams);
+    return new Config(ConfigSchema.parse(configParams));
   }
 }
 

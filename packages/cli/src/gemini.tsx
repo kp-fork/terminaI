@@ -71,7 +71,9 @@ import {
   getVersion,
   ApprovalMode,
   DesktopAutomationService,
+  computerSessionManager,
   type Provenance,
+  type RuntimeContext,
 } from '@terminai/core';
 import {
   initializeApp,
@@ -101,7 +103,6 @@ import {
   relaunchOnExitCode,
 } from './utils/relaunch.js';
 import { RuntimeManager } from './runtime/index.js';
-import { computerSessionManager, type RuntimeContext } from '@terminai/core';
 import { loadSandboxConfig } from './config/sandboxConfig.js';
 import { deleteSession, listSessions } from './utils/sessions.js';
 import { ExtensionManager } from './config/extension-manager.js';
@@ -402,13 +403,15 @@ export async function main() {
   const runtimeManager = new RuntimeManager(version);
   let runtimeContext: RuntimeContext;
   try {
-     runtimeContext = await runtimeManager.getContext();
-     computerSessionManager.setRuntimeContext(runtimeContext);
+    runtimeContext = await runtimeManager.getContext();
+    computerSessionManager.setRuntimeContext(runtimeContext);
   } catch (e) {
-     // If no runtime is found (e.g. no Docker and no python/permission), fail fast.
-     // In Phase 1, basic error is enough.
-     console.error(`Runtime Error: ${e instanceof Error ? e.message : String(e)}`);
-     process.exit(ExitCodes.FATAL_CONFIG_ERROR);
+    // If no runtime is found (e.g. no Docker and no python/permission), fail fast.
+    // In Phase 1, basic error is enough.
+    console.error(
+      `Runtime Error: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    process.exit(ExitCodes.FATAL_CONFIG_ERROR);
   }
 
   // hop into sandbox if we are outside and sandboxing is enabled AND we are using container runtime

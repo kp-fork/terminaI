@@ -14,7 +14,7 @@
     "gemini": "dist/index.js"
   },
   "scripts": {
-    "prebuild": "npm run build:tapts",
+    "prebuild": "node ../../scripts/build_tapts.js",
     "build": "node ../../scripts/build_package.js",
     "build:tapts": "cd ../../packages/sandbox-image/python && python3 -m build --wheel --outdir ../../../packages/cli/dist/",
     "start": "node dist/index.js",

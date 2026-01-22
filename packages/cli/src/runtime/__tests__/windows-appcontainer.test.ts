@@ -356,9 +356,13 @@ describe('RuntimeManager Windows Tier Selection', () => {
     const manager = new RuntimeManager('0.28.0');
 
     // Mock container as unavailable
-    vi.spyOn(manager as any, 'isContainerRuntimeAvailable').mockResolvedValue(
-      false,
-    );
+    const managerWithInternals = manager as unknown as {
+      isContainerRuntimeAvailable: () => Promise<boolean>;
+    };
+    vi.spyOn(
+      managerWithInternals,
+      'isContainerRuntimeAvailable',
+    ).mockResolvedValue(false);
 
     // This test would require Admin to actually run
     // Just verify the logic flow

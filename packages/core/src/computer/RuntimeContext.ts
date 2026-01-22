@@ -26,14 +26,33 @@ export interface ExecutionOptions {
 }
 
 export interface RuntimeProcess {
-  stdout?: NodeJS.ReadableStream;
-  stderr?: NodeJS.ReadableStream;
+  stdout?: {
+    on(event: string, listener: (chunk: Buffer) => void): void;
+    removeListener(event: string, listener: (chunk: Buffer) => void): void;
+  };
+  stderr?: {
+    on(event: string, listener: (chunk: Buffer) => void): void;
+    removeListener(event: string, listener: (chunk: Buffer) => void): void;
+  };
   stdin?: NodeJS.WritableStream;
+  pid?: number;
   kill(signal?: NodeJS.Signals | number): boolean;
+  on(event: 'error', listener: (error: Error) => void): this;
   on(
-    event: 'exit' | 'close' | 'error',
-    listener: (...args: any[]) => void,
+    event: 'exit' | 'close',
+    listener: (code: number | null, signal: NodeJS.Signals | null) => void,
   ): this;
+  on(event: string, listener: (...args: unknown[]) => void): this;
+  removeListener(event: 'error', listener: (error: Error) => void): this;
+  removeListener(
+    event: 'exit' | 'close',
+    listener: (code: number | null, signal: NodeJS.Signals | null) => void,
+  ): this;
+  removeListener(event: string, listener: (...args: unknown[]) => void): this;
+  /** Optional: true if IPC channel is connected (ChildProcess compatibility) */
+  connected?: boolean;
+  /** Optional: Disconnect IPC channel (ChildProcess compatibility) */
+  disconnect?(): void;
 }
 
 export interface ExecutionResult {

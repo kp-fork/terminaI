@@ -244,12 +244,12 @@ export class WindowsBrokerContext implements RuntimeContext {
           await this.handleAmsiScan(request, respond);
           break;
 
-        default:
-          respond(
-            createErrorResponse(
-              `Unknown request type: ${(request as any).type}`,
-            ),
-          );
+        default: {
+          const _exhaustive: never = request;
+          void _exhaustive;
+          respond(createErrorResponse('Unknown request type'));
+          break;
+        }
       }
     } catch (error) {
       respond(createErrorResponse((error as Error).message));
@@ -321,7 +321,6 @@ export class WindowsBrokerContext implements RuntimeContext {
         const result: ExecuteResult = {
           exitCode: code ?? -1,
           stdout,
-          stderr,
           timedOut,
           stderr: stderr || (code !== 0 ? 'Process failed' : ''),
         };
@@ -583,15 +582,15 @@ export class WindowsBrokerContext implements RuntimeContext {
   }
 
   async execute(
-    command: string,
-    options?: ExecutionOptions,
+    _command: string,
+    _options?: ExecutionOptions,
   ): Promise<ExecutionResult> {
     throw new Error('Windows Broker execute not implemented yet');
   }
 
   async spawn(
-    command: string,
-    options?: ExecutionOptions,
+    _command: string,
+    _options?: ExecutionOptions,
   ): Promise<RuntimeProcess> {
     throw new Error('Windows Broker spawn not implemented yet');
   }

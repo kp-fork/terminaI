@@ -63,6 +63,7 @@ export interface NativeModule {
 
 let nativeModule: NativeModule | null = null;
 let loadError: Error | null = null;
+const requireFn = createRequire(import.meta.url);
 
 function loadNativeModule(): NativeModule | null {
   if (nativeModule) return nativeModule;
@@ -75,8 +76,6 @@ function loadNativeModule(): NativeModule | null {
 
   try {
     // Native module is built by node-gyp to build/Release/terminai_native.node
-    const require = createRequire(import.meta.url);
-
     // Try different possible locations
     const possiblePaths = [
       // When running from packages/cli/src/runtime/windows/
@@ -105,7 +104,7 @@ function loadNativeModule(): NativeModule | null {
 
     for (const modulePath of possiblePaths) {
       if (fs.existsSync(modulePath)) {
-        nativeModule = require(modulePath) as NativeModule;
+        nativeModule = requireFn(modulePath) as NativeModule;
         console.log('[native] Loaded native module from:', modulePath);
         return nativeModule;
       }

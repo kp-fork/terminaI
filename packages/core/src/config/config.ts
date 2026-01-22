@@ -97,9 +97,8 @@ import { ModelConfigService } from '../services/modelConfigService.js';
 import { DEFAULT_MODEL_CONFIGS } from './defaultModelConfigs.js';
 import { ContextManager } from '../services/contextManager.js';
 import {
-  configureGuiAutomation,
-  getGuiAutomationConfig,
   type GuiAutomationConfig,
+  DEFAULT_GUI_AUTOMATION_CONFIG,
 } from '../gui/config.js';
 import type {
   AccessibilitySettings,
@@ -468,6 +467,7 @@ export class Config {
   private geminiClient!: GeminiClient;
   private baseLlmClient!: BaseLlmClient;
   private modelRouterService: ModelRouterService;
+  readonly disableModelRouterForAuth: AuthType[] | undefined;
   private readonly modelAvailabilityService: ModelAvailabilityService;
   private readonly fileFiltering: {
     respectGitIgnore: boolean;
@@ -804,20 +804,20 @@ export class Config {
     this.toolRegistry = new ToolRegistry(this);
     this.promptRegistry = new PromptRegistry();
     this.resourceRegistry = new ResourceRegistry();
-    this.agentRegistry = new AgentRegistry();
+    this.agentRegistry = new AgentRegistry(this);
     this.modelConfigService = new ModelConfigService(
-      params.modelConfigServiceConfig,
+      params.modelConfigServiceConfig ?? {},
     );
-    this.modelRouterService = new ModelRouterService(
-      params.disableModelRouterForAuth,
-    );
+    this.disableModelRouterForAuth = params.disableModelRouterForAuth;
+    this.modelRouterService = new ModelRouterService(this);
     this.auditLedger = new FileAuditLedger(
       new Storage(this.targetDir).getSessionAuditPath(this.sessionId),
-      undefined,
-      this.sessionId,
+      {},
     );
     this.auditSettings = params.audit ?? {};
-    this.guiAutomationSettings = params.guiAutomation ?? {};
+    this.guiAutomationSettings = params.guiAutomation
+      ? { ...DEFAULT_GUI_AUTOMATION_CONFIG, ...params.guiAutomation }
+      : DEFAULT_GUI_AUTOMATION_CONFIG;
 
     this.providerConfig = params.providerConfig ?? {
       provider: LlmProviderId.GEMINI,
@@ -929,6 +929,9 @@ export class Config {
 
   setRuntimeContext(context: RuntimeContext): void {
     this.runtimeContext = context;
+    // Also update safety and audit subsystems
+    this.contextBuilder.setRuntimeContext(context);
+    this.auditLedger.setRuntimeContext(context);
   }
 
   getRuntimeContext(): RuntimeContext | undefined {
@@ -1494,16 +1497,6 @@ export class Config {
 
   getAuditLedger(): AuditLedger {
     return this.auditLedger;
-  }
-
-  /**
-   * Inject the runtime context into the safety system.
-   * This is called by the CLI once the runtime environment is determined.
-   */
-  setRuntimeContext(context: RuntimeContext): void {
-    this.contextBuilder.setRuntimeContext(context);
-    this.auditLedger.setRuntimeContext(context);
-    // Also log it for audit if needed, or if policy engine needs direct access
   }
 
   getAuditSettings(): AuditSettings {

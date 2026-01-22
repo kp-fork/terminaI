@@ -1,7 +1,17 @@
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
-import { RuntimeContext, RuntimeProcess } from '../computer/RuntimeContext.js';
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * Portions Copyright 2025 TerminaI Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
+import type {
+  RuntimeContext,
+  RuntimeProcess,
+} from '../computer/RuntimeContext.js';
 
 /**
  * A custom MCP Transport that uses RuntimeContext to spawn the server process.
@@ -10,6 +20,7 @@ import { RuntimeContext, RuntimeProcess } from '../computer/RuntimeContext.js';
  */
 export class RuntimeStdioClientTransport implements Transport {
   private _process?: RuntimeProcess;
+  // @ts-expect-error - Reserved for future StdioClientTransport delegation
   private _transport?: StdioClientTransport;
   private _runtime: RuntimeContext;
   private _command: string;

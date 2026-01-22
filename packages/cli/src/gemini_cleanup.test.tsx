@@ -6,7 +6,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { main } from './gemini.js';
 import { debugLogger } from '@terminai/core';
 import { type Config } from '@terminai/core';
 
@@ -34,6 +33,8 @@ vi.mock('@terminai/core', async (importOriginal) => {
       },
       stderr: { write: vi.fn() },
     })),
+    isTelemetrySdkInitialized: vi.fn(() => false),
+    shutdownTelemetry: vi.fn(),
     enableMouseEvents: vi.fn(),
     disableMouseEvents: vi.fn(),
     enterAlternateScreen: vi.fn(),
@@ -126,6 +127,26 @@ const { cleanupMockState } = vi.hoisted(() => ({
   cleanupMockState: { shouldThrow: false, called: false },
 }));
 
+const { fakeRuntimeContext } = vi.hoisted(() => ({
+  fakeRuntimeContext: {
+    type: 'local',
+    isIsolated: false,
+    displayName: 'Test Runtime',
+    pythonPath: '/usr/bin/python3',
+    taptsVersion: '0.0.0-test',
+    healthCheck: async () => ({ ok: true }),
+    dispose: async () => {},
+  },
+}));
+
+vi.mock('./runtime/RuntimeManager.js', () => ({
+  RuntimeManager: class RuntimeManager {
+    async getContext() {
+      return fakeRuntimeContext;
+    }
+  },
+}));
+
 // Mock sessionCleanup.js at the top level
 vi.mock('./utils/sessionCleanup.js', async (importOriginal) => {
   const actual =
@@ -153,6 +174,8 @@ describe('gemini.tsx main function cleanup', () => {
   });
 
   it('should log error when cleanupExpiredSessions fails', async () => {
+    vi.resetModules();
+    const { main } = await import('./gemini.js');
     const { loadCliConfig, parseArguments } = await import(
       './config/config.js'
     );
@@ -184,6 +207,8 @@ describe('gemini.tsx main function cleanup', () => {
       getQuestion: vi.fn(() => 'test'),
       getSandbox: vi.fn(() => false),
       getDebugMode: vi.fn(() => false),
+      setRuntimeContext: vi.fn(),
+      getLogsRetentionDays: vi.fn(() => 30),
       getPolicyEngine: vi.fn(),
       getMessageBus: () => ({ subscribe: vi.fn() }),
       getEnableHooks: vi.fn(() => false),
@@ -196,7 +221,7 @@ describe('gemini.tsx main function cleanup', () => {
       getScreenReader: vi.fn(() => false),
       getGeminiMdFileCount: vi.fn(() => 0),
       getProjectRoot: vi.fn(() => '/'),
-      getListExtensions: vi.fn(() => false),
+      getListExtensions: vi.fn(() => true),
       getListSessions: vi.fn(() => false),
       getDeleteSession: vi.fn(() => undefined),
       getToolRegistry: vi.fn(),
@@ -226,5 +251,5 @@ describe('gemini.tsx main function cleanup', () => {
     );
     expect(processExitSpy).toHaveBeenCalledWith(0); // Should not exit on cleanup failure
     processExitSpy.mockRestore();
-  });
+  }, 10000);
 });

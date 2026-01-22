@@ -80,32 +80,33 @@ class DiscoveredToolInvocation extends BaseToolInvocation<
         stderr += data?.toString();
       };
 
-      const onError = (err: Error) => {
-        error = err;
+      const onError = (err: unknown) => {
+        error = err instanceof Error ? err : new Error(String(err));
       };
 
-      const onClose = (
-        _code: number | null,
-        _signal: NodeJS.Signals | null,
-      ) => {
-        code = _code;
-        signal = _signal;
+      const onClose = (...args: unknown[]) => {
+        const [maybeCode, maybeSignal] = args;
+        code = typeof maybeCode === 'number' ? maybeCode : null;
+        signal =
+          typeof maybeSignal === 'string'
+            ? (maybeSignal as NodeJS.Signals)
+            : null;
         cleanup();
         resolve();
       };
 
       const cleanup = () => {
-        child.stdout.removeListener('data', onStdout);
-        child.stderr.removeListener('data', onStderr);
+        child.stdout?.removeListener('data', onStdout);
+        child.stderr?.removeListener('data', onStderr);
         child.removeListener('error', onError);
         child.removeListener('close', onClose);
-        if (child.connected) {
-          child.disconnect();
+        if ('connected' in child && child.connected && 'disconnect' in child) {
+          (child as { disconnect: () => void }).disconnect();
         }
       };
 
-      child.stdout.on('data', onStdout);
-      child.stderr.on('data', onStderr);
+      child.stdout?.on('data', onStdout);
+      child.stderr?.on('data', onStderr);
       child.on('error', onError);
       child.on('close', onClose);
     });
@@ -342,7 +343,7 @@ export class ToolRegistry {
       let stdoutByteLength = 0;
       let stderrByteLength = 0;
 
-      proc.stdout.on('data', (data) => {
+      proc.stdout?.on('data', (data: Buffer) => {
         if (sizeLimitExceeded) return;
         if (stdoutByteLength + data.length > MAX_STDOUT_SIZE) {
           sizeLimitExceeded = true;
@@ -353,7 +354,7 @@ export class ToolRegistry {
         stdout += stdoutDecoder.write(data);
       });
 
-      proc.stderr.on('data', (data) => {
+      proc.stderr?.on('data', (data: Buffer) => {
         if (sizeLimitExceeded) return;
         if (stderrByteLength + data.length > MAX_STDERR_SIZE) {
           sizeLimitExceeded = true;

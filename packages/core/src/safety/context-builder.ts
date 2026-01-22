@@ -16,14 +16,11 @@ export class ContextBuilder {
   constructor(
     private readonly config: Config,
     private readonly conversationHistory: ConversationTurn[] = [],
-    private readonly runtimeContext?: RuntimeContext,
+    private runtimeContext?: RuntimeContext,
   ) {}
 
   setRuntimeContext(context: RuntimeContext): void {
-    // @ts-ignore - write to readonly for setter injection pattern if needed,
-    // or better, just allow it if not readonly.
-    // Since it's defined in constructor as private readonly, I should change it.
-    (this as any).runtimeContext = context;
+    this.runtimeContext = context;
   }
 
   /**
@@ -55,15 +52,18 @@ export class ContextBuilder {
     requiredKeys: Array<keyof SafetyCheckInput['context']>,
   ): SafetyCheckInput['context'] {
     const fullContext = this.buildFullContext();
-    const minimalContext: Partial<SafetyCheckInput['context']> = {};
+    const minimalContext: SafetyCheckInput['context'] = {
+      environment: fullContext.environment,
+    };
 
-    for (const key of requiredKeys) {
-      if (key in fullContext) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (minimalContext as any)[key] = fullContext[key];
-      }
+    if (requiredKeys.includes('history')) {
+      minimalContext.history = fullContext.history;
     }
 
-    return minimalContext as SafetyCheckInput['context'];
+    if (requiredKeys.includes('runtime')) {
+      minimalContext.runtime = fullContext.runtime;
+    }
+
+    return minimalContext;
   }
 }

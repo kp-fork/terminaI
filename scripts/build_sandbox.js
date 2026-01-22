@@ -54,7 +54,31 @@ const argv = yargs(hideBin(process.argv))
     type: 'string',
     description:
       'Path to write the final image URI. Used for CI/CD pipeline integration.',
+  })
+  .option('skip-sandbox', {
+    type: 'boolean',
+    default: false,
+    description: 'Skip sandbox image build and tests',
+  })
+  .option('require-sandbox', {
+    type: 'boolean',
+    default: false,
+    description: 'Fail if sandbox image build cannot run',
   }).argv;
+
+const skipSandbox =
+  argv['skip-sandbox'] ||
+  process.env.TERMINAI_SKIP_SANDBOX === '1' ||
+  process.env.TERMINAI_SKIP_SANDBOX === 'true';
+const requireSandbox =
+  argv['require-sandbox'] ||
+  process.env.TERMINAI_REQUIRE_SANDBOX === '1' ||
+  process.env.TERMINAI_REQUIRE_SANDBOX === 'true';
+
+if (skipSandbox) {
+  console.warn('Skipping sandbox image build (skip-sandbox enabled).');
+  process.exit(0);
+}
 
 let sandboxCommand;
 try {
@@ -64,13 +88,20 @@ try {
 } catch (e) {
   console.warn('ERROR: could not detect sandbox container command');
   console.error(e);
-  process.exit(process.env.CI ? 1 : 0);
+  if (requireSandbox) {
+    process.exit(1);
+  }
+  console.warn('Skipping sandbox image build.');
+  process.exit(0);
 }
 
 if (sandboxCommand === 'sandbox-exec') {
   console.warn(
     'WARNING: container-based sandboxing is disabled (see README.md#sandboxing)',
   );
+  if (requireSandbox) {
+    process.exit(1);
+  }
   process.exit(0);
 }
 

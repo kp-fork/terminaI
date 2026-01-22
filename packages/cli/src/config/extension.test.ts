@@ -109,6 +109,7 @@ vi.mock('@terminai/core', async (importOriginal) => {
     ExtensionEnableEvent: vi.fn(),
     ExtensionInstallEvent: vi.fn(),
     ExtensionUninstallEvent: vi.fn(),
+    ExtensionUpdateEvent: vi.fn(),
     ExtensionDisableEvent: vi.fn(),
     KeychainTokenStorage: vi.fn().mockImplementation(() => ({
       getSecret: vi.fn(),

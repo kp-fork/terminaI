@@ -20,14 +20,18 @@ export class LocalRuntimeContext implements RuntimeContext {
   readonly isIsolated = false;
   readonly displayName = 'Host Python (Direct Access)';
 
-  readonly pythonPath: string;
+  private pythonPathInternal: string;
   readonly taptsVersion: string;
 
   private venvPath: string | null = null;
 
   constructor(pythonExecutable: string, cliVersion: string) {
-    this.pythonPath = pythonExecutable;
+    this.pythonPathInternal = pythonExecutable;
     this.taptsVersion = cliVersion;
+  }
+
+  get pythonPath(): string {
+    return this.pythonPathInternal;
   }
 
   /**
@@ -69,11 +73,10 @@ export class LocalRuntimeContext implements RuntimeContext {
         ? path.join(this.venvPath, 'Scripts', 'python.exe')
         : path.join(this.venvPath, 'bin', 'python3');
 
-    // @ts-ignore: readonly property override for venv
-    this.pythonPath = venvPython;
+    this.pythonPathInternal = venvPython;
 
     // Task 9: Bootstrap T-APTS
-    await this.installTapts(this.pythonPath);
+    await this.installTapts(this.pythonPathInternal);
   }
 
   private async installTapts(pythonExecutable: string): Promise<void> {

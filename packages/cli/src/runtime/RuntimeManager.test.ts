@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * Portions Copyright 2025 TerminaI Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RuntimeManager } from './RuntimeManager.js';
 import { LocalRuntimeContext } from './LocalRuntimeContext.js';
@@ -22,18 +29,15 @@ describe('RuntimeManager', () => {
     vi.restoreAllMocks();
   });
 
-  it('should prioritize ContainerRuntimeContext if docker is available', async () => {
+  it('should fall through when docker is available but containers are deferred', async () => {
     // Mock docker check success
     vi.mocked(child_process.execSync).mockImplementation((command) => {
-      if (command.includes('docker --version')) return 'Docker version 20.10.0';
+      if (command.includes('docker info')) return '';
       throw new Error('Command failed');
     });
 
-    // We expect it to throw currently because we haven't implemented ContainerRuntimeContext fully
-    // but in the test we should verify it TRIES to select it.
-    // However, the current code throws "ContainerRuntimeContext not implemented" immediately.
     await expect(runtimeManager.getContext()).rejects.toThrow(
-      'ContainerRuntimeContext not implemented',
+      'No suitable runtime found',
     );
   });
 
@@ -51,10 +55,11 @@ describe('RuntimeManager', () => {
     });
 
     // Mock readline user approval
-    vi.mocked(readline.createInterface).mockReturnValue({
+    const mockInterface = {
       question: (_q: string, cb: (ans: string) => void) => cb('yes'),
       close: vi.fn(),
-    } as any);
+    } as unknown as readline.Interface;
+    vi.mocked(readline.createInterface).mockReturnValue(mockInterface);
 
     const context = await runtimeManager.getContext();
     expect(context).toBeInstanceOf(LocalRuntimeContext);
@@ -94,10 +99,11 @@ describe('RuntimeManager', () => {
     });
 
     // Mock readline user rejection
-    vi.mocked(readline.createInterface).mockReturnValue({
+    const mockInterface = {
       question: (_q: string, cb: (ans: string) => void) => cb('no'),
       close: vi.fn(),
-    } as any);
+    } as unknown as readline.Interface;
+    vi.mocked(readline.createInterface).mockReturnValue(mockInterface);
 
     await expect(runtimeManager.getContext()).rejects.toThrow(
       'Direct host access denied',

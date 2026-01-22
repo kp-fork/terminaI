@@ -17,8 +17,7 @@ vi.mock('node:util', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:util')>();
   return {
     ...actual,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    promisify: (fn: any) => {
+    promisify: (fn: unknown) => {
       if (fn === exec) {
         return (cmd: string) => {
           if (global.__MOCK_EXEC_RESULT__?.[cmd]) {
@@ -26,16 +25,17 @@ vi.mock('node:util', async (importOriginal) => {
             if (res.exitCode === 0) {
               return Promise.resolve({ stdout: res.stdout || '', stderr: '' });
             } else {
-              const err = new Error(`Command failed: ${cmd}`);
-              (err as any).stderr = res.stderr || 'error';
-              (err as any).stdout = '';
+              const err: Error & { stderr?: string; stdout?: string } =
+                new Error(`Command failed: ${cmd}`);
+              err.stderr = res.stderr || 'error';
+              err.stdout = '';
               return Promise.reject(err);
             }
           }
           return Promise.resolve({ stdout: '', stderr: '' });
         };
       }
-      return actual.promisify(fn);
+      return actual.promisify(fn as (...args: unknown[]) => unknown);
     },
   };
 });

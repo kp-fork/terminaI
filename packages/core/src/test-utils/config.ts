@@ -7,6 +7,7 @@
 
 import type { ConfigParameters } from '../config/config.js';
 import { Config } from '../config/config.js';
+import { ConfigSchema } from '../config/configSchema.js';
 
 /**
  * Default parameters used for {@link FAKE_CONFIG}
@@ -31,8 +32,9 @@ export function makeFakeConfig(
     ...DEFAULT_CONFIG_PARAMETERS,
   },
 ): Config {
-  return new Config({
+  const params = ConfigSchema.parse({
     ...DEFAULT_CONFIG_PARAMETERS,
     ...config,
   });
+  return new Config(params);
 }

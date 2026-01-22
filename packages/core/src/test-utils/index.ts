@@ -6,3 +6,5 @@
  */
 
 export * from './mock-tool.js';
+export * from './config.js';
+export * from './mock-message-bus.js';

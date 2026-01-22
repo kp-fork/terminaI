@@ -1397,7 +1397,6 @@ export async function connectToMcpServer(
   try {
     const transport = await createTransport(
       mcpServerName,
-      mcpServerName,
       mcpServerConfig,
       debugMode,
       cliConfig,

@@ -39,6 +39,26 @@ const performance = vi.hoisted(() => ({
 }));
 vi.stubGlobal('performance', performance);
 
+const { fakeRuntimeContext } = vi.hoisted(() => ({
+  fakeRuntimeContext: {
+    type: 'container',
+    isIsolated: true,
+    displayName: 'Test Runtime',
+    pythonPath: '/usr/bin/python3',
+    taptsVersion: '0.0.0-test',
+    healthCheck: async () => ({ ok: true }),
+    dispose: async () => {},
+  },
+}));
+
+vi.mock('./runtime/RuntimeManager.js', () => ({
+  RuntimeManager: class RuntimeManager {
+    async getContext() {
+      return fakeRuntimeContext;
+    }
+  },
+}));
+
 vi.mock('@terminai/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@terminai/core')>();
   return {
@@ -146,6 +166,7 @@ vi.mock('./config/config.js', () => ({
     getQuestion: vi.fn(() => ''),
     isInteractive: () => false,
     setTerminalBackground: vi.fn(),
+    setRuntimeContext: vi.fn(),
   } as unknown as Config),
   parseArguments: vi.fn().mockResolvedValue({}),
   isDebugMode: vi.fn(() => false),
@@ -306,6 +327,7 @@ describe('gemini.tsx main function', () => {
         getExtensions: () => [],
         getUsageStatisticsEnabled: () => false,
         setTerminalBackground: vi.fn(),
+        setRuntimeContext: vi.fn(),
       } as unknown as Config;
     });
     vi.mocked(loadSettings).mockReturnValue({
@@ -538,6 +560,7 @@ describe('gemini.tsx main function kitty protocol', () => {
       getExtensions: () => [],
       getUsageStatisticsEnabled: () => false,
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as unknown as Config);
     vi.mocked(loadSettings).mockReturnValue({
       errors: [],
@@ -663,6 +686,7 @@ describe('gemini.tsx main function kitty protocol', () => {
       getGeminiMdFileCount: () => 0,
       getProjectRoot: () => '/',
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as unknown as Config;
 
     vi.mocked(loadCliConfig).mockResolvedValue(mockConfig);
@@ -751,6 +775,7 @@ describe('gemini.tsx main function kitty protocol', () => {
       getProjectRoot: () => '/',
       refreshAuth: vi.fn(),
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as unknown as Config;
 
     vi.mocked(loadCliConfig).mockResolvedValue(mockConfig);
@@ -836,6 +861,7 @@ describe('gemini.tsx main function kitty protocol', () => {
       getOutputFormat: () => 'text',
       getUsageStatisticsEnabled: () => false,
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     vi.spyOn(themeManager, 'setActiveTheme').mockReturnValue(false);
@@ -924,6 +950,7 @@ describe('gemini.tsx main function kitty protocol', () => {
       getOutputFormat: () => 'text',
       getUsageStatisticsEnabled: () => false,
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     try {
@@ -1007,6 +1034,7 @@ describe('gemini.tsx main function kitty protocol', () => {
       getOutputFormat: () => 'text',
       getUsageStatisticsEnabled: () => false,
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // The mock is already set up at the top of the test
@@ -1080,6 +1108,7 @@ describe('gemini.tsx main function kitty protocol', () => {
       getOutputFormat: () => 'text',
       getUsageStatisticsEnabled: () => false,
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     vi.mock('./utils/readStdin.js', () => ({
@@ -1240,6 +1269,7 @@ describe('gemini.tsx main function exit codes', () => {
       getExtensions: () => [],
       getUsageStatisticsEnabled: () => false,
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as unknown as Config);
     vi.mocked(loadSettings).mockReturnValue({
       merged: { security: { auth: {} }, ui: {} },
@@ -1303,6 +1333,7 @@ describe('gemini.tsx main function exit codes', () => {
       getExtensions: () => [],
       getUsageStatisticsEnabled: () => false,
       setTerminalBackground: vi.fn(),
+      setRuntimeContext: vi.fn(),
     } as unknown as Config);
     vi.mocked(loadSettings).mockReturnValue({
       merged: { security: { auth: {} }, ui: {} },

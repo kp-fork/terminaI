@@ -306,21 +306,26 @@ live. Please restart (Ctrl-C and npm run start or terminai) to apply changes.
 
 ---
 
-## Safety model (high level)
+## The Sovereign Runtime (Safety & Architecture)
 
-TerminAI routes execution through governed tools and a deterministic approval
-ladder:
+TerminAI operates on a **3-Layer Defense-in-Depth** model to ensure that
+autonomous execution never becomes "unchecked access":
 
-- **Level A**: safe/reversible actions (no approval)
-- **Level B**: mutating actions (explicit approval)
-- **Level C**: destructive or high-risk actions (explicit approval + PIN)
+1.  **Cognitive Layer (The "Brain"):** A **PAC Loop** (Plan-Act-Check) with
+    multi-model consensus that verifies intent before proposing action.
+2.  **Governance Layer (The "Guardrails"):** A deterministic **Policy Engine**
+    with an **Approval Ladder** (A/B/C) that forces explicit human sign-off for
+    mutating or destructive actions.
+3.  **Isolation Layer (The "Cell"):** A **Sovereign Runtime** using AppContainer
+    (Windows) or MicroVMs to provide structural OS-level sandboxing, ensuring
+    the agent cannot access what it cannot see.
 
-Audit logs are written to `~/.terminai/logs/audit/` (JSONL). Runtime/session
-logs live in `~/.terminai/logs/`.
+Audit logs are written to `~/.terminai/logs/audit/` (JSONL), providing a
+forensic trace of every decision.
 
-> Zero telemetry by design. No opt-in, no opt-out: just local logs you can
-> inspect. Nothing leaves your system, except for the LLM provider you choose to
-> use.
+> **Structural Sovereignty:** Zero telemetry by design. No opt-in, no opt-out:
+> just local logs you can inspect. Nothing leaves your system, except for the
+> LLM provider you choose to use.
 
 ## Documentation
 
@@ -400,12 +405,12 @@ npm run desktop:dev
 | Capability            | Chat-first assistants / UI shells   | TerminAI (governed operator runtime)                                                   |
 | --------------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
 | Real terminal control | Often best-effort command execution | **True PTY** (interactive sudo/ssh/TTY flows)                                          |
-| Safety model          | “Be careful” prompts                | **Policy + A/B/C approvals** for risky actions                                         |
+| Safety model          | “Be careful” prompts                | **Sovereign Runtime** (Sandboxing + Logic-Gated Policies)                              |
 | Traceability          | Partial transcripts                 | **Local JSONL audit logs** of what ran and why                                         |
 | Provider choice       | Frequently tied to one model/vendor | **Model-agnostic** (Gemini / ChatGPT native Oauth, OpenAI-compatible + local gateways) |
 | Platforms             | Varies                              | **Windows + Linux + macOS** (CLI-first)                                                |
 | Goal                  | Assist with tasks                   | **Mutate system state safely** (review → approve → execute → verify)                   |
-| Privacy               | Varies.                             | Zero telemetry. Works great with local-hosted models                                   |
+| Privacy               | Varies.                             | **Structural Sovereignty** (Local-first, Zero-telemetry)                               |
 | Price                 | $100                                | Free. Works great with free models in OpenRouter (e.g., GPT-OSS)                       |
 
 ## Lineage

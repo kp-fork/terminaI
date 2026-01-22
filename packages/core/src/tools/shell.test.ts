@@ -99,6 +99,7 @@ describe.skipIf(process.platform === 'win32')('ShellTool', () => {
       getCriticalPaths: vi.fn().mockReturnValue([]),
       getSecurityProfile: vi.fn().mockReturnValue('balanced'),
       getApprovalPin: vi.fn().mockReturnValue('000000'),
+      getRuntimeContext: vi.fn().mockReturnValue(undefined),
     } as unknown as Config;
 
     shellTool = new ShellTool(mockConfig);
@@ -237,6 +238,7 @@ describe.skipIf(process.platform === 'win32')('ShellTool', () => {
         expect.any(AbortSignal),
         false,
         { pager: 'cat' },
+        undefined,
       );
       expect(result.llmContent).toContain('Background PIDs: 54322');
       // The file should be deleted by the tool
@@ -262,6 +264,7 @@ describe.skipIf(process.platform === 'win32')('ShellTool', () => {
         expect.any(AbortSignal),
         false,
         { pager: 'cat' },
+        undefined,
       );
     });
 
@@ -283,6 +286,7 @@ describe.skipIf(process.platform === 'win32')('ShellTool', () => {
         expect.any(AbortSignal),
         false,
         { pager: 'cat' },
+        undefined,
       );
     });
 
@@ -310,6 +314,7 @@ describe.skipIf(process.platform === 'win32')('ShellTool', () => {
           expect.any(AbortSignal),
           false,
           { pager: 'cat' },
+          undefined,
         );
       },
       20000,

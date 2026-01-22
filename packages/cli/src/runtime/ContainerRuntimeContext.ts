@@ -9,10 +9,9 @@ import type {
   RuntimeContext,
   ExecutionOptions,
   ExecutionResult,
+  RuntimeProcess,
 } from '@terminai/core';
 import { execSync } from 'node:child_process';
-import { RuntimeProcess } from '@terminai/core';
-import { RuntimeProcess } from '@terminai/core';
 
 /**
  * ContainerRuntimeContext - Docker/Podman Container Runtime (Phase 3)
@@ -59,7 +58,7 @@ export class ContainerRuntimeContext implements RuntimeContext {
 
       execSync('docker info', { stdio: 'ignore' });
       return { ok: true };
-    } catch (e) {
+    } catch (_error) {
       return { ok: false, error: 'Docker daemon not reachable' };
     }
   }
@@ -71,8 +70,8 @@ export class ContainerRuntimeContext implements RuntimeContext {
   }
 
   async execute(
-    command: string,
-    options?: ExecutionOptions,
+    _command: string,
+    _options?: ExecutionOptions,
   ): Promise<ExecutionResult> {
     throw new Error(
       'Container runtime execution not implemented (Deferred to Phase 3)',
@@ -80,8 +79,8 @@ export class ContainerRuntimeContext implements RuntimeContext {
   }
 
   async spawn(
-    command: string,
-    options?: ExecutionOptions,
+    _command: string,
+    _options?: ExecutionOptions,
   ): Promise<RuntimeProcess> {
     throw new Error('Container Runtime spawn not implemented (Phase 3)');
   }

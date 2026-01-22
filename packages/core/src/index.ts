@@ -198,6 +198,17 @@ export { OAuthUtils } from './mcp/oauth-utils.js';
 
 // Export telemetry functions
 export * from './telemetry/index.js';
+export { logIdeConnection } from './telemetry/loggers.js';
+export {
+  IdeConnectionEvent,
+  IdeConnectionType,
+  ExtensionInstallEvent,
+  ExtensionDisableEvent,
+  ExtensionEnableEvent,
+  ExtensionUninstallEvent,
+  ExtensionUpdateEvent,
+  ModelSlashCommandEvent,
+} from './telemetry/types.js';
 export { sessionId } from './utils/session.js';
 export * from './utils/browser.js';
 export * from './utils/secure-browser-launcher.js';
@@ -221,3 +232,5 @@ export { DesktopAutomationService } from './gui/service/DesktopAutomationService
 
 // Evaluation
 export * from './evaluation/index.js';
+
+export { getErrorStatus, ModelNotFoundError } from './utils/httpErrors.js';

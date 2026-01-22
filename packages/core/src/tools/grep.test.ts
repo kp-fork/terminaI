@@ -44,6 +44,7 @@ describe('GrepTool', () => {
     getFileExclusions: () => ({
       getGlobExcludes: () => [],
     }),
+    getRuntimeContext: () => undefined,
   } as unknown as Config;
 
   beforeEach(async () => {
@@ -269,6 +270,7 @@ describe('GrepTool', () => {
         getFileExclusions: () => ({
           getGlobExcludes: () => [],
         }),
+        getRuntimeContext: () => undefined,
       } as unknown as Config;
 
       const multiDirGrepTool = new GrepTool(multiDirConfig);
@@ -322,6 +324,7 @@ describe('GrepTool', () => {
         getFileExclusions: () => ({
           getGlobExcludes: () => [],
         }),
+        getRuntimeContext: () => undefined,
       } as unknown as Config;
 
       const multiDirGrepTool = new GrepTool(multiDirConfig);

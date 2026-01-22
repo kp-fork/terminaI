@@ -20,6 +20,7 @@ import {
   serializeTerminalToObject,
   type AnsiOutput,
 } from '../utils/terminalSerializer.js';
+import type { RuntimeContext } from '../computer/RuntimeContext.js';
 const { Terminal } = pkg;
 
 const SIGKILL_TIMEOUT_MS = 200;
@@ -275,18 +276,16 @@ export class ShellExecutionService {
           executionMethod: 'child_process' as const,
         };
       })
-      .catch((err) => {
-        return {
-          rawOutput: Buffer.from(''),
-          output: '',
-          exitCode: 1,
-          signal: null,
-          error: err,
-          aborted: false,
-          pid: undefined,
-          executionMethod: 'none' as const,
-        };
-      });
+      .catch((err) => ({
+        rawOutput: Buffer.from(''),
+        output: '',
+        exitCode: 1,
+        signal: null,
+        error: err,
+        aborted: false,
+        pid: undefined,
+        executionMethod: 'none' as const,
+      }));
     return { pid: undefined, result: executionPromise };
   }
 

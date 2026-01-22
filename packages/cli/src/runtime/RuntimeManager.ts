@@ -211,8 +211,8 @@ export class RuntimeManager {
         // Parse version (e.g., "Python 3.11.5")
         const match = version.match(/Python (\d+)\.(\d+)/);
         if (match) {
-          const major = parseInt(match[1]);
-          const minor = parseInt(match[2]);
+          const major = parseInt(match[1], 10);
+          const minor = parseInt(match[2], 10);
 
           // Require Python 3.10+
           if (major === 3 && minor >= 10) {

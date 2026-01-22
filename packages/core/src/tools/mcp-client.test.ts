@@ -13,7 +13,7 @@ import {
   StreamableHTTPError,
 } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthProviderType, type Config } from '../config/config.js';
+import { AuthProviderType } from '../config/config.js';
 import { GoogleCredentialProvider } from '../mcp/google-auth-provider.js';
 import { MCPOAuthProvider } from '../mcp/oauth-provider.js';
 import { MCPOAuthTokenStorage } from '../mcp/oauth-token-storage.js';
@@ -22,6 +22,7 @@ import type { PromptRegistry } from '../prompts/prompt-registry.js';
 import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
 
 import { WorkspaceContext } from '../utils/workspaceContext.js';
+import { makeFakeConfig } from '../test-utils/config.js';
 import {
   connectToMcpServer,
   createTransport,
@@ -125,11 +126,11 @@ describe('mcp-client', () => {
         promptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await client.discover({} as Config);
+      await client.discover(makeFakeConfig());
       expect(mockedClient.listTools).toHaveBeenCalledWith(
         {},
         { timeout: 600000 },
@@ -205,11 +206,11 @@ describe('mcp-client', () => {
         promptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await client.discover({} as Config);
+      await client.discover(makeFakeConfig());
       expect(mockedToolRegistry.registerTool).toHaveBeenCalledTimes(2);
       expect(consoleWarnSpy).not.toHaveBeenCalled();
       consoleWarnSpy.mockRestore();
@@ -256,11 +257,11 @@ describe('mcp-client', () => {
         promptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await expect(client.discover({} as Config)).rejects.toThrow(
+      await expect(client.discover(makeFakeConfig())).rejects.toThrow(
         'No prompts, tools, or resources found on the server.',
       );
       expect(coreEvents.emitFeedback).toHaveBeenCalledWith(
@@ -311,11 +312,11 @@ describe('mcp-client', () => {
         promptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await expect(client.discover({} as Config)).rejects.toThrow(
+      await expect(client.discover(makeFakeConfig())).rejects.toThrow(
         'No prompts, tools, or resources found on the server.',
       );
     });
@@ -370,11 +371,11 @@ describe('mcp-client', () => {
         promptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await client.discover({} as Config);
+      await client.discover(makeFakeConfig());
       expect(mockedToolRegistry.registerTool).toHaveBeenCalledOnce();
     });
 
@@ -443,11 +444,11 @@ describe('mcp-client', () => {
         promptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await client.discover({} as Config);
+      await client.discover(makeFakeConfig());
       expect(mockedToolRegistry.registerTool).toHaveBeenCalledOnce();
       const registeredTool = vi.mocked(mockedToolRegistry.registerTool).mock
         .calls[0][0];
@@ -519,11 +520,11 @@ describe('mcp-client', () => {
         promptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await client.discover({} as Config);
+      await client.discover(makeFakeConfig());
       expect(resourceRegistry.setResourcesForServer).toHaveBeenCalledWith(
         'test-server',
         [
@@ -602,11 +603,11 @@ describe('mcp-client', () => {
         promptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await client.discover({} as Config);
+      await client.discover(makeFakeConfig());
 
       expect(mockedClient.setNotificationHandler).toHaveBeenCalledOnce();
       expect(resourceListHandler).toBeDefined();
@@ -682,11 +683,11 @@ describe('mcp-client', () => {
         mockedPromptRegistry,
         resourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
       await client.connect();
-      await client.discover({} as Config);
+      await client.discover(makeFakeConfig());
 
       expect(mockedToolRegistry.registerTool).toHaveBeenCalledOnce();
       expect(mockedPromptRegistry.registerPrompt).toHaveBeenCalledOnce();
@@ -731,7 +732,7 @@ describe('mcp-client', () => {
         {} as PromptRegistry,
         {} as ResourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
 
@@ -767,7 +768,7 @@ describe('mcp-client', () => {
         {} as PromptRegistry,
         {} as ResourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
 
@@ -822,7 +823,7 @@ describe('mcp-client', () => {
         {} as PromptRegistry,
         {} as ResourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
         onToolsUpdatedSpy,
       );
@@ -892,7 +893,7 @@ describe('mcp-client', () => {
         {} as PromptRegistry,
         {} as ResourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
 
@@ -962,7 +963,7 @@ describe('mcp-client', () => {
         {} as PromptRegistry,
         {} as ResourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
         onToolsUpdatedSpy,
       );
@@ -974,7 +975,7 @@ describe('mcp-client', () => {
         {} as PromptRegistry,
         {} as ResourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
         onToolsUpdatedSpy,
       );
@@ -1056,7 +1057,7 @@ describe('mcp-client', () => {
         {} as PromptRegistry,
         {} as ResourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
       );
 
@@ -1120,7 +1121,7 @@ describe('mcp-client', () => {
         {} as PromptRegistry,
         {} as ResourceRegistry,
         workspaceContext,
-        {} as Config,
+        makeFakeConfig(),
         false,
         onToolsUpdatedSpy,
       );

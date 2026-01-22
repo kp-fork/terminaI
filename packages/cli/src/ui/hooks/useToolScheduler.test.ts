@@ -15,19 +15,17 @@ import {
   mapToDisplay,
 } from './useReactToolScheduler.js';
 import type { PartUnion, FunctionResponse } from '@google/genai';
-import type {
-  Config,
-  ToolCallRequestInfo,
-  ToolRegistry,
-  ToolResult,
-  ToolCallConfirmationDetails,
-  ToolCallResponseInfo,
-  ToolCall, // Import from core
-  Status as ToolCallStatusType,
-  AnyDeclarativeTool,
-  AnyToolInvocation,
-} from '@terminai/core';
 import {
+  type Config,
+  type ToolCallRequestInfo,
+  type ToolRegistry,
+  type ToolResult,
+  type ToolCallConfirmationDetails,
+  type ToolCallResponseInfo,
+  type ToolCall,
+  type Status as ToolCallStatusType,
+  type AnyDeclarativeTool,
+  type AnyToolInvocation,
   DEFAULT_TRUNCATE_TOOL_OUTPUT_LINES,
   DEFAULT_TRUNCATE_TOOL_OUTPUT_THRESHOLD,
   ToolConfirmationOutcome,
@@ -35,8 +33,8 @@ import {
   MockTool,
   HookSystem,
   PREVIEW_GEMINI_MODEL,
+  createMockMessageBus,
 } from '@terminai/core';
-import { createMockMessageBus } from '@terminai/core/src/test-utils/mock-message-bus.js';
 import { ToolCallStatus } from '../types.js';
 
 // Mocks

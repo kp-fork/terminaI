@@ -12,15 +12,40 @@ import path from 'node:path';
 import fs from 'node:fs';
 import cliPkgJson from '../../package.json' with { type: 'json' };
 
+// Derive image from package.json to ensure version consistency
+const image = cliPkgJson.config.sandboxImageUri;
+
+const dockerAvailable = (() => {
+  try {
+    execSync('docker info', { stdio: 'ignore', timeout: 2000 });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+const imageAvailable = (() => {
+  try {
+    execSync(`docker image inspect "${image}"`, {
+      stdio: 'ignore',
+      timeout: 2000,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+const forceDockerE2E = process.env['TERMINAI_RUN_DOCKER_E2E'] === '1';
+
 // Skip this test suite in CI unless TERMINAI_RUN_DOCKER_E2E=1 is set
 const shouldSkip =
-  process.env['CI'] === 'true' &&
-  process.env['TERMINAI_RUN_DOCKER_E2E'] !== '1';
+  (!forceDockerE2E && process.env['CI'] === 'true') ||
+  (!forceDockerE2E && (!dockerAvailable || !imageAvailable));
 
 describe.skipIf(shouldSkip)('Sandbox E2E Scenario: Cleanup Downloads', () => {
   const tempDir = path.join(os.tmpdir(), `terminai-e2e-${Date.now()}`);
-  // Derive image from package.json to ensure version consistency
-  const image = cliPkgJson.config.sandboxImageUri;
+  const imageForRun = image;
 
   beforeEach(() => {
     if (fs.existsSync(tempDir)) {
@@ -62,7 +87,7 @@ print(json.dumps(serializable))
       const output = execSync(
         `docker run --rm ` +
           `-v "${tempDir}:/mnt/downloads" ` +
-          `"${image}" ` +
+          `"${imageForRun}" ` +
           `python3 /mnt/downloads/test_cleanup.py`,
         { encoding: 'utf-8' },
       );
