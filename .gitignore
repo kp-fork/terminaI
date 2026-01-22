@@ -47,6 +47,7 @@ packages/core/src/generated/
 .integration-tests/
 packages/vscode-ide-companion/*.vsix
 packages/cli/download-ripgrep*/
+packages/cli/sea-prep.blob
 
 # GHA credentials
 gha-creds-*.json
@@ -90,4 +91,3 @@ local/*
 codex-cli/
 opencode/
 opencode-openai-auth/
-

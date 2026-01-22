@@ -7,6 +7,12 @@ rm -rf packages/*/dist
 echo "🔹 2. Installing dependencies (npm install)..."
 npm install
 
+echo "🔹 2b. Verifying environment contract..."
+node scripts/check-ci-env.js
+
+echo "🔹 2c. Running secret scan..."
+node scripts/check-secrets.js
+
 echo "🔹 3. Building project..."
 npm run build
 
